@@ -5,3 +5,11 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Agent skills
+.agents/
+.claude/
+.codebuddy/
+.continue/
+.kiro/
+skills-lock.json
