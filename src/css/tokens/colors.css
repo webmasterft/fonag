@@ -1,81 +1,134 @@
 :root {
-  /* Brand Primitive Palette */
-  --color-brand-50: #f0f9ff;
-  --color-brand-100: #e0f2fe;
-  --color-brand-200: #bae6fd;
-  --color-brand-300: #7dd3fc;
-  --color-brand-400: #38bdf8;
-  --color-brand-500: #0ea5e9;
-  --color-brand-600: #0284c7;
-  --color-brand-700: #0369a1;
-  --color-brand-800: #075985;
-  --color-brand-900: #0c4a6e;
+  /* ==========================================================================
+     FONAG Official Design Palette (5x6 Matrix extracted from Brand Guide)
+     ========================================================================== */
 
-  /* Accent Primitive Palette */
-  --color-accent-400: #2dd4bf;
-  --color-accent-500: #14b8a6;
-  --color-accent-600: #0d9488;
+  /* Row 1 */
+  --palette-r1-c1: #ffffff;
+  --palette-r1-c2: #f9fafc;
+  --palette-r1-c3: #242857;
+  --palette-r1-c4: #41a6e5;
+  --palette-r1-c5: #e8eaed;
+  --palette-r1-c6: #f19001;
 
-  /* Brand Orange Palette */
-  --color-brand-orange: #f58220;
-  --color-brand-orange-hover: #d96b12;
+  /* Row 2 */
+  --palette-r2-c1: #d6d6d6;
+  --palette-r2-c2: #efefef;
+  --palette-r2-c3: #f8f9fc;
+  --palette-r2-c4: #e3e0e0;
+  --palette-r2-c5: #e2e0e0;
+  --palette-r2-c6: #8900a2;
+
+  /* Row 3 */
+  --palette-r3-c1: #f4c895;
+  --palette-r3-c2: #707070;
+  --palette-r3-c3: #f1d8bb;
+  --palette-r3-c4: #b0cb8b;
+  --palette-r3-c5: #6eada4;
+  --palette-r3-c6: #d8917c;
+
+  /* Row 4 */
+  --palette-r4-c1: #f491cc;
+  --palette-r4-c2: #6b8cdd;
+  --palette-r4-c3: #9de5f9;
+  --palette-r4-c4: #b5aac0;
+  --palette-r4-c5: #ade3f6;
+  --palette-r4-c6: #000000;
+
+  /* Row 5 */
+  --palette-r5-c1: #f38fcb;
+  --palette-r5-c2: #ce9480;
+  --palette-r5-c3: #b5ca92;
+  --palette-r5-c4: #7caba4;
+  --palette-r5-c5: #edc99c;
+  --palette-r5-c6: #edd9be;
+
+  /* Named Palette Aliases */
+  --color-palette-white: var(--palette-r1-c1);
+  --color-palette-offwhite-1: var(--palette-r1-c2);
+  --color-palette-navy: var(--palette-r1-c3);
+  --color-palette-blue: var(--palette-r1-c4);
+  --color-palette-gray-light: var(--palette-r1-c5);
+  --color-palette-orange: var(--palette-r1-c6);
+
+  --color-palette-silver: var(--palette-r2-c1);
+  --color-palette-gray-soft: var(--palette-r2-c2);
+  --color-palette-offwhite-2: var(--palette-r2-c3);
+  --color-palette-gray-muted-1: var(--palette-r2-c4);
+  --color-palette-gray-muted-2: var(--palette-r2-c5);
+  --color-palette-purple: var(--palette-r2-c6);
+
+  --color-palette-peach-light: var(--palette-r3-c1);
+  --color-palette-charcoal: var(--palette-r3-c2);
+  --color-palette-beige: var(--palette-r3-c3);
+  --color-palette-sage: var(--palette-r3-c4);
+  --color-palette-teal: var(--palette-r3-c5);
+  --color-palette-terracotta: var(--palette-r3-c6);
+
+  --color-palette-pink: var(--palette-r4-c1);
+  --color-palette-periwinkle: var(--palette-r4-c2);
+  --color-palette-cyan: var(--palette-r4-c3);
+  --color-palette-lavender: var(--palette-r4-c4);
+  --color-palette-ice-blue: var(--palette-r4-c5);
+  --color-palette-black: var(--palette-r4-c6);
+
+  --color-palette-pink-deep: var(--palette-r5-c1);
+  --color-palette-terracotta-warm: var(--palette-r5-c2);
+  --color-palette-sage-pastel: var(--palette-r5-c3);
+  --color-palette-teal-pastel: var(--palette-r5-c4);
+  --color-palette-peach-warm: var(--palette-r5-c5);
+  --color-palette-cream: var(--palette-r5-c6);
+
+  /* Brand Primary & Semantic Tokens */
+  --color-brand-primary: var(--color-palette-navy);
+  --color-brand-accent: var(--color-palette-blue);
+  --color-brand-orange: var(--color-palette-orange);
+  --color-brand-orange-hover: #d97d00;
+  --color-brand-purple: var(--color-palette-purple);
 
   /* Footer Tokens */
-  --color-footer-bg: #1e244a;
+  --color-footer-bg: var(--color-palette-navy);
   --color-footer-divider: rgba(255, 255, 255, 0.2);
   --color-footer-text: #ffffff;
 
-  /* Neutral Primitive Palette */
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-400: #94a3b8;
-  --color-neutral-500: #64748b;
-  --color-neutral-600: #475569;
-  --color-neutral-700: #334155;
-  --color-neutral-800: #1e293b;
-  --color-neutral-900: #0f172a;
-  --color-neutral-950: #020617;
-
-  /* Semantic Variables - Light Default */
-  --bg-primary: var(--color-neutral-50);
+  /* Interactive & UI Semantics - Light Default */
+  --bg-primary: var(--color-palette-offwhite-1);
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
-  --bg-glass: rgba(255, 255, 255, 0.75);
+  --bg-glass: rgba(255, 255, 255, 0.85);
 
-  --text-primary: var(--color-neutral-900);
-  --text-secondary: var(--color-neutral-600);
-  --text-muted: var(--color-neutral-400);
+  --text-primary: var(--color-palette-navy);
+  --text-secondary: var(--color-palette-charcoal);
+  --text-muted: #94a3b8;
   --text-inverse: #ffffff;
 
-  --border-subtle: var(--color-neutral-200);
-  --border-strong: var(--color-neutral-300);
-  --border-brand: var(--color-brand-500);
+  --border-subtle: var(--color-palette-gray-soft);
+  --border-strong: var(--color-palette-silver);
+  --border-brand: var(--color-palette-blue);
 
-  --interactive-primary: var(--color-brand-600);
-  --interactive-primary-hover: var(--color-brand-700);
-  --interactive-secondary: var(--color-neutral-100);
-  --interactive-secondary-hover: var(--color-neutral-200);
+  --interactive-primary: var(--color-palette-blue);
+  --interactive-primary-hover: #298ecf;
+  --interactive-secondary: var(--color-palette-gray-soft);
+  --interactive-secondary-hover: var(--color-palette-silver);
 }
 
 [data-theme="dark"] {
-  --bg-primary: var(--color-neutral-950);
-  --bg-surface: var(--color-neutral-900);
-  --bg-surface-elevated: var(--color-neutral-800);
-  --bg-glass: rgba(15, 23, 42, 0.75);
+  --bg-primary: #0f1329;
+  --bg-surface: #171c3b;
+  --bg-surface-elevated: #1e2448;
+  --bg-glass: rgba(23, 28, 59, 0.85);
 
-  --text-primary: var(--color-neutral-50);
-  --text-secondary: var(--color-neutral-300);
-  --text-muted: var(--color-neutral-500);
-  --text-inverse: var(--color-neutral-950);
+  --text-primary: #f8f9fc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #8492a6;
+  --text-inverse: var(--color-palette-navy);
 
-  --border-subtle: var(--color-neutral-800);
-  --border-strong: var(--color-neutral-700);
-  --border-brand: var(--color-brand-400);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-brand: var(--color-palette-blue);
 
-  --interactive-primary: var(--color-brand-500);
-  --interactive-primary-hover: var(--color-brand-400);
-  --interactive-secondary: var(--color-neutral-800);
-  --interactive-secondary-hover: var(--color-neutral-700);
+  --interactive-primary: var(--color-palette-blue);
+  --interactive-primary-hover: #5ab6ee;
+  --interactive-secondary: #222850;
+  --interactive-secondary-hover: #2b3363;
 }

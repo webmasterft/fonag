@@ -37,6 +37,19 @@
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
+
+  --color-palette-navy: var(--color-palette-navy);
+  --color-palette-blue: var(--color-palette-blue);
+  --color-palette-orange: var(--color-palette-orange);
+  --color-palette-purple: var(--color-palette-purple);
+  --color-palette-charcoal: var(--color-palette-charcoal);
+  --color-palette-peach: var(--color-palette-peach-light);
+  --color-palette-sage: var(--color-palette-sage);
+  --color-palette-teal: var(--color-palette-teal);
+  --color-palette-terracotta: var(--color-palette-terracotta);
+  --color-palette-pink: var(--color-palette-pink);
+
+  --max-width-container: var(--container-max-width);
 }
 
 /* Base Body Reset */
