@@ -53,7 +53,7 @@
   font-size: 14px;
   font-weight: var(--font-weight-bold);
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: 8px;
   padding: 0.65rem 2rem;
   cursor: pointer;
   flex-shrink: 0;
