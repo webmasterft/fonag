@@ -54,7 +54,7 @@ Specification for the three core portal components displayed on the FONAG SEDC (
 - **Floating Search Capsule (Molecule - `.hero-search-capsule`)**:
   - Container: Pill shape (`border-radius: 9999px`), background `#FFFFFF`, width `100%`, max-width `580px`, box-shadow `0 8px 30px rgba(0, 0, 0, 0.25)`.
   - Padding: `6px 8px 6px 1.5rem`.
-  - Magnifying Glass Icon: Left aligned, 20px x 20px SVG, stroke `#707070`.
+  - Magnifying Glass Icon: Left aligned, 20px x 20px SVG, stroke `#242857`.
   - Input: Borderless, transparent background, font `Inter 15px`, placeholder text, color `#242857`.
   - Action Button:
     - Text: **Buscar**
@@ -72,7 +72,7 @@ Specification for the three core portal components displayed on the FONAG SEDC (
 ### 4.2 Metric Cards Anatomy & Typography (Exact Requirement)
 - **.stat-number**: `font: normal normal bold 22px/26px Inter; color: #242857;`
 - **.stat-label**: `font: normal normal bold 13px/16px Inter; color: #f19001;`
-- **.stat-desc**: `font: normal normal medium 13px/16px Inter; color: #707070;`
+- **.stat-desc**: `font: normal normal medium 13px/16px Inter; color: #242857;`
 
 ### 4.3 Metric Cards Grid (4 Columns)
 - Layout: CSS Grid, 4 equal columns on desktop (`grid-template-columns: repeat(4, 1fr)`), collapsing to 2 columns on tablet, 1 column on mobile. Max container width `1366px`.
@@ -90,25 +90,25 @@ Specification for the three core portal components displayed on the FONAG SEDC (
 1. **Card 1: Años**
    - Icon: Circular badge with light cyan background (`#eaf6fd`), Bar Chart icon (`#41a6e5`).
    - Value & Title: **19** (Navy `#242857`, 32px, bold) + **Años** (Orange `#f19001`, 18px, bold).
-   - Description: *"Resúmenes estadísticos anuales"* (`#707070`, 13px, line-height 18px, min-height 36px).
+   - Description: *"Resúmenes estadísticos anuales"* (`#242857`, 13px, line-height 18px, min-height 36px).
    - CTA: Orange pill button **Ver anuario** (`padding: 0.5rem 1.5rem; font-size: 13px; font-weight: 700;`).
 
 2. **Card 2: Estaciones**
    - Icon: Circular badge (`#eaf6fd`), Cloud with rain icon (`#41a6e5`).
    - Value & Title: **61** (Navy `#242857`, 32px, bold) + **Estaciones** (Orange `#f19001`, 18px, bold).
-   - Description: *"Meteorológicas, Pluviométricas e Hidrológicas activas"* (`#707070`, 13px, min-height 36px).
+   - Description: *"Meteorológicas, Pluviométricas e Hidrológicas activas"* (`#242857`, 13px, min-height 36px).
    - CTA: Orange pill button **Ver estaciones** (`padding: 0.5rem 1.5rem; font-size: 13px; font-weight: 700;`).
 
 3. **Card 3: Variables**
    - Icon: Circular badge (`#eaf6fd`), Water droplet & gauge icon (`#41a6e5`).
    - Value & Title: **13** (Navy `#242857`, 32px, bold) + **Variables** (Orange `#f19001`, 18px, bold).
-   - Description: *"Hidroclimáticas con información desde 2007"* (`#707070`, 13px, min-height 36px).
+   - Description: *"Hidroclimáticas con información desde 2007"* (`#242857`, 13px, min-height 36px).
    - CTA: Orange pill button **Ver variables** (`padding: 0.5rem 1.5rem; font-size: 13px; font-weight: 700;`).
 
 4. **Card 4: Telemetría**
    - Icon: Circular badge (`#eaf6fd`), Broadcast / telemetry waves icon (`#41a6e5`).
    - Value & Title: **20** (Navy `#242857`, 32px, bold) + **Estaciones con telemetría** (Orange `#f19001`, 15px, bold).
-   - Description: *"Transmisión en tiempo real"* (`#707070`, 13px, min-height 36px).
+   - Description: *"Transmisión en tiempo real"* (`#242857`, 13px, min-height 36px).
    - CTA: Orange pill button **Ver transmisión** (`padding: 0.5rem 1.5rem; font-size: 13px; font-weight: 700;`).
 
 ---
