@@ -59,6 +59,7 @@
 .stat-desc {
   font: normal normal medium 13px/16px 'Inter', sans-serif;
   color: var(--color-palette-charcoal);
+  opacity: 0.6;
   margin: 0 0 1.5rem;
   min-height: 36px;
   display: flex;
