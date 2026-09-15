@@ -47,25 +47,17 @@
 }
 
 .stat-number {
-  font-family: var(--font-family-sans);
-  font-size: 28px;
-  font-weight: var(--font-weight-extrabold);
+  font: normal normal bold 22px/26px 'Inter', sans-serif;
   color: var(--color-palette-navy);
-  line-height: 1;
 }
 
 .stat-label {
-  font-family: var(--font-family-sans);
-  font-size: 16px;
-  font-weight: var(--font-weight-bold);
+  font: normal normal bold 13px/16px 'Inter', sans-serif;
   color: var(--color-brand-orange);
-  line-height: 1.2;
 }
 
 .stat-desc {
-  font-family: var(--font-family-sans);
-  font-size: 13px;
-  line-height: 18px;
+  font: normal normal medium 13px/16px 'Inter', sans-serif;
   color: var(--color-palette-charcoal);
   margin: 0 0 1.5rem;
   min-height: 36px;

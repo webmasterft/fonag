@@ -69,7 +69,12 @@ Specification for the three core portal components displayed on the FONAG SEDC (
 - Typography: `font: normal normal bold 26px/32px Inter; color: #242857; text-align: center;`
 - Accent: Orange underline indicator (`width: 48px; height: 4px; background-color: #f19001; border-radius: 2px; margin: 0.5rem auto 2.5rem;`).
 
-### 4.2 Metric Cards Grid (4 Columns)
+### 4.2 Metric Cards Anatomy & Typography (Exact Requirement)
+- **.stat-number**: `font: normal normal bold 22px/26px Inter; color: #242857;`
+- **.stat-label**: `font: normal normal bold 13px/16px Inter; color: #f19001;`
+- **.stat-desc**: `font: normal normal medium 13px/16px Inter; color: #707070;`
+
+### 4.3 Metric Cards Grid (4 Columns)
 - Layout: CSS Grid, 4 equal columns on desktop (`grid-template-columns: repeat(4, 1fr)`), collapsing to 2 columns on tablet, 1 column on mobile. Max container width `1366px`.
 - Card Container (`.stat-card`):
   - Background: `#FFFFFF`.
