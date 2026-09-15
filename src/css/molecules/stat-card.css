@@ -8,7 +8,7 @@
   border-radius: 12px;
   border: 1px solid #EFEFEF;
   box-shadow: 0px 3px 6px #00000029;
-  padding: 2.25rem 1.5rem 3rem;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -72,7 +72,7 @@
 
 .stat-card .btn-cta-orange {
   position: absolute;
-  bottom: 0;
+  bottom: -20px;
   left: 0;
   right: 0;
   margin: auto;
