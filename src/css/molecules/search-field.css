@@ -1,0 +1,47 @@
+/* ==========================================================================
+   Molecule: Search Field
+   ========================================================================== */
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.search-field .search-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-muted);
+  width: 1.125rem;
+  height: 1.125rem;
+  pointer-events: none;
+}
+
+.search-field .input-text {
+  padding-left: var(--space-8);
+  padding-right: var(--space-8);
+}
+
+.search-field .clear-btn {
+  position: absolute;
+  right: var(--space-2);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+}
+
+.search-field .clear-btn:hover {
+  color: var(--text-primary);
+}
+
+.search-field.has-value .clear-btn {
+  display: flex;
+}
