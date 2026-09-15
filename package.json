@@ -6,10 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint:css": "stylelint \"src/css/**/*.css\"",
+    "lint:js": "eslint \"src/js/**/*.js\"",
+    "lint": "npm run lint:css && npm run lint:js"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.9",
+    "eslint": "^10.10.0",
+    "stylelint": "^17.15.0",
+    "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4.0.9",
     "vite": "^6.2.0"
   }

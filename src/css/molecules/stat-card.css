@@ -47,17 +47,17 @@
 }
 
 .stat-number {
-  font: normal normal bold 22px/26px 'Inter', sans-serif;
+  font: 700 22px/26px Inter, sans-serif;
   color: var(--color-palette-navy);
 }
 
 .stat-label {
-  font: normal normal bold 13px/16px 'Inter', sans-serif;
+  font: 700 13px/16px Inter, sans-serif;
   color: var(--color-brand-orange);
 }
 
 .stat-desc {
-  font: normal normal medium 13px/16px 'Inter', sans-serif;
+  font: 500 13px/16px Inter, sans-serif;
   color: var(--color-palette-charcoal);
   opacity: 0.6;
   margin: 0 0 1.5rem;
