@@ -67,6 +67,23 @@
   border-color: var(--border-strong);
 }
 
+.btn-cta-orange {
+  background-color: var(--color-brand-orange);
+  color: #ffffff;
+  font: normal normal bold 15px/25px 'Inter', sans-serif;
+  letter-spacing: 0px;
+  border-radius: var(--radius-full);
+  padding: 0.5rem 2.25rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.btn-cta-orange:hover:not(:disabled) {
+  background-color: var(--color-brand-orange-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
 /* Button Sizes */
 .btn-sm {
   padding: var(--space-1) var(--space-3);

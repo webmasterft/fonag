@@ -16,6 +16,15 @@
   --color-accent-500: #14b8a6;
   --color-accent-600: #0d9488;
 
+  /* Brand Orange Palette */
+  --color-brand-orange: #f58220;
+  --color-brand-orange-hover: #d96b12;
+
+  /* Footer Tokens */
+  --color-footer-bg: #1e244a;
+  --color-footer-divider: rgba(255, 255, 255, 0.2);
+  --color-footer-text: #ffffff;
+
   /* Neutral Primitive Palette */
   --color-neutral-50: #f8fafc;
   --color-neutral-100: #f1f5f9;

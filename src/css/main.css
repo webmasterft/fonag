@@ -53,8 +53,10 @@ body {
 /* 3. Atomic Design Layers */
 @import "./atoms/buttons.css";
 @import "./atoms/inputs.css";
+@import "./atoms/social-link.css";
 @import "./molecules/search-field.css";
 @import "./molecules/card.css";
 @import "./organisms/header.css";
 @import "./organisms/hero.css";
+@import "./organisms/footer.css";
 @import "./templates/layout.css";

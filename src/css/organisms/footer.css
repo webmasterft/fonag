@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Organism: FONAG Footer Component
+   ========================================================================== */
+
+.fonag-footer {
+  width: 100%;
+  background-color: var(--color-footer-bg);
+  color: var(--color-footer-text);
+  font-family: var(--font-family-sans);
+  padding: 3.5rem 1.5rem 2.5rem;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Tier 1: Contact & Social Info */
+.footer-top-tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+/* Contacto + Social Media Group */
+.footer-social-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.footer-heading {
+  font: normal normal bold 20px/24px 'Inter', sans-serif;
+  letter-spacing: 0px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.footer-social-list {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Contact Columns (Phones, Address, Email) */
+.footer-info-item {
+  font: normal normal bold 15px/25px 'Inter', sans-serif;
+  letter-spacing: 0px;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-info-item a {
+  color: #FFFFFF;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.footer-info-item a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Tier Divider */
+.footer-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--color-footer-divider);
+  margin: 0;
+}
+
+/* Tier 2: Logo and CTA Button */
+.footer-bottom-tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.footer-logo-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.footer-logo-svg {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
+.footer-cta-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 960px) {
+  .footer-top-tier {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .fonag-footer {
+    padding: 2.5rem 1rem 2rem;
+  }
+
+  .footer-top-tier {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-social-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .footer-bottom-tier {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+}
