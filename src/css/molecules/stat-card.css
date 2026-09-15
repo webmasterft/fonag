@@ -5,9 +5,9 @@
 .stat-card {
   position: relative;
   background-color: #ffffff;
-  border-radius: var(--radius-xl);
-  border: 1px solid #e8eaed;
-  box-shadow: 0 4px 16px rgba(36, 40, 87, 0.06);
+  border-radius: 12px;
+  border: 1px solid #EFEFEF;
+  box-shadow: 0px 3px 6px #00000029;
   padding: 2.25rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
