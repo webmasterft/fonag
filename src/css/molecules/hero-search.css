@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Molecule: Hero Floating Search Capsule
+   ========================================================================== */
+
+.hero-search-capsule {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: var(--radius-full);
+  padding: 6px 8px 6px 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hero-search-capsule:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+}
+
+.hero-search-icon {
+  width: 20px;
+  height: 20px;
+  stroke: var(--color-palette-charcoal);
+  stroke-width: 2.25;
+  fill: none;
+  flex-shrink: 0;
+  margin-right: 0.75rem;
+}
+
+.hero-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-family-sans);
+  font-size: 15px;
+  color: var(--color-palette-navy);
+  padding: 0.5rem 0.25rem;
+}
+
+.hero-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.hero-search-btn {
+  background-color: var(--color-brand-orange);
+  color: #ffffff;
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.65rem 2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.hero-search-btn:hover {
+  background-color: var(--color-brand-orange-hover);
+  transform: translateY(-1px);
+}

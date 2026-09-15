@@ -1,0 +1,49 @@
+/* ==========================================================================
+   Molecule: Navigation Menu with Active Underline
+   ========================================================================== */
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 2.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  font-family: var(--font-family-sans);
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-palette-charcoal);
+  padding: 0.5rem 0.25rem;
+  transition: color var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--color-palette-navy);
+}
+
+/* Active State with Orange Indicator */
+.nav-link.active {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-palette-navy);
+}
+
+.nav-link.active::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: var(--color-brand-orange);
+  border-radius: var(--radius-full);
+  margin-top: 4px;
+}

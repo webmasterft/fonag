@@ -1,0 +1,28 @@
+/* ==========================================================================
+   Atom: Badges & Icon Containers
+   ========================================================================== */
+
+.icon-badge-cyan {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background-color: #eaf6fd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-palette-blue);
+  margin-bottom: var(--space-3);
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.icon-badge-cyan svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.stat-card:hover .icon-badge-cyan {
+  transform: scale(1.08);
+  background-color: #d6eefa;
+}

@@ -12,70 +12,170 @@
 </head>
 <body>
   <div class="app-layout">
-    <!-- Organism: App Header -->
-    <header class="app-header" id="main-header">
-      <div class="header-container">
-        <a href="#" class="header-brand" id="brand-link">
-          <div class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-          </div>
-          <span>FONAG</span>
-          <span class="badge">v1.0 • SDD</span>
+    <!-- Organism: Portal Navigation Header -->
+    <header class="portal-header" id="portal-header">
+      <div class="portal-header-container">
+        <!-- Brand Logo -->
+        <a href="#" class="portal-brand" aria-label="FONAG Inicio">
+          <svg class="portal-logo-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 46C18 34 22 20 34 14C32 24 28 36 24 46" stroke="#242857" stroke-width="3" stroke-linecap="round"/>
+            <path d="M16 46C11 36 14 24 25 18C23 27 19 38 18 46" stroke="#242857" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M10 46C6 38 8 28 17 22" stroke="#242857" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="34" cy="11" r="3" fill="#f19001"/>
+            <text x="44" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" fill="#242857" letter-spacing="-0.5">FON</text>
+            <text x="120" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" font-style="italic" fill="#f19001" letter-spacing="-0.5">AG</text>
+          </svg>
         </a>
 
-        <div class="header-actions">
-          <!-- Molecule: Search Field -->
-          <div class="search-field" id="header-search-wrapper">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.3-4.3"/>
-            </svg>
-            <input type="text" id="component-search" class="input-text" placeholder="Filter architecture & components..." autocomplete="off" />
-            <button type="button" class="clear-btn" id="clear-search-btn" aria-label="Clear search">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6 6 18"/>
-                <path d="m6 6 12 12"/>
-              </svg>
-            </button>
-          </div>
+        <!-- Center Navigation Menu -->
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li class="nav-item"><a href="#inicio" class="nav-link active">Inicio</a></li>
+            <li class="nav-item"><a href="#estaciones" class="nav-link">Estaciones</a></li>
+            <li class="nav-item"><a href="#consultas" class="nav-link">Consultas</a></li>
+            <li class="nav-item"><a href="#tiempo-real" class="nav-link">Tiempo Real</a></li>
+          </ul>
+        </nav>
 
-          <!-- Organism: Theme Toggle Button -->
+        <!-- Right Header Actions -->
+        <div class="portal-header-actions">
           <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle dark/light mode">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
             </svg>
           </button>
+
+          <a href="#ingresar" class="btn-nav-login" id="btn-login">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" x2="3" y1="12" y2="12"/>
+            </svg>
+            <span>Ingresar</span>
+          </a>
         </div>
       </div>
     </header>
 
     <!-- Main Content Area -->
-    <main class="main-content" id="main-content">
-      <!-- Organism: Hero Section -->
-      <section class="hero-section" id="hero-section">
-        <div class="hero-badge-container">
-          <span class="badge">Spec-Driven Development + Atomic Architecture</span>
-        </div>
-        <h1 class="hero-title">
-          Clean Foundation with <span class="hero-title-gradient">Vanilla Web & Tailwind v4</span>
-        </h1>
-        <p class="hero-subtitle">
-          Built with pure semantic HTML5, Vanilla CSS Design Tokens, decoupled Vanilla JS ES modules, and native Tailwind CSS v4 theme integration.
-        </p>
-        <div class="hero-cta-group">
-          <button class="btn btn-primary btn-lg" id="explore-tokens-btn">
-            <span>Explore Design Tokens</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m9 18 6-6-6-6"/>
+    <main class="main-portal-content" id="main-content">
+      <!-- Organism: Hero Section with SEDC Lockup & Search Capsule -->
+      <section class="hero-portal" id="hero-section">
+        <div class="hero-portal-inner">
+          <!-- SEDC Brand Lockup -->
+          <div class="sedc-lockup">
+            <div class="sedc-acronym-block">
+              <span class="sedc-acronym">SEDC</span>
+              <span class="sedc-country">FONAG - ECUADOR</span>
+            </div>
+            <div class="sedc-divider" aria-hidden="true"></div>
+            <div class="sedc-fullname">
+              Sistema de Estandarización de Datos Crudos
+            </div>
+          </div>
+
+          <!-- Hero Description -->
+          <p class="hero-portal-desc">
+            La red de monitoreo hidrometeorológico del FONAG generar información climática e hidrológica en las áreas de interés hídrico desde las cuales se abastece de agua el Distrito Metropolitano de Quito.
+          </p>
+
+          <!-- Floating Search Capsule -->
+          <form class="hero-search-capsule" role="search" onsubmit="event.preventDefault();">
+            <svg class="hero-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
             </svg>
-          </button>
-          <button class="btn btn-secondary btn-lg" id="view-atoms-btn">
-            View Atomic Modules
-          </button>
+            <input type="text" id="portal-search-input" class="hero-search-input" placeholder="Buscar por estación, cuenca o variable..." aria-label="Buscar en el portal" />
+            <button type="submit" class="hero-search-btn">Buscar</button>
+          </form>
         </div>
       </section>
+
+      <!-- Organism: Cifras del Portal Stats Grid -->
+      <section class="stats-section" id="cifras-portal">
+        <div class="stats-container">
+          <div class="stats-header">
+            <h2 class="stats-title">Cifras del Portal</h2>
+            <div class="stats-title-underline" aria-hidden="true"></div>
+          </div>
+
+          <div class="stats-grid">
+            <!-- Stat Card 1 -->
+            <article class="stat-card" id="stat-anios">
+              <div class="icon-badge-cyan">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" x2="18" y1="20" y2="10"/>
+                  <line x1="12" x2="12" y1="20" y2="4"/>
+                  <line x1="6" x2="6" y1="20" y2="14"/>
+                </svg>
+              </div>
+              <div class="stat-metric">
+                <span class="stat-number">19</span>
+                <span class="stat-label">Años</span>
+              </div>
+              <p class="stat-desc">Resúmenes estadísticos anuales</p>
+              <a href="#anuario" class="btn btn-cta-orange">Ver anuario</a>
+            </article>
+
+            <!-- Stat Card 2 -->
+            <article class="stat-card" id="stat-estaciones">
+              <div class="icon-badge-cyan">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                  <line x1="8" x2="8" y1="19" y2="21"/>
+                  <line x1="12" x2="12" y1="19" y2="21"/>
+                  <line x1="16" x2="16" y1="19" y2="21"/>
+                </svg>
+              </div>
+              <div class="stat-metric">
+                <span class="stat-number">61</span>
+                <span class="stat-label">Estaciones</span>
+              </div>
+              <p class="stat-desc">Meteorológicas, Pluviométricas e Hidrológicas activas</p>
+              <a href="#estaciones" class="btn btn-cta-orange">Ver estaciones</a>
+            </article>
+
+            <!-- Stat Card 3 -->
+            <article class="stat-card" id="stat-variables">
+              <div class="icon-badge-cyan">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  <path d="M12 12v4"/>
+                  <path d="M12 8h.01"/>
+                </svg>
+              </div>
+              <div class="stat-metric">
+                <span class="stat-number">13</span>
+                <span class="stat-label">Variables</span>
+              </div>
+              <p class="stat-desc">Hidroclimáticas con información desde 2007</p>
+              <a href="#variables" class="btn btn-cta-orange">Ver variables</a>
+            </article>
+
+            <!-- Stat Card 4 -->
+            <article class="stat-card" id="stat-telemetria">
+              <div class="icon-badge-cyan">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.93 19.07a10 10 0 0 1 0-14.14"/>
+                  <path d="M7.76 16.24a6 6 0 0 1 0-8.48"/>
+                  <circle cx="12" cy="12" r="2"/>
+                  <path d="M16.24 7.76a6 6 0 0 1 0 8.48"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              </div>
+              <div class="stat-metric">
+                <span class="stat-number">20</span>
+                <span class="stat-label">Estaciones con telemetría</span>
+              </div>
+              <p class="stat-desc">Transmisión en tiempo real</p>
+              <a href="#tiempo-real" class="btn btn-cta-orange">Ver transmisión</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Showcase Container -->
+      <div class="main-content" style="padding-top: 3rem;">
 
       <!-- Component Showcase Grid -->
       <section class="cards-grid" id="components-grid">
@@ -172,7 +272,8 @@
           </div>
         </article>
       </section>
-    </main>
+    </div>
+  </main>
 
     <!-- Organism: FONAG Footer -->
     <footer class="fonag-footer" id="main-footer">

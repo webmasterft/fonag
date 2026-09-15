@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Organism: FONAG Portal Header with Navigation & Login
+   ========================================================================== */
+
+.portal-header {
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-palette-gray-soft);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.portal-header-container {
+  max-width: var(--container-max-width, 1366px);
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.portal-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.portal-logo-svg {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+
+.portal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Mobile Nav Toggle (hidden on desktop) */
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-palette-navy);
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .portal-header .nav-menu {
+    display: none;
+  }
+
+  .mobile-nav-toggle {
+    display: block;
+  }
+}

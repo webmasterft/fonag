@@ -1,0 +1,63 @@
+/* ==========================================================================
+   Organism: Cifras del Portal Stats Section
+   ========================================================================== */
+
+.stats-section {
+  width: 100%;
+  padding: 4.5rem 1.5rem;
+  background-color: #ffffff;
+}
+
+.stats-container {
+  max-width: var(--container-max-width, 1366px);
+  margin: 0 auto;
+}
+
+/* Section Header with Orange Center Underline */
+.stats-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.stats-title {
+  font-family: var(--font-family-sans);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-palette-navy);
+  margin: 0;
+  position: relative;
+  display: inline-block;
+}
+
+.stats-title-underline {
+  width: 50px;
+  height: 4px;
+  background-color: var(--color-brand-orange);
+  border-radius: var(--radius-full);
+  margin: 0.5rem auto 0;
+}
+
+/* 4-Column Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-section {
+    padding: 3rem 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}

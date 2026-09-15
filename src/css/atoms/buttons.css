@@ -84,6 +84,34 @@
   transform: translateY(-1px);
 }
 
+.btn-nav-login {
+  background-color: var(--color-palette-navy);
+  color: #ffffff;
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  line-height: 20px;
+  border-radius: var(--radius-full);
+  padding: 0.5rem 1.25rem;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-nav-login:hover {
+  background-color: #1b1e42;
+  transform: translateY(-1px);
+}
+
+.btn-nav-login svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+}
+
 /* Button Sizes */
 .btn-sm {
   padding: var(--space-1) var(--space-3);
