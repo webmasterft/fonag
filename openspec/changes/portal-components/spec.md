@@ -24,6 +24,7 @@ Specification for the three core portal components displayed on the FONAG SEDC (
   - Spacing: `2rem` gap between navigation items.
 - **Right (Login Action)**:
   - Button: "Ingresar" (`.btn-nav-login`).
+  - Target URL: `https://sedc.fonag.org.ec/login/?next=/`
   - Style: Rounded pill shape (`border-radius: 9999px`).
   - Background: Dark Navy (`#242857`, hover: `#1b1e42`).
   - Icon: Login icon (door with arrow entering) on the left of the label, 16px x 16px SVG, white.

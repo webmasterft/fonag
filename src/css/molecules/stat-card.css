@@ -30,7 +30,7 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 44px;
+  width: 100px;
   height: 3px;
   background-color: var(--color-palette-blue);
   border-radius: 0 0 2px 2px;
