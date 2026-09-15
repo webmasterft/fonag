@@ -1,0 +1,31 @@
+/* ==========================================================================
+   Molecule: Constituent Partner Badge Item
+   ========================================================================== */
+
+.constituent-badge {
+  width: 110px;
+  height: 110px;
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  margin: 0 auto;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  user-select: none;
+}
+
+.constituent-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.constituent-logo {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  display: block;
+}

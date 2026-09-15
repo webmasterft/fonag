@@ -72,12 +72,14 @@ body {
 @import "./molecules/nav-menu.css";
 @import "./molecules/hero-search.css";
 @import "./molecules/stat-card.css";
+@import "./molecules/constituent-item.css";
 @import "./molecules/search-field.css";
 @import "./molecules/card.css";
 
 @import "./organisms/portal-header.css";
 @import "./organisms/hero-portal.css";
 @import "./organisms/stats-section.css";
+@import "./organisms/constituents-carousel.css";
 @import "./organisms/header.css";
 @import "./organisms/hero.css";
 @import "./organisms/footer.css";

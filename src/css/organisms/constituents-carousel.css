@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Organism: Nuestros Constituyentes Carousel
+   ========================================================================== */
+
+.constituents-section {
+  width: 100%;
+  padding: 4rem 1.5rem 5rem;
+  background-color: #ffffff;
+}
+
+.constituents-container {
+  max-width: var(--container-max-width, 1366px);
+  margin: 0 auto;
+}
+
+/* Header Typography */
+.constituents-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.constituents-eyebrow {
+  font: 500 13px/16px Inter, sans-serif;
+  color: #F19001;
+  margin: 0 0 0.35rem;
+  letter-spacing: 0.2px;
+}
+
+.constituents-title {
+  font: 700 20px/24px Inter, sans-serif;
+  color: #242857;
+  margin: 0;
+}
+
+.constituents-title-underline {
+  width: 48px;
+  height: 3px;
+  background-color: #F19001;
+  border-radius: var(--radius-full);
+  margin: 0.5rem auto 1rem;
+}
+
+.constituents-desc {
+  font: 500 13px/16px Inter, sans-serif;
+  color: #242857;
+  opacity: 0.8;
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 20px;
+}
+
+/* Carousel Box */
+.constituents-carousel-box {
+  position: relative;
+  background-color: #f8fafc;
+  border: 1px solid #efefef;
+  border-radius: 16px;
+  padding: 2.5rem 3.5rem;
+}
+
+/* Embla Structure */
+.embla {
+  overflow: hidden;
+  width: 100%;
+}
+
+.embla-container {
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+  margin-left: -1rem;
+}
+
+.embla-slide {
+  flex: 0 0 calc(100% / 6);
+  min-width: 0;
+  padding-left: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Embla Navigation Arrows */
+.embla-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  color: #F19001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.embla-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.embla-btn:hover:not(:disabled) {
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.embla-btn-prev {
+  left: 1rem;
+}
+
+.embla-btn-next {
+  right: 1rem;
+}
+
+.embla-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.5;
+}
+
+/* Responsive Slide Sizes */
+@media (max-width: 1100px) {
+  .embla-slide {
+    flex: 0 0 calc(100% / 4);
+  }
+}
+
+@media (max-width: 768px) {
+  .constituents-carousel-box {
+    padding: 2rem 2.5rem;
+  }
+
+  .embla-slide {
+    flex: 0 0 calc(100% / 3);
+  }
+}
+
+@media (max-width: 520px) {
+  .constituents-carousel-box {
+    padding: 1.75rem 2rem;
+  }
+
+  .embla-slide {
+    flex: 0 0 calc(100% / 2);
+  }
+}
