@@ -123,3 +123,61 @@ export function exportAnuarioCsv(estacion, rows, year = 2025) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Obtiene las series estructuradas para las 3 gráficas (Precipitación, Temperatura, Humedad).
+ * @param {Object} estacion
+ * @param {number|string} year
+ * @returns {Object}
+ */
+export function getSeriesEstadisticas(estacion, year = 2025) {
+  const rows = getAnuarioEstadistico(estacion, year).slice(0, 12);
+  const labels = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+  const seed = (typeof estacion.id === 'number' ? estacion.id : 42) + Number(year);
+
+  // Precipitación (mm)
+  const precipMensual = rows.map((r) => r.precipitacionTotal);
+  const precipHistorica = precipMensual.map((val, i) => {
+    const delta = Math.sin((i / 11) * Math.PI) * 15 - 8;
+    return Math.max(15, Math.round((val + delta) * 10) / 10);
+  });
+
+  // Temperatura (°C)
+  const tempMax = rows.map((r) => r.tempMaxAbs);
+  const tempMin = rows.map((r) => r.tempMinAbs);
+  const tempMedia = rows.map((r) => r.tempMedia);
+  const tempHistorica = tempMedia.map((val, i) => {
+    const offset = (((seed + i * 3) % 10) - 5) * 0.15;
+    return Math.round((val + offset) * 10) / 10;
+  });
+
+  // Humedad (%)
+  const humMedia = rows.map((r) => parseInt(r.humedadRelativa, 10));
+  const humMax = humMedia.map((m) => Math.min(100, Math.round(m + 12)));
+  const humMin = humMedia.map((m) => Math.max(35, Math.round(m - 16)));
+  const humHistorica = humMedia.map((m, i) => {
+    const offset = (((seed + i * 7) % 8) - 4);
+    return Math.min(98, Math.max(40, m + offset));
+  });
+
+  return {
+    labels,
+    precipitacion: {
+      mensual: precipMensual,
+      mediaHistorica: precipHistorica,
+    },
+    temperatura: {
+      maxima: tempMax,
+      minima: tempMin,
+      media: tempMedia,
+      mediaHistorica: tempHistorica,
+    },
+    humedad: {
+      maxima: humMax,
+      minima: humMin,
+      media: humMedia,
+      mediaHistorica: humHistorica,
+    }
+  };
+}

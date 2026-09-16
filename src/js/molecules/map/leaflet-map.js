@@ -104,7 +104,7 @@ export function initLeafletMap(containerId = 'station-map') {
               cursor: pointer;
             "
           >
-            Ver datos
+            Ver estadísticas
           </button>
         </div>
       `;
