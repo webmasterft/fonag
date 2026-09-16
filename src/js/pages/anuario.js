@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Renderizar inicial
   applyFilters();
+  if (mapController) {
+    setTimeout(() => mapController.invalidateSize(), 150);
+  }
 
   // 3. Listeners de filtros
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
