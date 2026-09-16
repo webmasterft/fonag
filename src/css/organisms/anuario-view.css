@@ -1,0 +1,489 @@
+/* ==========================================================================
+   Organism: Anuario Hidroclimático View (Figma Redesign)
+   ========================================================================== */
+
+.anuario-page {
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.anuario-container {
+  max-width: var(--container-max-width, 1366px);
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+}
+
+/* Breadcrumbs */
+.anuario-breadcrumbs {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.anuario-breadcrumbs a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.anuario-breadcrumbs a:hover {
+  color: #F19001;
+}
+
+.anuario-breadcrumbs .active {
+  color: #242857;
+  font-weight: 600;
+}
+
+/* Page Header */
+.anuario-header {
+  margin-bottom: 1.75rem;
+}
+
+.anuario-title {
+  font: 700 24px/28px 'Inter', sans-serif;
+  color: #242857;
+  margin: 0;
+}
+
+.anuario-title-underline {
+  width: 48px;
+  height: 3px;
+  background-color: #F19001;
+  border-radius: var(--radius-full, 9999px);
+  margin: 0.5rem 0 0.75rem;
+}
+
+.anuario-description {
+  font: 500 14px/20px 'Inter', sans-serif;
+  color: #475569;
+  margin: 0;
+  max-width: 800px;
+}
+
+/* Year Control Bar */
+.anuario-year-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.year-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.year-selector-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+}
+
+.year-select-box {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  gap: 8px;
+}
+
+.year-select {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  color: #242857;
+  outline: none;
+  cursor: pointer;
+}
+
+.year-notice-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F19001;
+  margin: 0;
+}
+
+.btn-download-compilado {
+  background-color: #1e2347;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(30, 35, 71, 0.15);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-download-compilado:hover {
+  background-color: #2a3163;
+  transform: translateY(-1px);
+}
+
+/* Filter Card */
+.anuario-filter-card {
+  background-color: #ffffff;
+  border: 1px solid #efefef;
+  border-radius: 14px;
+  padding: 1.25rem 1.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-inputs-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.filter-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-input-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-input:focus {
+  border-color: #41a6e5;
+  box-shadow: 0 0 0 3px rgba(65, 166, 229, 0.15);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-limpiar {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  height: 38px;
+}
+
+.btn-limpiar:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.filter-counter-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.filter-counter-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: #242857;
+}
+
+/* Secondary Instruction */
+.anuario-instruction {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F19001;
+  margin: 0 0 1rem;
+}
+
+/* Split Main Layout (Map + Cards) */
+.anuario-split-layout {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+/* Map Column */
+.anuario-map-column {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  position: relative;
+  min-height: 580px;
+}
+
+#station-map {
+  width: 100%;
+  height: 100%;
+  min-height: 580px;
+}
+
+/* Stations List Column */
+.anuario-cards-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Custom Scrollbar */
+.anuario-cards-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.anuario-cards-column::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Station Item Card */
+.station-card-item {
+  background-color: #ffffff;
+  border: 1px solid #efefef;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.station-card-item:hover,
+.station-card-item-active {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(36, 40, 87, 0.08);
+  border-color: #41a6e5;
+}
+
+.station-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.station-card-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #F19001;
+  flex-shrink: 0;
+}
+
+.station-card-province {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.station-card-code {
+  font-size: 16px;
+  font-weight: 800;
+  color: #242857;
+  letter-spacing: 0.2px;
+}
+
+.station-card-pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.station-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-card-ver-datos {
+  background-color: #F19001;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-card-ver-datos:hover {
+  background-color: #d97f00;
+  transform: scale(1.02);
+}
+
+.btn-card-descargar {
+  background-color: #1e2347;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-card-descargar:hover {
+  background-color: #2a3163;
+  transform: scale(1.02);
+}
+
+/* Modal for Data Table */
+.anuario-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.anuario-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.anuario-modal-dialog {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.anuario-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.anuario-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #242857;
+}
+
+.btn-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.btn-modal-close:hover {
+  color: #0f172a;
+}
+
+.anuario-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .anuario-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .anuario-map-column {
+    min-height: 420px;
+  }
+
+  .anuario-cards-column {
+    max-height: none;
+  }
+}

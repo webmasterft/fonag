@@ -73,6 +73,7 @@ body {
 @import "./molecules/hero-search.css";
 @import "./molecules/stat-card.css";
 @import "./molecules/constituent-item.css";
+@import "./molecules/data-table.css";
 @import "./molecules/search-field.css";
 @import "./molecules/card.css";
 
@@ -80,6 +81,7 @@ body {
 @import "./organisms/hero-portal.css";
 @import "./organisms/stats-section.css";
 @import "./organisms/constituents-carousel.css";
+@import "./organisms/anuario-view.css";
 @import "./organisms/header.css";
 @import "./organisms/hero.css";
 @import "./organisms/footer.css";

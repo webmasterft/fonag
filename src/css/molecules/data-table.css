@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Molecule: FONAG Modern Data Table & Anuario Grid
+   ========================================================================== */
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+}
+
+.fonag-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-family-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-palette-navy, #242857);
+  text-align: left;
+}
+
+.fonag-data-table th,
+.fonag-data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f8fafc;
+}
+
+.fonag-data-table thead th {
+  background-color: #f8fafc;
+  color: var(--color-palette-navy, #242857);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.fonag-data-table thead th.col-group {
+  text-align: center;
+  background-color: #f1f5f9;
+}
+
+.fonag-data-table thead th.col-group-precip {
+  border-bottom-color: var(--color-palette-blue, #41a6e5);
+}
+
+.fonag-data-table thead th.col-group-temp {
+  border-bottom-color: var(--color-palette-orange, #f19001);
+}
+
+.fonag-data-table tbody tr {
+  transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.fonag-data-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.fonag-data-table tbody tr.row-resumen-anual {
+  background-color: #f1f5f9;
+  font-weight: 700;
+  border-top: 2px solid #cbd5e1;
+}
+
+.fonag-data-table .cell-mes {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.fonag-data-table .text-right {
+  text-align: right;
+}
+
+.fonag-data-table .text-center {
+  text-align: center;
+}
+
+.fonag-data-table .text-danger {
+  color: #dc2626;
+}
+
+.fonag-data-table .text-primary {
+  color: #0284c7;
+}
+
+/* Toolbar de la tabla */
+.anuario-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-top-left-radius: var(--radius-md, 8px);
+  border-top-right-radius: var(--radius-md, 8px);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.anuario-table-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.station-tag {
+  background-color: #242857;
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.anuario-table-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #242857;
+}
+
+.station-type-badge {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-navy-export {
+  background-color: #242857;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.btn-navy-export:hover {
+  background-color: #1a1d3f;
+}
