@@ -58,16 +58,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (selectYear) {
     const noticeEl = document.querySelector('.year-notice-text');
+    const cardsOverlay = document.getElementById('cards-loading-overlay');
+    const cardsOverlayText = document.getElementById('cards-loading-text');
+    const mapOverlay = document.getElementById('map-loading-overlay');
+    const mapOverlayText = document.getElementById('map-loading-text');
+
     const updateNotice = () => {
       if (!noticeEl) return;
       noticeEl.style.display = currentYear === '2026' ? 'block' : 'none';
     };
     updateNotice();
 
-    selectYear.addEventListener('change', (e) => {
+    selectYear.addEventListener('change', async (e) => {
       currentYear = e.target.value;
       updateNotice();
+
+      // 1. Mostrar estado de carga en tarjetas, mapa y modal
+      selectYear.disabled = true;
+      if (btnCompilado) btnCompilado.disabled = true;
+
+      if (cardsOverlay) {
+        if (cardsOverlayText) {
+          cardsOverlayText.textContent = `Cargando datos del año ${currentYear}...`;
+        }
+        cardsOverlay.style.display = 'flex';
+        cardsOverlay.setAttribute('aria-busy', 'true');
+      }
+
+      if (mapOverlay) {
+        if (mapOverlayText) {
+          mapOverlayText.textContent = `Actualizando mapa ${currentYear}...`;
+        }
+        mapOverlay.style.display = 'flex';
+        mapOverlay.setAttribute('aria-busy', 'true');
+      }
+
+      const isModalOpen = modal && modal.classList.contains('is-open') && currentModalEstacion;
+      if (isModalOpen) {
+        renderModalHeader(currentModalEstacion);
+        if (modalBody) {
+          modalBody.innerHTML = `
+            <div class="modal-loading-state">
+              <div class="spinner-ring" aria-hidden="true"></div>
+              <span class="loading-text">Cargando estadísticas del año ${currentYear}...</span>
+            </div>
+          `;
+        }
+      }
+
+      // 2. Simulación asíncrona de obtención/compilación de datos
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      // 3. Actualizar componentes con el nuevo año
       if (btnCompilado) {
+        btnCompilado.disabled = false;
         btnCompilado.innerHTML = `
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -77,10 +121,23 @@ document.addEventListener('DOMContentLoaded', async () => {
           Descargar copilado ${currentYear}
         `;
       }
-      if (modal && modal.classList.contains('is-open') && currentModalEstacion) {
-        renderModalHeader(currentModalEstacion);
+
+      applyFilters();
+
+      if (isModalOpen) {
         renderModalContent(currentModalEstacion);
       }
+
+      // 4. Ocultar estados de carga
+      if (cardsOverlay) {
+        cardsOverlay.style.display = 'none';
+        cardsOverlay.setAttribute('aria-busy', 'false');
+      }
+      if (mapOverlay) {
+        mapOverlay.style.display = 'none';
+        mapOverlay.setAttribute('aria-busy', 'false');
+      }
+      selectYear.disabled = false;
     });
   }
 
@@ -226,12 +283,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();
     const qTipo = selectTipo ? selectTipo.value : '';
+    const numYear = parseInt(currentYear, 10) || 2025;
 
     const filtered = allEstaciones.filter((est) => {
       const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
       const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
       const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
-      return matchCodigo && matchNombre && matchTipo;
+
+      // Filtrar estaciones según año de inicio de operación
+      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
+      const matchYear = isNaN(anioInicio) || anioInicio <= numYear;
+
+      return matchCodigo && matchNombre && matchTipo && matchYear;
     });
 
     // Actualizar contador
@@ -239,15 +302,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       counterEl.textContent = `${filtered.length} estaciones`;
     }
 
-    // Actualizar marcadores en el mapa
+    // Actualizar marcadores en el mapa para el año seleccionado
     if (mapController) {
       mapController.setMarkers(filtered, (estacion, openData) => {
         if (openData) {
-          openModal(estacion);
+          openModal(estacion, 'charts');
         } else {
           highlightCard(estacion.codigo);
         }
-      });
+      }, currentYear);
     }
 
     // Renderizar tarjetas
