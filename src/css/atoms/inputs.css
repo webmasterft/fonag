@@ -28,10 +28,6 @@
   box-shadow: 0 0 0 3px var(--color-brand-100);
 }
 
-[data-theme="dark"] .input-text:focus {
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
-}
-
 /* Badge Atom */
 .badge {
   display: inline-flex;
@@ -46,7 +42,3 @@
   color: var(--color-brand-800);
 }
 
-[data-theme="dark"] .badge {
-  background-color: rgba(14, 165, 233, 0.2);
-  color: var(--color-brand-300);
-}

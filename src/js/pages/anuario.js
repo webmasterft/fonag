@@ -10,7 +10,7 @@ import { renderEstadisticasCharts, destroyCharts } from '../molecules/charts/anu
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initThemeToggle('#theme-toggle');
+  initThemeToggle();
 
   const mapController = initLeafletMap('station-map');
   const cardsContainer = document.getElementById('stations-cards-list');
@@ -57,8 +57,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (selectYear) {
+    const noticeEl = document.querySelector('.year-notice-text');
+    const updateNotice = () => {
+      if (!noticeEl) return;
+      noticeEl.style.display = currentYear === '2026' ? 'block' : 'none';
+    };
+    updateNotice();
+
     selectYear.addEventListener('change', (e) => {
       currentYear = e.target.value;
+      updateNotice();
       if (btnCompilado) {
         btnCompilado.innerHTML = `
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

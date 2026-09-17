@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize atomic interaction modules
   initButtons();
   initSearch('#component-search', '.card');
-  initThemeToggle('#theme-toggle');
+  initThemeToggle();
   initConstituentsCarousel('#constituents-embla');
 
   console.log('FONAG Design System & App Initialized.');

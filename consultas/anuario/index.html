@@ -34,19 +34,26 @@
           <ul class="nav-menu">
             <li class="nav-item"><a href="/" class="nav-link">Inicio</a></li>
             <li class="nav-item"><a href="/#estaciones" class="nav-link">Estaciones</a></li>
-            <li class="nav-item"><a href="/consultas/anuario/" class="nav-link active">Consultas</a></li>
+            <li class="nav-item nav-item-dropdown">
+              <a href="/consultas/anuario/" class="nav-link nav-link-dropdown active" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-content">
+                  Consultas
+                  <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </a>
+              <div class="nav-dropdown-menu" role="menu">
+                <a href="https://sedc.fonag.org.ec/consultas/" class="nav-dropdown-item" role="menuitem">Consultas por periodo</a>
+                <a href="/consultas/anuario/" class="nav-dropdown-item active" role="menuitem">Anuario Hidroclimático</a>
+              </div>
+            </li>
             <li class="nav-item"><a href="/#tiempo-real" class="nav-link">Tiempo Real</a></li>
           </ul>
         </nav>
 
         <!-- Right Header Actions -->
         <div class="portal-header-actions">
-          <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle dark/light mode">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-            </svg>
-          </button>
-
           <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login" id="btn-login" rel="noopener noreferrer">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
@@ -85,11 +92,26 @@
           <label for="select-consult-year" class="year-selector-label">Año de consulta:</label>
           <div class="year-select-box">
             <select id="select-consult-year" class="year-select">
+              <option value="2026">2026</option>
               <option value="2025" selected>2025</option>
               <option value="2024">2024</option>
               <option value="2023">2023</option>
               <option value="2022">2022</option>
               <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="2019">2019</option>
+              <option value="2018">2018</option>
+              <option value="2017">2017</option>
+              <option value="2016">2016</option>
+              <option value="2015">2015</option>
+              <option value="2014">2014</option>
+              <option value="2013">2013</option>
+              <option value="2012">2012</option>
+              <option value="2011">2011</option>
+              <option value="2010">2010</option>
+              <option value="2009">2009</option>
+              <option value="2008">2008</option>
+              <option value="2007">2007</option>
             </select>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#242857" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>

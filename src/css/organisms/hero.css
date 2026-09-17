@@ -32,11 +32,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-[data-theme="dark"] .hero-title-gradient {
-  background: linear-gradient(135deg, var(--color-brand-400) 0%, var(--color-accent-400) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
 
 .hero-subtitle {
   font-size: var(--font-size-lg);
