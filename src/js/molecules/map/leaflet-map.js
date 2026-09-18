@@ -308,6 +308,9 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
 
       const marker = L.marker([estacion.latitud, estacion.longitud], { icon: customIcon });
 
+      const subtitleText = typeof year === 'object' ? (year.subtitle || '') : year;
+      const btnLabelText = typeof year === 'object' ? (year.buttonText || 'Ver datos') : `Ver estadísticas ${year}`;
+
       const popupContent = `
         <div class="map-station-popup" style="font-family: 'Inter', sans-serif; font-size: 13px; min-width: 190px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
@@ -315,7 +318,7 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
               <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
               <strong style="color: #242857; font-size: 14px;">${estacion.codigo}</strong>
             </div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">${year}</span>
+            ${subtitleText ? `<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">${subtitleText}</span>` : ''}
           </div>
           <p style="margin: 0 0 6px; color: #475569; font-weight: 500;">${estacion.nombre}</p>
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 8px;">
@@ -337,7 +340,7 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
               cursor: pointer;
             "
           >
-            Ver estadísticas ${year}
+            ${btnLabelText}
           </button>
         </div>
       `;

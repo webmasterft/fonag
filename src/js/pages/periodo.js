@@ -73,8 +73,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 3. Listeners de Filtros
-  if (inputFechaInicio) inputFechaInicio.addEventListener('change', applyFilters);
-  if (inputFechaFin) inputFechaFin.addEventListener('change', applyFilters);
+  if (inputFechaInicio) {
+    inputFechaInicio.addEventListener('change', applyFilters);
+    inputFechaInicio.addEventListener('input', applyFilters);
+  }
+  if (inputFechaFin) {
+    inputFechaFin.addEventListener('change', applyFilters);
+    inputFechaFin.addEventListener('input', applyFilters);
+  }
   if (selectVariable) selectVariable.addEventListener('change', applyFilters);
   if (selectFrecuencia) selectFrecuencia.addEventListener('change', applyFilters);
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
@@ -227,20 +233,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const varCode = selectVariable?.value || 'PRE';
     const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
 
-    const qCodigo = (inputCodigo?.value || '').trim().toLowerCase();
-    const qNombre = (inputNombre?.value || '').trim().toLowerCase();
-    const qTipo = selectTipo?.value || '';
+    const sDate = inputFechaInicio?.value || '2026-01-01';
+    const eDate = inputFechaFin?.value || '2026-09-03';
+    const numStartYear = parseInt(sDate.substring(0, 4), 10);
 
-    // Conteos para leyenda flotante (estaciones con la variable seleccionada y eje activo)
+    // Conteos para leyenda flotante (estaciones con la variable seleccionada, eje activo y activas en el periodo)
     let countMeteo = 0;
     let countPluvio = 0;
     let countHidro = 0;
 
     allEstaciones.forEach((est) => {
+      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
+      const matchPeriod = isNaN(anioInicio) || isNaN(numStartYear) || anioInicio <= numStartYear;
       const matchVar = estacionTieneVariable(est, varCode);
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
 
-      if (matchVar && matchEje) {
+      if (matchVar && matchEje && matchPeriod) {
         if (est.tipo?.includes('Hidro')) countHidro++;
         else if (est.tipo?.includes('Pluvio')) countPluvio++;
         else countMeteo++;
@@ -253,6 +261,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Filtrar lista completa
     const filtered = allEstaciones.filter((est) => {
+      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
+      const matchPeriod = isNaN(anioInicio) || isNaN(numStartYear) || anioInicio <= numStartYear;
       const matchVar = estacionTieneVariable(est, varCode);
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
       const matchFloatingTipo = (activeFloatingTipo === 'ALL') || (est.tipo === activeFloatingTipo);
@@ -260,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
       const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
 
-      return matchVar && matchEje && matchFloatingTipo && matchTipo && matchCodigo && matchNombre;
+      return matchVar && matchEje && matchFloatingTipo && matchTipo && matchCodigo && matchNombre && matchPeriod;
     });
 
     // Actualizar texto contador
@@ -276,7 +286,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           highlightCard(estacion.codigo);
         }
-      }, varCfg.name);
+      }, {
+        subtitle: `${varCfg.code} (${varCfg.unit})`,
+        buttonText: `Ver serie ${varCfg.code}`
+      });
     }
 
     // Renderizar tarjetas
