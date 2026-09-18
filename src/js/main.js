@@ -7,9 +7,11 @@ import { initSearch } from './molecules/search.js';
 import { initThemeToggle } from './organisms/theme-toggle.js';
 import { initConstituentsCarousel } from './organisms/constituents-carousel.js';
 import { initHomeStationsMap } from './organisms/home-map.js';
+import { initGlobalHttpLoader } from './atoms/global-loader.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize atomic interaction modules
+  initGlobalHttpLoader();
   initButtons();
   initSearch('#component-search', '.card');
   initThemeToggle();

@@ -2,7 +2,7 @@
  * Page Module: Home Stations Map (Figma Match)
  * Renderiza los polígonos coloreados de Ejes de Trabajo con etiquetas centradas,
  * estaciones con colores coincidentes al diseño (Meteorológica: Naranja, Pluviométrica: Morado, Hidrológica: Celeste),
- * leyenda flotante inferior izquierda y tarjeta lateral derecha de Ejes de Trabajo interactiva.
+ * leyenda flotante inferior izquierda y tarjeta lateral derecha con vista de lista y vista de detalle por eje.
  */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -11,68 +11,113 @@ import ejesGeojsonData from '../../data/ejes_2026.json';
 
 // Paleta de colores para los tipos de estación (Figma Match)
 const TYPE_COLORS = {
-  'Meteorológica': '#f59e0b', // Naranja/Ambar
-  'Pluviométrica': '#8b5cf6', // Morado / Violeta
-  'Hidrológica': '#38bdf8',   // Celeste / Azul cielo
+  'Meteorológica': '#f59e0b', // Naranja
+  'Pluviométrica': '#8b5cf6', // Morado
+  'Hidrológica': '#38bdf8',   // Celeste
   'default': '#64748b'
 };
 
-// Configuración visual por Eje de Trabajo (Figma Match exacto)
+// Configuración y estadísticas por Eje de Trabajo (Figma Match exacto)
 const EJES_CONFIG = {
   'PITA': {
     name: 'Pita',
     color: '#f9b872',
     fillOpacity: 0.55,
-    border: '#e0984c'
+    border: '#e0984c',
+    total: 12,
+    meteo: 3,
+    pluvio: 4,
+    hidro: 5,
+    pct: 20
   },
   'PICHINCHA ATACAZO': {
     name: 'Pichincha Atacazo',
     color: '#a3c97e',
     fillOpacity: 0.55,
-    border: '#83a85e'
+    border: '#83a85e',
+    total: 11,
+    meteo: 2,
+    pluvio: 5,
+    hidro: 4,
+    pct: 18
   },
   'NORORIENTE DMQ': {
     name: 'Nororiente DMQ',
     color: '#c98a75',
     fillOpacity: 0.55,
-    border: '#ad725e'
+    border: '#ad725e',
+    total: 8,
+    meteo: 2,
+    pluvio: 4,
+    hidro: 2,
+    pct: 13
   },
   'ANTISANA': {
     name: 'Antisana',
     color: '#5c7cfa',
     fillOpacity: 0.55,
-    border: '#4263eb'
+    border: '#4263eb',
+    total: 16,
+    meteo: 3,
+    pluvio: 6,
+    hidro: 7,
+    pct: 26
   },
   'PAPALLACTA - OYACACHI': {
     name: 'Papallacta - Oyacachi',
     color: '#f1dfbb',
     fillOpacity: 0.65,
-    border: '#d6c096'
+    border: '#d6c096',
+    total: 5,
+    meteo: 3,
+    pluvio: 1,
+    hidro: 1,
+    pct: 8
   },
   'SAN PEDRO': {
     name: 'San Pedro',
     color: '#63b39d',
     fillOpacity: 0.55,
-    border: '#4a9984'
+    border: '#4a9984',
+    total: 2,
+    meteo: 2,
+    pluvio: 0,
+    hidro: 0,
+    pct: 3
   },
   'PISQUE': {
     name: 'Pisque',
     color: '#f472b6',
     fillOpacity: 0.55,
-    border: '#db2777'
+    border: '#db2777',
+    total: 2,
+    meteo: 0,
+    pluvio: 1,
+    hidro: 1,
+    pct: 3
   },
   'NOROCCIDENTE': {
-    name: 'Noroccidente del DMQ',
-    shortName: 'Noroccidente',
+    name: 'Noroccidente',
+    displayName: 'Noroccidente del DMQ',
     color: '#93c5fd',
     fillOpacity: 0.55,
-    border: '#60a5fa'
+    border: '#60a5fa',
+    total: 5,
+    meteo: 1,
+    pluvio: 3,
+    hidro: 1,
+    pct: 8
   },
   'NORCENTRAL': {
     name: 'Norcentral',
     color: '#b4a2b8',
     fillOpacity: 0.55,
-    border: '#9a859f'
+    border: '#9a859f',
+    total: 5,
+    meteo: 0,
+    pluvio: 3,
+    hidro: 2,
+    pct: 8
   }
 };
 
@@ -80,14 +125,14 @@ export async function initHomeStationsMap() {
   const container = document.getElementById('home-stations-map');
   if (!container) return;
 
+  const cardAside = document.getElementById('home-ejes-card');
   const loader = document.getElementById('home-map-loader');
   const countMeteoEl = document.getElementById('count-meteo');
   const countPluvioEl = document.getElementById('count-pluvio');
   const countHidroEl = document.getElementById('count-hidro');
-  const ejesButtons = document.querySelectorAll('.eje-list-item');
   const legendItems = document.querySelectorAll('.tipo-legend-item');
 
-  // Inicializar Leaflet centrado en el Distrito Metropolitano de Quito y cuencas
+  // Inicializar Leaflet centrado en el Distrito Metropolitano de Quito
   const map = L.map(container, {
     center: [-0.18, -78.45],
     zoom: 10,
@@ -134,30 +179,32 @@ export async function initHomeStationsMap() {
         border: '#64748b'
       };
 
+      const isThisEjeActive = activeEje !== 'ALL' && activeEje.toUpperCase() === config.name.toUpperCase();
+
       const geoLayer = L.geoJSON(feature, {
         style: () => ({
           fillColor: config.color,
-          fillOpacity: config.fillOpacity,
-          color: config.border,
-          weight: 1.5,
-          opacity: 0.9,
-          dashArray: ''
+          fillOpacity: (activeEje === 'ALL') ? config.fillOpacity : (isThisEjeActive ? 0.75 : 0.15),
+          color: (activeEje === 'ALL') ? config.border : (isThisEjeActive ? config.border : '#cbd5e1'),
+          weight: isThisEjeActive ? 3 : 1.5,
+          opacity: (activeEje === 'ALL' || isThisEjeActive) ? 0.9 : 0.3
         })
       });
 
       // Hover interactivo en el polígono
       geoLayer.on('mouseover', () => {
-        geoLayer.setStyle({
-          fillOpacity: 0.75,
-          weight: 2.5
-        });
+        if (activeEje === 'ALL' || isThisEjeActive) {
+          geoLayer.setStyle({
+            fillOpacity: 0.8,
+            weight: 2.5
+          });
+        }
       });
 
       geoLayer.on('mouseout', () => {
-        const isActive = activeEje !== 'ALL' && activeEje.toUpperCase() === ejeKey.toUpperCase();
         geoLayer.setStyle({
-          fillOpacity: isActive ? 0.8 : config.fillOpacity,
-          weight: isActive ? 3 : 1.5
+          fillOpacity: (activeEje === 'ALL') ? config.fillOpacity : (isThisEjeActive ? 0.75 : 0.15),
+          weight: isThisEjeActive ? 3 : 1.5
         });
       });
 
@@ -166,31 +213,33 @@ export async function initHomeStationsMap() {
       });
 
       polygonsLayer.addLayer(geoLayer);
-      polygonLayersMap.set(ejeKey.toUpperCase(), geoLayer);
+      polygonLayersMap.set(config.name.toUpperCase(), geoLayer);
 
-      // Etiqueta centrada del Eje en el mapa (como en Figma)
-      try {
-        const bounds = geoLayer.getBounds();
-        const center = bounds.getCenter();
-        const displayName = config.name === 'Noroccidente' ? 'Noroccidente<br>del DMQ' : config.name;
+      // Etiqueta centrada del Eje en el mapa
+      if (activeEje === 'ALL' || isThisEjeActive) {
+        try {
+          const bounds = geoLayer.getBounds();
+          const center = bounds.getCenter();
+          const displayName = config.displayName || config.name;
 
-        const labelMarker = L.marker(center, {
-          icon: L.divIcon({
-            className: 'eje-polygon-label',
-            html: `<div style="text-align: center; line-height: 1.2; font-size: 11px; font-weight: 700; color: #1e293b;">${displayName}</div>`,
-            iconSize: [120, 30],
-            iconAnchor: [60, 15]
-          }),
-          interactive: false
-        });
-        labelsLayer.addLayer(labelMarker);
-      } catch (e) {
-        // center calculation fallback
+          const labelMarker = L.marker(center, {
+            icon: L.divIcon({
+              className: 'eje-polygon-label',
+              html: `<div style="text-align: center; line-height: 1.2; font-size: 11px; font-weight: 700; color: #1e293b;">${displayName}</div>`,
+              iconSize: [120, 30],
+              iconAnchor: [60, 15]
+            }),
+            interactive: false
+          });
+          labelsLayer.addLayer(labelMarker);
+        } catch (e) {
+          // center calculation fallback
+        }
       }
     });
   }
 
-  // 2. Renderizar Estaciones (Pins con colores coincidentes)
+  // 2. Renderizar Estaciones (Pins con colores)
   function renderMarkers() {
     markersLayer.clearLayers();
 
@@ -203,7 +252,7 @@ export async function initHomeStationsMap() {
       const tipo = (props.tipo || '').trim();
       const sistema = (props.sistema || props.cuenca || '').toUpperCase();
 
-      // Conteo para la leyenda
+      // Conteo general
       if (tipo === 'Meteorológica') meteoCount++;
       else if (tipo === 'Pluviométrica') pluvioCount++;
       else if (tipo === 'Hidrológica') hidroCount++;
@@ -221,7 +270,6 @@ export async function initHomeStationsMap() {
       return matchTipo && matchEje;
     });
 
-    // Actualizar contadores si están en ALL
     if (activeEje === 'ALL' && activeTipo === 'ALL') {
       if (countMeteoEl) countMeteoEl.textContent = meteoCount || 16;
       if (countPluvioEl) countPluvioEl.textContent = pluvioCount || 24;
@@ -281,20 +329,103 @@ export async function initHomeStationsMap() {
     });
   }
 
+  // 3. Renderizar la Tarjeta Lateral (Lista vs Detalle)
+  function renderSidebar() {
+    if (!cardAside) return;
+
+    if (activeEje === 'ALL') {
+      // Vista 1: Lista completa de Ejes de trabajo (Figma captura 1)
+      cardAside.innerHTML = `
+        <h2 class="home-ejes-title">Ejes de trabajo</h2>
+        <div class="home-ejes-underline" aria-hidden="true"></div>
+        <p class="home-ejes-subtitle">Ver detalle por eje</p>
+
+        <div class="home-ejes-list" id="home-ejes-list" role="list">
+          ${Object.values(EJES_CONFIG).map(cfg => `
+            <button class="eje-list-item" data-eje="${cfg.name}" type="button" role="listitem">
+              <span class="eje-indicator" style="background-color: ${cfg.color};"></span>
+              <span class="eje-item-name">${cfg.name}</span>
+              <span class="eje-item-count">${cfg.total}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      // Re-enlazar eventos
+      cardAside.querySelectorAll('.eje-list-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectEje(btn.getAttribute('data-eje'));
+        });
+      });
+
+    } else {
+      // Vista 2: Detalle del Eje Seleccionado (Figma captura 2)
+      const configKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === activeEje.toUpperCase()) || 'PITA';
+      const cfg = EJES_CONFIG[configKey] || EJES_CONFIG['PITA'];
+
+      cardAside.innerHTML = `
+        <div class="eje-detail-view">
+          <!-- Back button: < Todos los ejes -->
+          <button class="eje-btn-back" id="btn-back-ejes" type="button" aria-label="Volver a todos los ejes">
+            &lt; Todos los ejes
+          </button>
+
+          <!-- Top Selected Eje Pill Box -->
+          <div class="eje-detail-header-card">
+            <span class="eje-indicator" style="background-color: ${cfg.color};"></span>
+            <span class="eje-detail-header-title">${cfg.name}</span>
+            <span class="eje-detail-header-count">${cfg.total} estaciones activas</span>
+          </div>
+
+          <!-- Breakdown by Tipo -->
+          <div class="eje-detail-type-section">
+            <h3 class="eje-detail-type-title">Tipo</h3>
+            <div class="eje-detail-type-list">
+              <div class="eje-detail-type-item">
+                <span class="tipo-legend-dot meteo"></span>
+                <span>Meteorológica</span>
+                <span class="type-count meteo">${cfg.meteo}</span>
+              </div>
+              <div class="eje-detail-type-item">
+                <span class="tipo-legend-dot pluvio"></span>
+                <span>Pluviométrica</span>
+                <span class="type-count pluvio">${cfg.pluvio}</span>
+              </div>
+              <div class="eje-detail-type-item">
+                <span class="tipo-legend-dot hidro"></span>
+                <span>Hidrológica</span>
+                <span class="type-count hidro">${cfg.hidro}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Representation Info Box -->
+          <div class="eje-detail-callout">
+            <strong>${cfg.name}</strong> representa el <strong>${cfg.pct}%</strong> de las estaciones activas de la red
+          </div>
+
+          <!-- Bottom CTA Button -->
+          <div class="eje-detail-cta-wrap">
+            <a href="/estaciones/?eje=${encodeURIComponent(cfg.name)}" class="btn-eje-ver-estaciones">
+              Ver estaciones
+            </a>
+          </div>
+        </div>
+      `;
+
+      // Listener para el botón volver
+      const backBtn = cardAside.querySelector('#btn-back-ejes');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          selectEje('ALL');
+        });
+      }
+    }
+  }
+
   // Manejar selección de Eje
   function selectEje(ejeName) {
-    ejesButtons.forEach(btn => {
-      const dataEje = btn.getAttribute('data-eje');
-      if (dataEje === ejeName && activeEje !== ejeName) {
-        btn.classList.add('active');
-      } else if (dataEje === ejeName && activeEje === ejeName) {
-        btn.classList.remove('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-
-    if (activeEje === ejeName) {
+    if (ejeName === 'ALL' || activeEje === ejeName) {
       activeEje = 'ALL';
       map.setView([-0.18, -78.45], 10);
     } else {
@@ -308,15 +439,8 @@ export async function initHomeStationsMap() {
 
     renderEjesPolygons();
     renderMarkers();
+    renderSidebar();
   }
-
-  // Listeners de los botones de la tarjeta lateral
-  ejesButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ejeName = btn.getAttribute('data-eje');
-      selectEje(ejeName);
-    });
-  });
 
   // Listeners de la leyenda flotante de tipo
   legendItems.forEach(item => {
@@ -339,6 +463,7 @@ export async function initHomeStationsMap() {
   showLoading(true);
   try {
     renderEjesPolygons();
+    renderSidebar();
     const geojson = await fetchPointGeojson('hydroclimate');
     currentFeatures = geojson?.features || [];
     renderMarkers();

@@ -68,6 +68,7 @@ body {
 @import "./atoms/inputs.css";
 @import "./atoms/badges.css";
 @import "./atoms/social-link.css";
+@import "./atoms/loader.css";
 
 @import "./molecules/nav-menu.css";
 @import "./molecules/hero-search.css";
@@ -83,6 +84,7 @@ body {
 @import "./organisms/home-map-section.css";
 @import "./organisms/constituents-carousel.css";
 @import "./organisms/anuario-view.css";
+@import "./organisms/estaciones-view.css";
 @import "./organisms/header.css";
 @import "./organisms/hero.css";
 @import "./organisms/footer.css";

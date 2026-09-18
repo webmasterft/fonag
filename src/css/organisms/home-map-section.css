@@ -249,6 +249,140 @@
   margin-left: 8px;
 }
 
+/* Eje Detail View Styles (Figma Match) */
+.eje-detail-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.eje-btn-back {
+  background: transparent;
+  border: none;
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e2347;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.eje-btn-back:hover {
+  color: #f19001;
+  transform: translateX(-3px);
+}
+
+.eje-detail-header-card {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #f1f5f9;
+}
+
+.eje-detail-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-right: auto;
+}
+
+.eje-detail-header-count {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e2347;
+}
+
+.eje-detail-type-section {
+  margin-bottom: 1.5rem;
+}
+
+.eje-detail-type-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e2347;
+  margin: 0 0 12px;
+}
+
+.eje-detail-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eje-detail-type-item {
+  display: flex;
+  align-items: center;
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.eje-detail-type-item .tipo-legend-dot {
+  margin-right: 8px;
+}
+
+.eje-detail-type-item .type-count {
+  margin-left: auto;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.eje-detail-type-item .type-count.meteo { color: #f59e0b; }
+.eje-detail-type-item .type-count.pluvio { color: #8b5cf6; }
+.eje-detail-type-item .type-count.hidro { color: #38bdf8; }
+
+.eje-detail-callout {
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.eje-detail-callout strong {
+  color: #1e2347;
+  font-weight: 700;
+}
+
+.eje-detail-cta-wrap {
+  margin-top: auto;
+}
+
+.btn-eje-ver-estaciones {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #f19001;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(241, 144, 1, 0.25);
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-eje-ver-estaciones:hover {
+  background-color: #d97f00;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(241, 144, 1, 0.35);
+}
+
 /* Polygons in Leaflet */
 .eje-polygon-label {
   background: transparent !important;

@@ -88,6 +88,11 @@ export function renderEstadisticasCharts(container, seriesData) {
   // 1. Chart Precipitación (Barras + Línea punteada)
   const ctxPrecip = container.querySelector('#chart-precipitacion');
   if (ctxPrecip) {
+    const allPrecipValues = [...precipitacion.mediaHistorica, ...precipitacion.mensual];
+    const maxVal = Math.max(...allPrecipValues.filter(v => typeof v === 'number' && !isNaN(v)), 100);
+    // Margen superior holgado del 20% redondeado a múltiplos de 20 o 50
+    const dynamicMaxPrecip = Math.ceil((maxVal * 1.25) / 20) * 20;
+
     const chartPrecip = new Chart(ctxPrecip, {
       data: {
         labels,
@@ -118,7 +123,7 @@ export function renderEstadisticasCharts(container, seriesData) {
           }
         ]
       },
-      options: getCommonOptions(180, 45, 'mm')
+      options: getCommonOptions(dynamicMaxPrecip, null, 'mm')
     });
     chartInstances.push(chartPrecip);
   }
@@ -126,6 +131,10 @@ export function renderEstadisticasCharts(container, seriesData) {
   // 2. Chart Temperatura (Líneas múltiples)
   const ctxTemp = container.querySelector('#chart-temperatura');
   if (ctxTemp) {
+    const allTempValues = [...temperatura.media, ...temperatura.mediaHistorica, ...temperatura.maxima, ...temperatura.minima];
+    const maxTempVal = Math.max(...allTempValues.filter(v => typeof v === 'number' && !isNaN(v)), 20);
+    const dynamicMaxTemp = Math.ceil((maxTempVal * 1.2) / 5) * 5;
+
     const chartTemp = new Chart(ctxTemp, {
       type: 'line',
       data: {
@@ -182,7 +191,7 @@ export function renderEstadisticasCharts(container, seriesData) {
           }
         ]
       },
-      options: getCommonOptions(24, 6, '°C')
+      options: getCommonOptions(dynamicMaxTemp, null, '°C')
     });
     chartInstances.push(chartTemp);
   }
@@ -239,7 +248,7 @@ export function renderEstadisticasCharts(container, seriesData) {
           }
         ]
       },
-      options: getCommonOptions(100, 25, '%')
+      options: getCommonOptions(105, 25, '%')
     });
     chartInstances.push(chartHum);
   }
@@ -305,6 +314,14 @@ function getCommonOptions(maxY, stepY, unit = '') {
         }
       }
     },
+    layout: {
+      padding: {
+        top: 20,
+        right: 12,
+        bottom: 8,
+        left: 8
+      }
+    },
     scales: {
       x: {
         grid: {
@@ -323,7 +340,7 @@ function getCommonOptions(maxY, stepY, unit = '') {
         beginAtZero: true,
         max: maxY,
         ticks: {
-          stepSize: stepY,
+          ...(stepY ? { stepSize: stepY } : {}),
           font: {
             family: "'Inter', sans-serif",
             size: 11,

@@ -8,8 +8,10 @@ import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderAnuarioTable } from '../molecules/data-table/anuario-table.js';
 import { renderEstadisticasCharts, destroyCharts } from '../molecules/charts/anuario-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
+import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initGlobalHttpLoader();
   initThemeToggle();
 
   const mapController = initLeafletMap('station-map');

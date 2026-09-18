@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Atom: Global Animated Loader Component
+   Branded animated spinner and top progress bar for all server requests
+   ========================================================================== */
+
+/* Top slim indeterminate animated progress line */
+.fonag-top-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3.5px;
+  background: transparent;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.fonag-top-progress-bar.is-active {
+  opacity: 1;
+}
+
+.fonag-top-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #242857 0%, #f19001 50%, #2bd0d0 100%);
+  background-size: 200% 100%;
+  animation: fonag-bar-stream 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes fonag-bar-stream {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* Floating animated notification card at bottom-right */
+.fonag-global-loader {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99998;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fonag-global-loader.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.fonag-loader-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 10px 25px -3px rgba(36, 40, 87, 0.12), 0 4px 6px -2px rgba(36, 40, 87, 0.05);
+  border-radius: 9999px;
+  padding: 10px 20px 10px 14px;
+}
+
+/* Animated Spinner with Dual Rings and Pulsing Center */
+.fonag-loader-spinner-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fonag-loader-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(241, 144, 1, 0.18);
+  border-top-color: #f19001;
+  border-right-color: #242857;
+  animation: fonag-spin 0.75s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+}
+
+.fonag-loader-inner-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #f19001;
+  border-radius: 50%;
+  animation: fonag-pulse-dot 1.2s ease-in-out infinite;
+}
+
+.fonag-loader-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.fonag-loader-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #242857;
+  line-height: 1.2;
+}
+
+.fonag-loader-subtitle {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+/* Keyframes */
+@keyframes fonag-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fonag-pulse-dot {
+  0%, 100% {
+    transform: scale(0.75);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Dark Mode Adaptation */
+[data-theme="dark"] .fonag-loader-card {
+  background: rgba(30, 35, 71, 0.92);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .fonag-loader-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .fonag-loader-subtitle {
+  color: #94a3b8;
+}

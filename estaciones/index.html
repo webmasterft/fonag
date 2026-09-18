@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaciones — Red de Monitoreo Hidrometeorológico FONAG</title>
+  <meta name="description" content="Listado completo y filtros de las estaciones meteorológicas, pluviométricas e hidrológicas de la Red FONAG.">
+  <link rel="icon" type="image/svg+xml" href="/media/fonag-logo.svg">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/main.css">
+</head>
+<body class="estaciones-page">
+  <div class="app-layout">
+    <!-- Organism: Portal Navigation Header -->
+    <header class="portal-header" id="portal-header">
+      <div class="portal-header-container">
+        <!-- Brand Logo -->
+        <a href="/" class="portal-brand" aria-label="FONAG Inicio">
+          <svg class="portal-logo-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 46C18 34 22 20 34 14C32 24 28 36 24 46" stroke="#242857" stroke-width="3" stroke-linecap="round"/>
+            <path d="M16 46C11 36 14 24 25 18C23 27 19 38 18 46" stroke="#242857" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M10 46C6 38 8 28 17 22" stroke="#242857" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="34" cy="11" r="3" fill="#f19001"/>
+            <text x="44" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" fill="#242857" letter-spacing="-0.5">FON</text>
+            <text x="120" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" font-style="italic" fill="#f19001" letter-spacing="-0.5">AG</text>
+          </svg>
+        </a>
+
+        <!-- Center Navigation Menu -->
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li class="nav-item"><a href="/" class="nav-link">Inicio</a></li>
+            <li class="nav-item"><a href="/estaciones/" class="nav-link active">Estaciones</a></li>
+            <li class="nav-item nav-item-dropdown">
+              <a href="javascript:void(0)" role="button" class="nav-link nav-link-dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-content">
+                  Consultas
+                  <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </a>
+              <div class="nav-dropdown-menu" role="menu">
+                <a href="https://sedc.fonag.org.ec/consultas/" class="nav-dropdown-item" role="menuitem">Consultas por periodo</a>
+                <a href="/consultas/anuario/" class="nav-dropdown-item" role="menuitem">Anuario Hidroclimático</a>
+              </div>
+            </li>
+            <li class="nav-item"><a href="/#tiempo-real" class="nav-link">Tiempo Real</a></li>
+          </ul>
+        </nav>
+
+        <!-- Right Header Actions -->
+        <div class="portal-header-actions">
+          <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login" id="btn-login" rel="noopener noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" x2="3" y1="12" y2="12"/>
+            </svg>
+            <span>Ingresar</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main View -->
+    <main class="estaciones-container">
+      <!-- Breadcrumbs: Inicio > Estaciones -->
+      <nav class="estaciones-breadcrumbs" aria-label="Migas de pan">
+        <a href="/">Inicio</a>
+        <span>&gt;</span>
+        <span class="active">Estaciones</span>
+      </nav>
+
+      <!-- Header Section: 61 estaciones activas + Red de Monitoreo + Pills -->
+      <div class="estaciones-header-wrapper">
+        <div class="estaciones-header-left">
+          <span class="estaciones-count-badge" id="estaciones-total-count">61 estaciones activas</span>
+          <h1 class="estaciones-title">Red de Monitoreo Hidrometeorológico FONAG</h1>
+          <div class="estaciones-title-underline" aria-hidden="true"></div>
+        </div>
+
+        <div class="estaciones-header-stats" role="group" aria-label="Filtrar por tipo rápido">
+          <button type="button" class="estaciones-stat-pill" data-tipo="Meteorológica">
+            <span class="estaciones-stat-dot meteo"></span>
+            <span>Meteorológica (16)</span>
+          </button>
+          <button type="button" class="estaciones-stat-pill" data-tipo="Pluviométrica">
+            <span class="estaciones-stat-dot pluvio"></span>
+            <span>Pluviométrica (24)</span>
+          </button>
+          <button type="button" class="estaciones-stat-pill" data-tipo="Hidrológica">
+            <span class="estaciones-stat-dot hidro"></span>
+            <span>Hidrológica (21)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Card Row -->
+      <div class="estaciones-filter-card">
+        <!-- Input Código -->
+        <div class="estaciones-filter-field" style="flex: 1;">
+          <label for="filter-codigo" class="estaciones-filter-label">Código:</label>
+          <div class="estaciones-input-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="filter-codigo" class="estaciones-input" placeholder="Ej: ATP01">
+          </div>
+        </div>
+
+        <!-- Input Nombre -->
+        <div class="estaciones-filter-field" style="flex: 1.5;">
+          <label for="filter-nombre" class="estaciones-filter-label">Nombre:</label>
+          <div class="estaciones-input-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="filter-nombre" class="estaciones-input" placeholder="Buscar por nombre...">
+          </div>
+        </div>
+
+        <!-- Select Tipo de Estación -->
+        <div class="estaciones-filter-field" style="flex: 1;">
+          <label for="filter-tipo" class="estaciones-filter-label">Tipo de Estación:</label>
+          <select id="filter-tipo" class="estaciones-select">
+            <option value="">Todos los tipos</option>
+            <option value="Hidrológica">Hidrológica</option>
+            <option value="Meteorológica">Meteorológica</option>
+            <option value="Pluviométrica">Pluviométrica</option>
+          </select>
+        </div>
+
+        <!-- Select Provincia -->
+        <div class="estaciones-filter-field" style="flex: 1;">
+          <label for="filter-provincia" class="estaciones-filter-label">Provincia:</label>
+          <select id="filter-provincia" class="estaciones-select">
+            <option value="">Todas</option>
+            <option value="Pichincha">Pichincha</option>
+            <option value="Napo">Napo</option>
+          </select>
+        </div>
+
+        <!-- Select Eje de trabajo -->
+        <div class="estaciones-filter-field" style="flex: 1.2;">
+          <label for="filter-eje" class="estaciones-filter-label">Eje de trabajo:</label>
+          <select id="filter-eje" class="estaciones-select">
+            <option value="">Todos los ejes</option>
+            <option value="Pita">Pita</option>
+            <option value="Pichincha Atacazo">Pichincha Atacazo</option>
+            <option value="Nororiente DMQ">Nororiente DMQ</option>
+            <option value="Antisana">Antisana</option>
+            <option value="Papallacta - Oyacachi">Papallacta - Oyacachi</option>
+            <option value="San Pedro">San Pedro</option>
+            <option value="Pisque">Pisque</option>
+            <option value="Noroccidente">Noroccidente</option>
+            <option value="Norcentral">Norcentral</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table Toolbar: Counter + Buttons -->
+      <div class="estaciones-table-toolbar">
+        <span class="estaciones-found-counter" id="estaciones-found-count">61 estaciones encontradas</span>
+        <div class="estaciones-toolbar-actions">
+          <button type="button" class="btn-columnas-dropdown">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h7"/>
+            </svg>
+            Columnas
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <button type="button" class="btn-descargar-estaciones" id="btn-descargar-estaciones">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Descargar
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Table Card -->
+      <div class="estaciones-table-card">
+        <!-- Table Dedicated Animated Loading Overlay -->
+        <div id="estaciones-table-loader" class="estaciones-table-loader" aria-live="polite" aria-busy="true">
+          <div class="table-spinner-ring"></div>
+          <div class="table-loading-info">
+            <span class="table-loading-title">Cargando estaciones de monitoreo...</span>
+            <span class="table-loading-subtitle">Consultando red hidroclimática del FONAG</span>
+          </div>
+        </div>
+
+        <table class="estaciones-table" role="table">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 50px;">No.</th>
+              <th scope="col" class="th-sortable" data-col="codigo">
+                Código <span class="sort-icon">&#8693;</span>
+              </th>
+              <th scope="col" class="th-sortable" data-col="nombre">
+                Nombre <span class="sort-icon">&#8693;</span>
+              </th>
+              <th scope="col" class="th-sortable" data-col="tipo">
+                Tipo <span class="sort-icon">&#8693;</span>
+              </th>
+              <th scope="col" class="th-sortable" data-col="provincia">
+                Provincia <span class="sort-icon">&#8693;</span>
+              </th>
+              <th scope="col" class="th-sortable" data-col="ejeDeTrabajo">
+                Eje de trabajo <span class="sort-icon">&#8693;</span>
+              </th>
+              <th scope="col" class="th-sortable" data-col="transmision">
+                Transmisión <span class="sort-icon">&#8693;</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="estaciones-table-body">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer Bar -->
+      <div class="estaciones-pagination-bar">
+        <div class="pagination-page-size">
+          <span id="pagination-range-text">Mostrando <strong>1 &ndash; 10</strong> de <strong>61</strong> resultados por página:</span>
+          <select id="select-page-size" class="select-page-size" aria-label="Resultados por página">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div class="pagination-controls">
+          <button type="button" class="btn-page-arrow" id="btn-prev-page" aria-label="Página anterior">&lt;</button>
+          <div class="page-numbers-list" id="page-numbers-container">
+            <!-- Dynamic Page Numbers -->
+          </div>
+          <button type="button" class="btn-page-arrow" id="btn-next-page" aria-label="Página siguiente">&gt;</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Organism: FONAG Footer -->
+    <footer class="fonag-footer" id="main-footer">
+      <div class="footer-inner">
+        <!-- Tier 1: Contact info & Socials -->
+        <div class="footer-top-tier">
+          <div class="footer-social-group">
+            <h2 class="footer-heading">Contacto</h2>
+            <div class="footer-social-list" aria-label="Redes sociales de FONAG">
+              <a href="https://facebook.com" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Facebook de FONAG">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                </svg>
+              </a>
+              <a href="https://x.com" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) de FONAG">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              <a href="https://instagram.com" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram de FONAG">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                </svg>
+              </a>
+              <a href="https://tiktok.com" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="TikTok de FONAG">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.88 2.89 2.89 0 0 1-2.89-2.88 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.02a6.31 6.31 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.75a8.28 8.28 0 0 0 3.77.94v-3z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <div class="footer-info-item">
+            <a href="tel:+59322430233">(593 2) 2430 233</a>
+            <a href="tel:+59322439549">(593 2) 2439 549</a>
+          </div>
+
+          <div class="footer-info-item">
+            <span>Mariana de Jesús y Martí</span>
+            <span>Utreras.</span>
+          </div>
+
+          <div class="footer-info-item">
+            <a href="mailto:comunicacion@fonag.org.ec">comunicacion@fonag.org.ec</a>
+          </div>
+        </div>
+
+        <hr class="footer-divider" />
+
+        <div class="footer-bottom-tier">
+          <div class="footer-logo-wrapper">
+            <svg class="footer-logo-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FONAG Logo">
+              <path d="M22 46C18 34 22 20 34 14C32 24 28 36 24 46" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+              <path d="M16 46C11 36 14 24 25 18C23 27 19 38 18 46" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M10 46C6 38 8 28 17 22" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="34" cy="11" r="3" fill="#f58220"/>
+              <text x="44" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" fill="#ffffff" letter-spacing="-0.5">FON</text>
+              <text x="120" y="38" font-family="'Inter', sans-serif" font-size="30" font-weight="800" font-style="italic" fill="#f58220" letter-spacing="-0.5">AG</text>
+            </svg>
+          </div>
+          <a href="https://fonag.org.ec" class="btn btn-cta-orange" target="_blank" rel="noopener noreferrer">Contáctanos</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Page Scripts -->
+  <script type="module" src="/src/js/pages/estaciones.js"></script>
+</body>
+</html>
