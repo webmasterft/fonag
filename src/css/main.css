@@ -84,6 +84,7 @@ body {
 @import "./organisms/home-map-section.css";
 @import "./organisms/constituents-carousel.css";
 @import "./organisms/anuario-view.css";
+@import "./organisms/periodo-view.css";
 @import "./organisms/estaciones-view.css";
 @import "./organisms/header.css";
 @import "./organisms/hero.css";

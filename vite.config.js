@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main: resolve(__dirname, 'index.html'),
           anuario: resolve(__dirname, 'consultas/anuario/index.html'),
+          periodo: resolve(__dirname, 'consultas/periodo/index.html'),
           estaciones: resolve(__dirname, 'estaciones/index.html'),
         },
       },
