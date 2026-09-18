@@ -401,13 +401,26 @@
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background-color: #e0f2fe;
-  color: #0284c7;
+  gap: 6px;
   padding: 3px 10px;
   border-radius: 9999px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.station-card-pill.tipo-meteo {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.station-card-pill.tipo-pluvio {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.station-card-pill.tipo-hidro {
+  background-color: #e0f2fe;
+  color: #0284c7;
 }
 
 .station-card-actions {
@@ -441,9 +454,9 @@
 }
 
 .btn-card-descargar {
-  background-color: #1e2347;
-  color: #ffffff;
-  border: none;
+  background-color: #f8fafc;
+  color: #1e2347;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
@@ -453,33 +466,33 @@
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-card-descargar:hover {
-  background-color: #2a3163;
-  transform: scale(1.02);
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 /* Modal for Data Table & Charts */
 .anuario-modal {
   position: fixed;
   inset: 0;
-  z-index: 9999;
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .anuario-modal.is-open {
   opacity: 1;
-  pointer-events: auto;
+  visibility: visible;
 }
 
 .anuario-modal-dialog {
@@ -516,7 +529,7 @@
 
 .modal-station-type-badge {
   background-color: #f3e8ff;
-  color: #9333ea;
+  color: #7e22ce;
   font-size: 12px;
   font-weight: 700;
   padding: 4px 12px;
@@ -529,8 +542,8 @@
 }
 
 .modal-station-type-badge.tipo-meteorologica {
-  background-color: #ecfdf5;
-  color: #059669;
+  background-color: #fef3c7;
+  color: #d97706;
 }
 
 .modal-station-code {

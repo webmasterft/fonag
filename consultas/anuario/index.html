@@ -186,9 +186,32 @@
 
       <!-- Split Main Layout -->
       <div class="anuario-split-layout">
-        <!-- Left Column: Interactive Map -->
+        <!-- Left Column: Interactive Map with Polygons & Floating Legend -->
         <div class="anuario-map-column">
           <div id="station-map"></div>
+
+          <!-- Floating Tipo de Estación Legend Card (Bottom Left) -->
+          <div class="map-tipo-legend" id="anuario-map-tipo-legend">
+            <span class="tipo-legend-title">TIPO DE ESTACIÓN</span>
+            <div class="tipo-legend-items">
+              <div class="tipo-legend-item" data-type="Meteorológica">
+                <span class="tipo-legend-dot meteo"></span>
+                <span class="tipo-legend-label">Meteorológica</span>
+                <span class="tipo-legend-count" id="anuario-count-meteo">16</span>
+              </div>
+              <div class="tipo-legend-item" data-type="Pluviométrica">
+                <span class="tipo-legend-dot pluvio"></span>
+                <span class="tipo-legend-label">Pluviométrica</span>
+                <span class="tipo-legend-count" id="anuario-count-pluvio">24</span>
+              </div>
+              <div class="tipo-legend-item" data-type="Hidrológica">
+                <span class="tipo-legend-dot hidro"></span>
+                <span class="tipo-legend-label">Hidrológica</span>
+                <span class="tipo-legend-count" id="anuario-count-hidro">21</span>
+              </div>
+            </div>
+          </div>
+
           <div id="map-loading-overlay" class="map-loading-overlay" style="display: none;" aria-live="polite" aria-busy="false">
             <div class="spinner-ring" aria-hidden="true"></div>
             <span class="loading-text" id="map-loading-text">Actualizando mapa...</span>

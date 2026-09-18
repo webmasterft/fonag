@@ -17,6 +17,68 @@ const TYPE_COLORS = {
   'default': '#64748b'
 };
 
+// Helper geométrico para asociar estaciones al Eje de Trabajo exacto
+function pointInPoly(x, y, poly) {
+  let inside = false;
+  let p1x = poly[0][0];
+  let p1y = poly[0][1];
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const p2x = poly[(i + 1) % n][0];
+    const p2y = poly[(i + 1) % n][1];
+    if (y > Math.min(p1y, p2y)) {
+      if (y <= Math.max(p1y, p2y)) {
+        if (x <= Math.max(p1x, p2x)) {
+          let xinters = 0;
+          if (p1y !== p2y) {
+            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
+          }
+          if (p1x === p2x || x <= xinters) {
+            inside = !inside;
+          }
+        }
+      }
+    }
+    p1x = p2x;
+    p1y = p2y;
+  }
+  return inside;
+}
+
+function getEjeForCoords(lng, lat) {
+  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
+
+  for (const f of ejesGeojsonData.features) {
+    const geom = f.geometry;
+    if (!geom) continue;
+    const name = f.properties?.eje_trab || '';
+
+    if (geom.type === 'Polygon') {
+      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
+    } else if (geom.type === 'MultiPolygon') {
+      for (const poly of geom.coordinates) {
+        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
+      }
+    }
+  }
+  return null;
+}
+
+function formatEjeName(name) {
+  if (!name) return 'Pita';
+  const u = name.toUpperCase();
+  if (u.includes('PITA')) return 'Pita';
+  if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
+  if (u.includes('NORORIENTE')) return 'Nororiente DMQ';
+  if (u.includes('ANTISANA')) return 'Antisana';
+  if (u.includes('PAPALLACTA')) return 'Papallacta - Oyacachi';
+  if (u.includes('SAN PEDRO')) return 'San Pedro';
+  if (u.includes('PISQUE')) return 'Pisque';
+  if (u.includes('NOROCCIDENTE')) return 'Noroccidente';
+  if (u.includes('NORCENTRAL')) return 'Norcentral';
+  return name;
+}
+
 // Configuración y estadísticas por Eje de Trabajo (Figma Match exacto)
 const EJES_CONFIG = {
   'PITA': {
@@ -249,34 +311,72 @@ export async function initHomeStationsMap() {
     let pluvioCount = 0;
     let hidroCount = 0;
 
+    // Primero: computar los conteos del Eje seleccionado (o de toda la red si es ALL)
+    currentFeatures.forEach(feature => {
+      const props = feature.properties || {};
+      const tipo = (props.tipo || '').trim();
+      const coords = feature.geometry?.coordinates;
+      let eje = null;
+      if (coords && coords.length >= 2) {
+        eje = getEjeForCoords(coords[0], coords[1]);
+      }
+      if (!eje) {
+        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
+        if (sistema.includes('PITA')) eje = 'Pita';
+        else if (sistema.includes('PICHINCHA') || sistema.includes('CENTRO') || sistema.includes('SALOYA')) eje = 'Pichincha Atacazo';
+        else if (sistema.includes('ANTISANA') || sistema.includes('MICA')) eje = 'Antisana';
+        else if (sistema.includes('PAPALLACTA') || sistema.includes('OYACACHI')) eje = 'Papallacta - Oyacachi';
+        else if (sistema.includes('NOROCCIDENTE')) eje = 'Noroccidente';
+        else eje = 'Pita';
+      }
+
+      const matchEjeForCounts = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
+      if (matchEjeForCounts) {
+        if (tipo === 'Meteorológica') meteoCount++;
+        else if (tipo === 'Pluviométrica') pluvioCount++;
+        else if (tipo === 'Hidrológica') hidroCount++;
+      }
+    });
+
+    // Actualizar dinámicamente los contadores de la tarjeta flotante "TIPO DE ESTACIÓN"
+    if (activeEje !== 'ALL') {
+      const cfgKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === activeEje.toUpperCase());
+      const cfg = cfgKey ? EJES_CONFIG[cfgKey] : null;
+      if (countMeteoEl) countMeteoEl.textContent = cfg ? cfg.meteo : meteoCount;
+      if (countPluvioEl) countPluvioEl.textContent = cfg ? cfg.pluvio : pluvioCount;
+      if (countHidroEl) countHidroEl.textContent = cfg ? cfg.hidro : hidroCount;
+    } else {
+      if (countMeteoEl) countMeteoEl.textContent = meteoCount || 16;
+      if (countPluvioEl) countPluvioEl.textContent = pluvioCount || 24;
+      if (countHidroEl) countHidroEl.textContent = hidroCount || 21;
+    }
+
+    // Filtrar qué estaciones dibujar en el mapa
     const filtered = currentFeatures.filter(feature => {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
-      const sistema = (props.sistema || props.cuenca || '').toUpperCase();
-
-      // Conteo general
-      if (tipo === 'Meteorológica') meteoCount++;
-      else if (tipo === 'Pluviométrica') pluvioCount++;
-      else if (tipo === 'Hidrológica') hidroCount++;
+      const coords = feature.geometry?.coordinates;
+      let eje = null;
+      if (coords && coords.length >= 2) {
+        eje = getEjeForCoords(coords[0], coords[1]);
+      }
+      if (!eje) {
+        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
+        if (sistema.includes('PITA')) eje = 'Pita';
+        else if (sistema.includes('PICHINCHA')) eje = 'Pichincha Atacazo';
+        else if (sistema.includes('ANTISANA')) eje = 'Antisana';
+        else if (sistema.includes('PAPALLACTA')) eje = 'Papallacta - Oyacachi';
+        else eje = 'Pita';
+      }
 
       // Filtro tipo
       const matchTipo = (activeTipo === 'ALL') || (tipo === activeTipo);
 
       // Filtro eje
-      let matchEje = true;
-      if (activeEje !== 'ALL') {
-        const target = activeEje.toUpperCase();
-        matchEje = sistema.includes(target) || target.includes(sistema);
-      }
+      const matchEje = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
 
       return matchTipo && matchEje;
     });
-
-    if (activeEje === 'ALL' && activeTipo === 'ALL') {
-      if (countMeteoEl) countMeteoEl.textContent = meteoCount || 16;
-      if (countPluvioEl) countPluvioEl.textContent = pluvioCount || 24;
-      if (countHidroEl) countHidroEl.textContent = hidroCount || 21;
-    }
 
     filtered.forEach(feature => {
       const coords = feature.geometry?.coordinates;

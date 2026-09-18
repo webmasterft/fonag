@@ -4,7 +4,7 @@
  */
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import { getAnuarioEstadistico, getSeriesEstadisticas, exportAnuarioCsv } from '../services/anuario-service.js';
-import { initLeafletMap } from '../molecules/map/leaflet-map.js';
+import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
 import { renderAnuarioTable } from '../molecules/data-table/anuario-table.js';
 import { renderEstadisticasCharts, destroyCharts } from '../molecules/charts/anuario-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
@@ -14,7 +14,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   initGlobalHttpLoader();
   initThemeToggle();
 
-  const mapController = initLeafletMap('station-map');
+  let activeEje = 'ALL';
+  let activeFloatingTipo = 'ALL';
+
+  const mapController = initLeafletMap('station-map', {
+    onEjeSelect: (eje) => {
+      activeEje = eje;
+      applyFilters();
+    }
+  });
+
   const cardsContainer = document.getElementById('stations-cards-list');
   const counterEl = document.getElementById('stations-counter');
   const inputCodigo = document.getElementById('input-filter-codigo');
@@ -23,6 +32,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   const selectYear = document.getElementById('select-consult-year');
   const btnCompilado = document.getElementById('btn-download-compilado');
+
+  // Elementos de la leyenda flotante "TIPO DE ESTACIÓN"
+  const countMeteoEl = document.getElementById('anuario-count-meteo');
+  const countPluvioEl = document.getElementById('anuario-count-pluvio');
+  const countHidroEl = document.getElementById('anuario-count-hidro');
+  const legendItems = document.querySelectorAll('#anuario-map-tipo-legend .tipo-legend-item');
 
   // Modal elements
   const modal = document.getElementById('anuario-data-modal');
@@ -35,8 +50,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentModalEstacion = null;
   let currentModalTab = 'charts'; // 'charts' | 'table'
 
+  // Leer parámetro URL opcional ?eje=... o ?codigo=...
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramEje = urlParams.get('eje');
+  const paramCodigo = urlParams.get('codigo');
+  if (paramEje) {
+    activeEje = paramEje;
+    if (mapController) mapController.setEje(paramEje);
+  }
+  if (paramCodigo && inputCodigo) {
+    inputCodigo.value = paramCodigo;
+  }
+
   // 1. Cargar datos de estaciones
-  allEstaciones = await fetchEstaciones();
+  const rawEstaciones = await fetchEstaciones();
+  allEstaciones = rawEstaciones.map((est) => ({
+    ...est,
+    ejeCalculado: getEjeForCoords(est.longitud, est.latitud) || est.cuenca || 'Pita'
+  }));
 
   // 2. Renderizar inicial
   applyFilters();
@@ -47,13 +78,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3. Listeners de filtros
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
-  if (selectTipo) selectTipo.addEventListener('change', applyFilters);
+  if (selectTipo) selectTipo.addEventListener('change', () => {
+    activeFloatingTipo = 'ALL';
+    legendItems.forEach(i => i.style.opacity = '1');
+    applyFilters();
+  });
+
+  // Listeners de la leyenda flotante de tipo
+  legendItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const type = item.getAttribute('data-type');
+      if (activeFloatingTipo === type) {
+        activeFloatingTipo = 'ALL';
+        legendItems.forEach(i => i.style.opacity = '1');
+      } else {
+        activeFloatingTipo = type;
+        legendItems.forEach(i => {
+          i.style.opacity = (i.getAttribute('data-type') === type) ? '1' : '0.4';
+        });
+      }
+      applyFilters();
+    });
+  });
 
   if (btnLimpiar) {
     btnLimpiar.addEventListener('click', () => {
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
       if (selectTipo) selectTipo.value = '';
+      activeEje = 'ALL';
+      activeFloatingTipo = 'ALL';
+      legendItems.forEach(i => i.style.opacity = '1');
+      if (mapController) mapController.setEje('ALL');
       applyFilters();
     });
   }
@@ -287,16 +343,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qTipo = selectTipo ? selectTipo.value : '';
     const numYear = parseInt(currentYear, 10) || 2025;
 
+    // Calcular conteos para la leyenda flotante según el eje activo y año seleccionado
+    let countMeteo = 0;
+    let countPluvio = 0;
+    let countHidro = 0;
+
+    allEstaciones.forEach((est) => {
+      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
+      const matchYear = isNaN(anioInicio) || anioInicio <= numYear;
+      const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
+
+      if (matchYear && matchEje) {
+        if (est.tipo?.includes('Hidro')) {
+          countHidro++;
+        } else if (est.tipo?.includes('Pluvio')) {
+          countPluvio++;
+        } else {
+          countMeteo++;
+        }
+      }
+    });
+
+    if (countMeteoEl) countMeteoEl.textContent = countMeteo;
+    if (countPluvioEl) countPluvioEl.textContent = countPluvio;
+    if (countHidroEl) countHidroEl.textContent = countHidro;
+
     const filtered = allEstaciones.filter((est) => {
       const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
       const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
       const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
 
+      // Filtro por eje territorial seleccionado
+      const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
+
+      // Filtro interactivo por leyenda flotante de tipo de estación
+      const matchFloatingTipo = (activeFloatingTipo === 'ALL') || (est.tipo === activeFloatingTipo);
+
       // Filtrar estaciones según año de inicio de operación
       const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
       const matchYear = isNaN(anioInicio) || anioInicio <= numYear;
 
-      return matchCodigo && matchNombre && matchTipo && matchYear;
+      return matchCodigo && matchNombre && matchTipo && matchEje && matchFloatingTipo && matchYear;
     });
 
     // Actualizar contador
@@ -335,15 +422,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const html = list.map((est) => `
+    const html = list.map((est) => {
+      let pillClass = 'tipo-meteo';
+      let dotColor = '#f59e0b';
+      if (est.tipo?.includes('Hidro')) {
+        pillClass = 'tipo-hidro';
+        dotColor = '#38bdf8';
+      } else if (est.tipo?.includes('Pluvio')) {
+        pillClass = 'tipo-pluvio';
+        dotColor = '#8b5cf6';
+      }
+
+      return `
       <article class="station-card-item" id="card-${est.codigo}" data-codigo="${est.codigo}">
         <div class="station-card-top">
-          <span class="station-card-dot"></span>
+          <span class="station-card-dot" style="background-color: ${dotColor};"></span>
           <span class="station-card-province">${est.provincia}</span>
         </div>
         <div class="station-card-code">${est.codigo}</div>
         <div style="font-size: 13px; color: #475569; font-weight: 500;">${est.nombre}</div>
-        <div class="station-card-pill">• ${est.tipo}</div>
+        <div class="station-card-pill ${pillClass}">• ${est.tipo}</div>
         <div class="station-card-actions">
           <button class="btn-card-ver-estadisticas" data-codigo="${est.codigo}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -363,7 +461,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           </button>
         </div>
       </article>
-    `).join('');
+      `;
+    }).join('');
 
     cardsContainer.innerHTML = html;
 
