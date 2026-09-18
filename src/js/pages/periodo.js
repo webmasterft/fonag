@@ -233,9 +233,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const varCode = selectVariable?.value || 'PRE';
     const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
 
+    const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
+    const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();
+    const qTipo = selectTipo ? selectTipo.value : '';
+
     const sDate = inputFechaInicio?.value || '2026-01-01';
     const eDate = inputFechaFin?.value || '2026-09-03';
-    const numStartYear = parseInt(sDate.substring(0, 4), 10);
 
     // Conteos para leyenda flotante (estaciones con la variable seleccionada, eje activo y activas en el periodo)
     let countMeteo = 0;
@@ -243,8 +246,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countHidro = 0;
 
     allEstaciones.forEach((est) => {
-      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
-      const matchPeriod = isNaN(anioInicio) || isNaN(numStartYear) || anioInicio <= numStartYear;
+      // Una estación estuvo activa si su fecha de instalación no es posterior al fin del periodo seleccionado
+      const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
 
@@ -261,8 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Filtrar lista completa
     const filtered = allEstaciones.filter((est) => {
-      const anioInicio = parseInt((est.fechaInicio || '').substring(0, 4), 10);
-      const matchPeriod = isNaN(anioInicio) || isNaN(numStartYear) || anioInicio <= numStartYear;
+      const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
       const matchFloatingTipo = (activeFloatingTipo === 'ALL') || (est.tipo === activeFloatingTipo);
@@ -321,19 +323,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       return `
         <article class="periodo-station-card" id="card-${est.codigo}" data-codigo="${est.codigo}">
-          <div class="periodo-station-card-top">
+          <div class="periodo-station-card-header">
             <span class="periodo-station-dot" style="background-color: ${dotColor};"></span>
-            <span class="periodo-station-province">${est.provincia}</span>
+            <div class="periodo-station-info">
+              <span class="periodo-station-name">${est.nombre}</span>
+              <span class="periodo-station-code">${est.codigo}</span>
+            </div>
           </div>
-          <div class="periodo-station-code">${est.codigo}</div>
-          <div style="font-size: 13px; color: #475569; font-weight: 500;">${est.nombre}</div>
-          <div class="periodo-station-pill ${pillClass}">• ${est.tipo}</div>
+          <div class="periodo-station-pill ${pillClass}">
+            <span class="pill-dot" style="background-color: ${dotColor};"></span>
+            ${est.tipo}
+          </div>
           <div class="periodo-station-actions">
             <button class="btn-card-ver-datos-periodo" data-codigo="${est.codigo}">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"></line>
-                <line x1="12" y1="20" x2="12" y2="4"></line>
-                <line x1="6" y1="20" x2="6" y2="14"></line>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="M18 17V9"/>
+                <path d="M13 17V5"/>
+                <path d="M8 17v-3"/>
+                <circle cx="8" cy="14" r="1" fill="currentColor"/>
+                <circle cx="13" cy="5" r="1" fill="currentColor"/>
+                <circle cx="18" cy="9" r="1" fill="currentColor"/>
+                <path d="M8 14l5-9 5 4" stroke-dasharray="1 1"/>
               </svg>
               Ver datos
             </button>

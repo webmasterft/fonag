@@ -279,27 +279,27 @@
 /* Station Card Item */
 .periodo-station-card {
   background-color: #ffffff;
-  border: 1px solid #efefef;
+  border: 1px solid #eef2f6;
   border-radius: 14px;
-  padding: 1.15rem 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  padding: 1.15rem 1.25rem 1.25rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .periodo-station-card:hover,
 .periodo-station-card.is-active {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(36, 40, 87, 0.08);
+  box-shadow: 0 8px 20px rgba(36, 40, 87, 0.09);
   border-color: #41a6e5;
 }
 
-.periodo-station-card-top {
+.periodo-station-card-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .periodo-station-dot {
@@ -307,19 +307,28 @@
   height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 5px;
 }
 
-.periodo-station-province {
-  font-size: 13px;
-  font-weight: 500;
-  color: #475569;
+.periodo-station-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.periodo-station-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.25;
 }
 
 .periodo-station-code {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
-  color: #242857;
+  color: #1e244a;
   letter-spacing: 0.2px;
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 .periodo-station-pill {
@@ -327,10 +336,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 4px 14px;
   border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-left: 19px;
+}
+
+.periodo-station-pill .pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .periodo-station-pill.tipo-meteo {
@@ -353,7 +370,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .btn-card-ver-datos-periodo {
