@@ -25,6 +25,55 @@ export async function fetchEstaciones() {
 }
 
 /**
+ * Obtiene el FeatureCollection GeoJSON de estaciones (SEDC point_geojson).
+ * @param {string} section - 'hydroclimate' | 'wetland' | 'quality' | 'soil'
+ * @param {string} [variable] - Código opcional de variable (ej. 'PRE', 'TEM')
+ * @returns {Promise<Object>}
+ */
+export async function fetchPointGeojson(section = 'hydroclimate', variable = '') {
+  try {
+    const params = new URLSearchParams({ section });
+    if (variable) params.append('variable', variable);
+
+    const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
+    if (res.ok) {
+      const geojson = await res.json();
+      if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
+        return geojson;
+      }
+    }
+  } catch (error) {
+    console.warn('Error al obtener point_geojson desde SEDC API:', error);
+  }
+
+  // Fallback construyendo un FeatureCollection desde el fallback local
+  const normalized = normalizeEstaciones(estacionesFallback);
+  return {
+    type: 'FeatureCollection',
+    features: normalized.map(item => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [item.longitud, item.latitud]
+      },
+      properties: {
+        est_id: item.id,
+        est_codigo: item.codigo,
+        est_nombre: item.nombre,
+        est_altura: item.altura,
+        est_latitud: item.latitud,
+        est_longitud: item.longitud,
+        tipo: item.tipo,
+        administrador: item.administrador,
+        cuenca: item.cuenca,
+        sistema: item.sistema,
+        transmision: item.transmision
+      }
+    }))
+  };
+}
+
+/**
  * Normaliza las coordenadas y campos de las estaciones.
  * @param {Array<Object>} list
  * @returns {Array<Object>}

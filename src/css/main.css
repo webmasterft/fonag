@@ -80,6 +80,7 @@ body {
 @import "./organisms/portal-header.css";
 @import "./organisms/hero-portal.css";
 @import "./organisms/stats-section.css";
+@import "./organisms/home-map-section.css";
 @import "./organisms/constituents-carousel.css";
 @import "./organisms/anuario-view.css";
 @import "./organisms/header.css";

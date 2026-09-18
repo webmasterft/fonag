@@ -135,3 +135,57 @@ graph TD
 - **CSS Linting**: `stylelint "src/css/**/*.css"` con `stylelint-config-standard`.
 - **JS Linting**: `eslint "src/js/**/*.js"` con ESLint v9 Flat Config.
 - **Production Build**: `vite build` con validación cruzada de todos los puntos de entrada MPA.
+
+---
+
+## 7. Integración con Servicios SEDC (API Proxy & Seguridad de Credenciales)
+
+Para la consulta de datos hidroclimáticos reales desde el backend SEDC (`https://sedc.fonag.org.ec`), se implementó una arquitectura de proxy inverso local con autenticación delegada.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Browser as Frontend (Vanilla JS)
+    participant Proxy as Vite Dev Server (:9000)
+    participant Env as .env.local (Node.js)
+    participant SEDC as Backend SEDC FONAG
+    
+    Browser->>Proxy: GET /api/sedc/estacion/list/
+    Note over Proxy,Env: Inyecta credenciales sin exponerlas al cliente
+    Env-->>Proxy: SEDC_USERNAME + SEDC_PASSWORD
+    Proxy->>SEDC: GET /estacion/list/ (Header: Authorization Basic base64)
+    SEDC-->>Proxy: JSON 200 OK (Dataset completo autenticado)
+    Proxy-->>Browser: JSON 200 OK
+```
+
+### 7.1. Modelo de Seguridad y Variables de Entorno
+1. **Aislamiento de Secretos**: Las credenciales se almacenan exclusivamente en `.env.local`, el cual está estrictamente excluido del control de versiones (`.gitignore`).
+2. **Prevención de Fuga en Bundles (`VITE_` guard)**:
+   - En Vite, cualquier variable con prefijo `VITE_` se inyecta estáticamente en el código JS compilado del cliente.
+   - Las variables sensibles (`SEDC_USERNAME`, `SEDC_PASSWORD`) se definen **sin** dicho prefijo para que únicamente residan en el runtime de Node.js del servidor de desarrollo.
+3. **Plantilla Pública**: Se mantiene `.env.example` con valores de muestra como referencia limpia de integración para el equipo.
+
+### 7.2. Catálogo de Endpoints SEDC Integrados
+
+| # | Servicio / Función | Endpoint SEDC Remoto | Ruta Proxy Local | Autenticación |
+| :--- | :--- | :--- | :--- | :--- |
+| **01** | **Listado de Estaciones** | `/estacion/list/` | `/api/sedc/estacion/list/` | HTTP Basic Auth |
+| **02** | **GeoJSON de Estaciones** | `/point_geojson` | `/api/sedc/point_geojson` | HTTP Basic Auth |
+| **03** | **Catálogo de Variables** | `/variable/{seccion}/list` | `/api/sedc/variable/{seccion}/list` | HTTP Basic Auth |
+| **04** | **Telemetría en Tiempo Real** | `/ajax/telemetria/consulta` | `/api/sedc/ajax/telemetria/consulta` | HTTP Basic Auth |
+| **05** | **Datos Históricos por Periodo** | `/reportes/consultas_periodo` | `/api/sedc/reportes/consultas_periodo` | HTTP Basic Auth |
+
+### 7.3. Patrón de Consumo en Clientes Frontend
+Los módulos JS del cliente consumen exclusivamente la ruta `/api/sedc/*` mediante `fetch()`, eliminando problemas de CORS en desarrollo y evitando almacenar tokens o contraseñas en el `localStorage` o memoria del navegador:
+
+```javascript
+// Ejemplo canónico de consumo desacoplado
+export async function fetchEstaciones() {
+  const response = await fetch('/api/sedc/estacion/list/');
+  if (!response.ok) {
+    throw new Error(`Error SEDC [${response.status}]: ${response.statusText}`);
+  }
+  return response.json();
+}
+```
+

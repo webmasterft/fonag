@@ -181,6 +181,102 @@
         </div>
       </section>
 
+      <!-- Organism: Mapa de Estaciones de Monitoreo (Figma Match) -->
+      <section class="home-map-section" id="estaciones">
+        <div class="home-map-container">
+          <div class="home-map-layout">
+            <!-- Left Column: Interactive Map with Floating Legend -->
+            <div class="home-map-wrapper">
+              <div id="home-stations-map"></div>
+              
+              <!-- Floating Tipo de Estación Legend Card (Bottom Left) -->
+              <div class="map-tipo-legend" id="map-tipo-legend">
+                <span class="tipo-legend-title">TIPO DE ESTACIÓN</span>
+                <div class="tipo-legend-items">
+                  <div class="tipo-legend-item" data-type="Meteorológica">
+                    <span class="tipo-legend-dot meteo"></span>
+                    <span class="tipo-legend-label">Meteorológica</span>
+                    <span class="tipo-legend-count" id="count-meteo">16</span>
+                  </div>
+                  <div class="tipo-legend-item" data-type="Pluviométrica">
+                    <span class="tipo-legend-dot pluvio"></span>
+                    <span class="tipo-legend-label">Pluviométrica</span>
+                    <span class="tipo-legend-count" id="count-pluvio">24</span>
+                  </div>
+                  <div class="tipo-legend-item" data-type="Hidrológica">
+                    <span class="tipo-legend-dot hidro"></span>
+                    <span class="tipo-legend-label">Hidrológica</span>
+                    <span class="tipo-legend-count" id="count-hidro">21</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loading Overlay -->
+              <div id="home-map-loader" class="home-map-loader" style="display: none;" aria-live="polite">
+                <div class="spinner-ring" style="width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #f19001; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                <span>Actualizando mapa de estaciones...</span>
+              </div>
+            </div>
+
+            <!-- Right Column: Ejes de Trabajo Card -->
+            <aside class="home-ejes-card" aria-label="Ejes de trabajo">
+              <h2 class="home-ejes-title">Ejes de trabajo</h2>
+              <div class="home-ejes-underline" aria-hidden="true"></div>
+              <p class="home-ejes-subtitle">Ver detalle por eje</p>
+
+              <div class="home-ejes-list" id="home-ejes-list" role="list">
+                <!-- Ejes items rendered dynamically or pre-structured -->
+                <button class="eje-list-item" data-eje="Pita" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #f9b872;"></span>
+                  <span class="eje-item-name">Pita</span>
+                  <span class="eje-item-count">12</span>
+                </button>
+                <button class="eje-list-item" data-eje="Pichincha Atacazo" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #a3c97e;"></span>
+                  <span class="eje-item-name">Pichincha Atacazo</span>
+                  <span class="eje-item-count">11</span>
+                </button>
+                <button class="eje-list-item" data-eje="Nororiente DMQ" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #c98a75;"></span>
+                  <span class="eje-item-name">Nororiente DMQ</span>
+                  <span class="eje-item-count">8</span>
+                </button>
+                <button class="eje-list-item" data-eje="Antisana" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #5c7cfa;"></span>
+                  <span class="eje-item-name">Antisana</span>
+                  <span class="eje-item-count">16</span>
+                </button>
+                <button class="eje-list-item" data-eje="Papallacta - Oyacachi" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #f1dfbb;"></span>
+                  <span class="eje-item-name">Papallacta - Oyacachi</span>
+                  <span class="eje-item-count">5</span>
+                </button>
+                <button class="eje-list-item" data-eje="San Pedro" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #63b39d;"></span>
+                  <span class="eje-item-name">San Pedro</span>
+                  <span class="eje-item-count">2</span>
+                </button>
+                <button class="eje-list-item" data-eje="Pisque" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #f472b6;"></span>
+                  <span class="eje-item-name">Pisque</span>
+                  <span class="eje-item-count">2</span>
+                </button>
+                <button class="eje-list-item" data-eje="Noroccidente" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #93c5fd;"></span>
+                  <span class="eje-item-name">Noroccidente</span>
+                  <span class="eje-item-count">5</span>
+                </button>
+                <button class="eje-list-item" data-eje="Norcentral" type="button" role="listitem">
+                  <span class="eje-indicator" style="background-color: #b4a2b8;"></span>
+                  <span class="eje-item-name">Norcentral</span>
+                  <span class="eje-item-count">5</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
       <!-- Organism: Nuestros Constituyentes Carousel -->
       <section class="constituents-section" id="constituyentes-section">
         <div class="constituents-container">
