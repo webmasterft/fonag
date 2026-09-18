@@ -132,10 +132,12 @@ export async function initHomeStationsMap() {
   const countHidroEl = document.getElementById('count-hidro');
   const legendItems = document.querySelectorAll('.tipo-legend-item');
 
-  // Inicializar Leaflet centrado en el Distrito Metropolitano de Quito
+  // Inicializar Leaflet centrado para abarcar todos los ejes de trabajo de FONAG con menor zoom
   const map = L.map(container, {
-    center: [-0.18, -78.45],
-    zoom: 10,
+    center: [-0.32, -78.38],
+    zoom: 8.8,
+    zoomSnap: 0.1,
+    zoomDelta: 0.5,
     zoomControl: true,
     scrollWheelZoom: false,
   });
@@ -427,7 +429,7 @@ export async function initHomeStationsMap() {
   function selectEje(ejeName) {
     if (ejeName === 'ALL' || activeEje === ejeName) {
       activeEje = 'ALL';
-      map.setView([-0.18, -78.45], 10);
+      map.setView([-0.32, -78.38], 8.8);
     } else {
       activeEje = ejeName;
       // Resaltar polígono y enfocar
