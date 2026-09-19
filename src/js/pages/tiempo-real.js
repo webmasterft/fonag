@@ -1,15 +1,12 @@
 /**
- * Page Controller: Tiempo Real (Telemetría)
+ * Page Controller: Tiempo Real (Telemetría en Vivo)
  * Muestra estaciones con transmisión telemétrica activa,
  * filtros por fecha/hora, código, nombre y tipo de estación,
- * mapa interactivo con polígonos territoriales de los 9 Ejes y tarjetas con "Ver datos".
+ * mapa interactivo y modal con conexión directa a la API SEDC en vivo.
  */
 import { fetchEstaciones } from '../services/estaciones-service.js';
-import {
-  VARIABLES_CONFIG,
-  getSeriesDeTiempo,
-  exportarSerieCsv
-} from '../services/periodo-service.js';
+import { fetchTelemetriaReal } from '../services/telemetria-service.js';
+import { exportarSerieCsv } from '../services/periodo-service.js';
 import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
 import { renderPeriodoChart, destroyPeriodoChart } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
@@ -41,6 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let telemetriaEstaciones = [];
   let currentModalEstacion = null;
+  let currentTelemetryResult = null;
+  let activeVariableId = null;
 
   // Inicializar Leaflet Map
   const mapController = initLeafletMap('tiempo-real-stations-map', {
@@ -50,29 +49,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 1. Cargar Estaciones del Servicio y filtrar exclusivamente las que tienen transmisión telemétrica
+  // 1. Cargar Estaciones del Servicio (API en vivo con fallback)
   const rawEstaciones = await fetchEstaciones();
   telemetriaEstaciones = rawEstaciones
     .filter((est) => Boolean(est.transmision))
     .map((est) => {
       const ejeCalc = getEjeForCoords(est.longitud, est.latitud) || est.cuenca || 'Pita';
       
-      // Contar variables disponibles según el tipo de estación
       let varCount = 1;
-      let varsList = ['Precipitación'];
-      if (est.tipo?.includes('Meteorológica')) {
-        varCount = 6;
-        varsList = ['Precipitación', 'Temperatura', 'Humedad', 'Presión', 'Radiación', 'Viento'];
-      } else if (est.tipo?.includes('Hidrológica')) {
-        varCount = 3;
-        varsList = ['Precipitación', 'Caudal', 'Nivel de agua'];
-      }
+      if (est.tipo?.includes('Meteorológica')) varCount = 6;
+      else if (est.tipo?.includes('Hidrológica')) varCount = 3;
 
       return {
         ...est,
         ejeCalculado: ejeCalc,
-        varCount,
-        varsList
+        varCount
       };
     });
 
@@ -98,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Botón Limpiar
   if (btnLimpiar) {
     btnLimpiar.addEventListener('click', () => {
-      if (inputFechaInicio) inputFechaInicio.value = '2026-01-01';
+      if (inputFechaInicio) inputFechaInicio.value = '2026-09-01';
       if (inputFechaFin) inputFechaFin.value = '2026-09-03';
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
@@ -119,22 +110,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') closeModal();
   });
 
-  function openModal(estacion) {
+  async function openModal(estacion) {
     if (!modal) return;
     currentModalEstacion = estacion;
 
-    const sDate = inputFechaInicio?.value || '2026-01-01';
+    const sDate = inputFechaInicio?.value || '2026-09-01';
     const eDate = inputFechaFin?.value || '2026-09-03';
-    const varCfg = VARIABLES_CONFIG['PRE'];
 
-    const series = getSeriesDeTiempo(estacion, 'PRE', sDate, eDate, 'horario');
-
-    renderModalHeader(estacion, varCfg, sDate, eDate, series);
-    renderPeriodoChart(chartCanvas, series, varCfg);
-    renderTablePreview(series, varCfg);
-
+    // Mostrar estado de carga en el modal
+    if (modalHeader) {
+      modalHeader.innerHTML = `
+        <div style="padding: 1rem 0; text-align: center;">
+          <h3 style="margin: 0; color: #242857;">Cargando datos en vivo de ${estacion.nombre}...</h3>
+        </div>
+      `;
+    }
+    if (tablePreviewContainer) {
+      tablePreviewContainer.innerHTML = `
+        <div style="padding: 2rem; text-align: center; color: #64748b;">
+          Conectando con la API del SEDC FONAG...
+        </div>
+      `;
+    }
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+
+    // Consultar telemetría real desde la API del SEDC
+    currentTelemetryResult = await fetchTelemetriaReal(estacion, sDate, eDate);
+
+    const firstVar = currentTelemetryResult.variables[0];
+    activeVariableId = firstVar ? firstVar.id : '1';
+
+    updateModalView();
+  }
+
+  function updateModalView() {
+    if (!currentModalEstacion || !currentTelemetryResult) return;
+
+    const sDate = inputFechaInicio?.value || '2026-09-01';
+    const eDate = inputFechaFin?.value || '2026-09-03';
+
+    const currentVar = currentTelemetryResult.variables.find((v) => v.id === activeVariableId) || currentTelemetryResult.variables[0];
+    const series = currentTelemetryResult.seriesByVar[currentVar.id] || [];
+
+    const varConfig = {
+      name: currentVar.name,
+      unit: currentVar.unit,
+      chartType: currentVar.code === 'PRE' ? 'bar' : 'line',
+      color: currentVar.color
+    };
+
+    renderModalHeader(currentModalEstacion, varConfig, sDate, eDate, series, currentTelemetryResult);
+    renderPeriodoChart(chartCanvas, series, varConfig);
+    renderTablePreview(series, varConfig, currentTelemetryResult.fromLiveApi);
   }
 
   function closeModal() {
@@ -142,20 +170,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.classList.remove('is-open');
     document.body.style.overflow = '';
     destroyPeriodoChart();
+    currentModalEstacion = null;
+    currentTelemetryResult = null;
   }
 
-  function renderModalHeader(estacion, varCfg, sDate, eDate, series) {
+  function renderModalHeader(estacion, varCfg, sDate, eDate, series, telResult) {
     if (!modalHeader) return;
+
+    const sourceBadge = telResult.fromLiveApi
+      ? `<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 9999px;">
+           <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+           API SEDC EN VIVO
+         </span>`
+      : `<span style="font-size: 11px; font-weight: 700; color: #f59e0b; background: #fffbeb; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 9999px;">
+           MODO SIMULADO
+         </span>`;
+
+    // Botones selectores de variables disponibles recibidas del backend
+    const varButtons = telResult.variables.map((v) => {
+      const isActive = v.id === activeVariableId;
+      return `
+        <button
+          type="button"
+          class="btn-var-selector"
+          data-var-id="${v.id}"
+          style="
+            background: ${isActive ? '#242857' : '#ffffff'};
+            color: ${isActive ? '#ffffff' : '#334155'};
+            border: 1px solid ${isActive ? '#242857' : '#cbd5e1'};
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+          "
+        >
+          ${v.name} (${v.unit || 'n/a'}) [${v.count}]
+        </button>
+      `;
+    }).join(' ');
+
     modalHeader.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span class="periodo-station-pill ${estacion.tipo === 'Hidrológica' ? 'tipo-hidro' : (estacion.tipo === 'Pluviométrica' ? 'tipo-pluvio' : 'tipo-meteo')}">
             ${estacion.tipo}
           </span>
-          <span style="font-size: 13px; font-weight: 700; color: #10b981; display: inline-flex; align-items: center; gap: 4px;">
-            <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span>
-            Telemetría Activa
-          </span>
+          ${sourceBadge}
           <span style="font-size: 13px; font-weight: 700; color: #64748b;">${estacion.codigo}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -171,30 +233,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
       <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.nombre} (${estacion.codigo})</h3>
-      <p style="margin: 0; font-size: 13px; color: #64748b;">
-        Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Datos crudos telemétricos (Tiempo Real) &middot; Periodo: ${sDate} a ${eDate}
+      <p style="margin: 0 0 10px; font-size: 13px; color: #64748b;">
+        Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Periodo: ${sDate} a ${eDate} &middot; Frecuencia: Subhoraria / Horaria
       </p>
+      ${telResult.variables.length > 1 ? `
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+          <span style="font-size: 12px; font-weight: 700; color: #475569;">Variables disponibles:</span>
+          ${varButtons}
+        </div>
+      ` : ''}
     `;
 
     modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
     modalHeader.querySelector('#btn-modal-tr-csv')?.addEventListener('click', () => {
-      exportarSerieCsv(estacion, 'PRE', series, 'horario');
+      exportarSerieCsv(estacion, varCfg.code || 'PRE', series, 'tiempo-real');
+    });
+
+    modalHeader.querySelectorAll('.btn-var-selector').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeVariableId = btn.getAttribute('data-var-id');
+        updateModalView();
+      });
     });
   }
 
-  function renderTablePreview(series, varCfg) {
+  function renderTablePreview(series, varCfg, isLive) {
     if (!tablePreviewContainer) return;
-    const preview = series.slice(0, 10);
+    const preview = series.slice(0, 15);
 
     tablePreviewContainer.innerHTML = `
-      <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 700; color: #242857;">Datos crudos en tiempo real (primeros ${preview.length} registros de ${series.length})</h4>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #242857;">
+          Datos en tiempo real (mostrando ${preview.length} de ${series.length} registros)
+        </h4>
+        <span style="font-size: 11.5px; color: #64748b;">
+          Variable: <strong>${varCfg.name}</strong>
+        </span>
+      </div>
       <div style="overflow-x: auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
           <thead>
             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Fecha / Hora</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Precipitación (${varCfg.unit})</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Transmisión</th>
+              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">${varCfg.name} (${varCfg.unit})</th>
+              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Estado / Transmisión</th>
             </tr>
           </thead>
           <tbody>
@@ -202,7 +284,9 @@ document.addEventListener('DOMContentLoaded', async () => {
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${p.fecha}</td>
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor}</td>
-                <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">Telemétrica (En vivo)</td>
+                <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">
+                  ${isLive ? 'Dato Crudo (Telemetría SEDC)' : 'Simulado (Offline)'}
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -221,7 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const eDate = inputFechaFin?.value || '2026-09-03';
 
-    // Filtrar lista completa de estaciones telemétricas
+    // Filtrar lista de estaciones telemétricas
     const filtered = telemetriaEstaciones.filter((est) => {
       const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
@@ -232,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return matchEje && matchTipo && matchCodigo && matchNombre && matchPeriod;
     });
 
-    // Actualizar texto contador (Figma screenshot: "39 estaciones con precipitación")
+    // Actualizar texto contador
     if (counterEl) {
       counterEl.textContent = `${filtered.length} estaciones con precipitación`;
     }
@@ -251,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Renderizar tarjetas estilo exacto Figma
+    // Renderizar tarjetas
     renderCards(filtered);
   }
 
