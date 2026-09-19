@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
           anuario: resolve(__dirname, 'consultas/anuario/index.html'),
           periodo: resolve(__dirname, 'consultas/periodo/index.html'),
           estaciones: resolve(__dirname, 'estaciones/index.html'),
+          tiempoReal: resolve(__dirname, 'tiempo-real/index.html'),
         },
       },
     },
