@@ -1,19 +1,18 @@
 /**
  * Service: Telemetría en Tiempo Real (SEDC Live API)
- * Conecta directamente al endpoint /api/sedc/telemetria/consulta
- * autenticado contra el backend oficial del FONAG SEDC.
+ * Conecta al endpoint /api/sedc/telemetria/consulta autenticado con SEDC FONAG.
+ * Fallback de datos simulados suspendido temporalmente a solicitud del usuario.
  */
-import { getSeriesDeTiempo } from './periodo-service.js';
 
 /**
  * Consulta las lecturas telemétricas reales para una estación y fecha de inicio.
- * Si la API responde con éxito, formatea las series de cada variable recibida.
- * En caso de error o sin conexión, activa el fallback garantizado.
+ * Si la API responde con éxito, formatea las series de cada sensor.
+ * Si la API no responde o no hay datos, retorna estado vacío sin simular valores.
  * 
  * @param {Object} estacion Objeto estación (incluye id, codigo, nombre, tipo)
  * @param {string} fechaInicio 'YYYY-MM-DD'
  * @param {string} fechaFin 'YYYY-MM-DD'
- * @returns {Promise<Object>} { variables: Array, seriesByVar: Object, fromLiveApi: boolean }
+ * @returns {Promise<Object>} { variables: Array, seriesByVar: Object, fromLiveApi: boolean, hasData: boolean, error?: string }
  */
 export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', fechaFin = '2026-09-03') {
   try {
@@ -35,6 +34,7 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
       if (varKeys.length > 0) {
         const variables = [];
         const seriesByVar = {};
+        let totalMeasurements = 0;
 
         varKeys.forEach((key) => {
           const item = data[key];
@@ -52,10 +52,12 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
               points.push({
                 fecha: fechas[i] || '',
                 valor: parseFloat(valores[i]),
-                validado: false // Datos crudos telemétricos en tiempo real
+                validado: false // Datos crudos telemétricos
               });
             }
           }
+
+          totalMeasurements += points.length;
 
           variables.push({
             id: key,
@@ -69,19 +71,44 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
           seriesByVar[key] = points;
         });
 
-        return {
-          fromLiveApi: true,
-          variables,
-          seriesByVar,
-        };
+        if (variables.length > 0 && totalMeasurements > 0) {
+          return {
+            fromLiveApi: true,
+            hasData: true,
+            variables,
+            seriesByVar,
+          };
+        }
       }
+
+      // La API respondió pero no hay datos de sensores para el rango solicitado
+      return {
+        fromLiveApi: true,
+        hasData: false,
+        variables: [],
+        seriesByVar: {},
+        error: 'No hay mediciones telemétricas registradas para esta estación en las fechas seleccionadas.'
+      };
+    } else {
+      const errData = await res.text();
+      return {
+        fromLiveApi: false,
+        hasData: false,
+        variables: [],
+        seriesByVar: {},
+        error: `Error al consultar la API del SEDC (${res.status}).`
+      };
     }
   } catch (err) {
-    console.warn('[SEDC Live Telemetry] Error al conectar con el backend real, activando fallback local:', err);
+    console.warn('[SEDC Live Telemetry] Error de conexión:', err);
+    return {
+      fromLiveApi: false,
+      hasData: false,
+      variables: [],
+      seriesByVar: {},
+      error: 'No se pudo establecer conexión con el servidor del SEDC.'
+    };
   }
-
-  // Fallback determinista garantizado
-  return getFallbackTelemetry(estacion, fechaInicio, fechaFin);
 }
 
 function getCodeForVarName(name = '') {
@@ -108,24 +135,4 @@ function getColorForVarName(name = '') {
   if (n.includes('radiac')) return '#ec4899';
   if (n.includes('viento')) return '#14b8a6';
   return '#F19001';
-}
-
-function getFallbackTelemetry(estacion, fechaInicio, fechaFin) {
-  const fallbackPoints = getSeriesDeTiempo(estacion, 'PRE', fechaInicio, fechaFin, 'horario');
-  return {
-    fromLiveApi: false,
-    variables: [
-      {
-        id: '1',
-        name: 'Precipitación',
-        unit: 'mm',
-        code: 'PRE',
-        color: '#3b82f6',
-        count: fallbackPoints.length,
-      },
-    ],
-    seriesByVar: {
-      '1': fallbackPoints,
-    },
-  };
 }

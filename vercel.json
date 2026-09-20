@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/sedc/telemetria/consulta",
+      "destination": "/api/telemetria"
+    },
+    {
+      "source": "/api/sedc/:path*",
+      "destination": "https://sedc.fonag.org.ec/:path*"
+    }
+  ]
+}

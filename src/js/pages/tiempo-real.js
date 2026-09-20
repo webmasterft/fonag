@@ -138,14 +138,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Consultar telemetría real desde la API del SEDC
     currentTelemetryResult = await fetchTelemetriaReal(estacion, sDate, eDate);
 
+    if (!currentTelemetryResult.hasData || currentTelemetryResult.variables.length === 0) {
+      renderModalEmptyState(estacion, currentTelemetryResult.error || 'No hay datos telemétricos disponibles para el período seleccionado.', sDate, eDate);
+      return;
+    }
+
     const firstVar = currentTelemetryResult.variables[0];
-    activeVariableId = firstVar ? firstVar.id : '1';
+    activeVariableId = firstVar ? firstVar.id : null;
 
     updateModalView();
   }
 
+  function renderModalEmptyState(estacion, message, sDate, eDate) {
+    if (modalHeader) {
+      modalHeader.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="periodo-station-pill ${estacion.tipo === 'Hidrológica' ? 'tipo-hidro' : (estacion.tipo === 'Pluviométrica' ? 'tipo-pluvio' : 'tipo-meteo')}">
+              ${estacion.tipo}
+            </span>
+            <span style="font-size: 13px; font-weight: 700; color: #64748b;">${estacion.codigo}</span>
+          </div>
+          <button id="btn-tr-close-modal" style="background: transparent; border: none; font-size: 24px; color: #64748b; cursor: pointer;">&times;</button>
+        </div>
+        <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.nombre} (${estacion.codigo})</h3>
+        <p style="margin: 0; font-size: 13px; color: #64748b;">
+          Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Periodo: ${sDate} a ${eDate}
+        </p>
+      `;
+      modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
+    }
+
+    destroyPeriodoChart();
+    if (chartCanvas) {
+      const parent = chartCanvas.parentElement;
+      if (parent) {
+        parent.style.display = 'none';
+      }
+    }
+
+    if (tablePreviewContainer) {
+      tablePreviewContainer.innerHTML = `
+        <div style="padding: 3rem 1.5rem; text-align: center; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1;">
+          <svg style="margin: 0 auto 12px; color: #94a3b8;" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px; font-weight: 700;">Sin registros telemétricos</h4>
+          <p style="margin: 0; color: #64748b; font-size: 13.5px; max-width: 480px; margin: 0 auto;">${message}</p>
+        </div>
+      `;
+    }
+  }
+
   function updateModalView() {
     if (!currentModalEstacion || !currentTelemetryResult) return;
+
+    if (chartCanvas && chartCanvas.parentElement) {
+      chartCanvas.parentElement.style.display = 'block';
+    }
 
     const sDate = inputFechaInicio?.value || '2026-09-01';
     const eDate = inputFechaFin?.value || '2026-09-03';
