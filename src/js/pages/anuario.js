@@ -3,7 +3,12 @@
  * Conecta el mapa Leaflet, la lista reactiva de estaciones, los filtros y la tabla estadística.
  */
 import { fetchEstaciones } from '../services/estaciones-service.js';
-import { getAnuarioEstadistico, getSeriesEstadisticas, exportAnuarioCsv } from '../services/anuario-service.js';
+import {
+  fetchAnuarioEstadistico,
+  getAnuarioEstadistico,
+  getSeriesEstadisticas,
+  exportAnuarioCsv
+} from '../services/anuario-service.js';
 import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
 import { renderAnuarioTable } from '../molecules/data-table/anuario-table.js';
 import { renderEstadisticasCharts, destroyCharts } from '../molecules/charts/anuario-charts.js';
@@ -287,9 +292,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Listeners del header
     const btnExcel = modalHeader.querySelector('#btn-modal-download-excel');
     if (btnExcel) {
-      btnExcel.addEventListener('click', () => {
-        const rows = getAnuarioEstadistico(estacion, currentYear);
-        exportAnuarioCsv(estacion, rows, currentYear);
+      btnExcel.addEventListener('click', async () => {
+        btnExcel.disabled = true;
+        btnExcel.innerText = 'Descargando...';
+        try {
+          const rows = await fetchAnuarioEstadistico(estacion, currentYear);
+          exportAnuarioCsv(estacion, rows, currentYear);
+        } finally {
+          btnExcel.disabled = false;
+          btnExcel.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Descargar Excel
+          `;
+        }
       });
     }
 
@@ -322,14 +341,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function renderModalContent(estacion) {
+  async function renderModalContent(estacion) {
     if (!modalBody) return;
+    modalBody.innerHTML = `
+      <div style="padding: 3rem 1rem; text-align: center; color: #64748b;">
+        <div class="stat-spinner" style="display:inline-block; width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#0284c7; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:12px;"></div>
+        <div style="font-weight: 600;">Consultando series mensuales en la API SEDC...</div>
+      </div>
+    `;
+
+    const rows = await fetchAnuarioEstadistico(estacion, currentYear);
+
     if (currentModalTab === 'charts') {
-      const series = getSeriesEstadisticas(estacion, currentYear);
+      const series = getSeriesEstadisticas(estacion, currentYear, rows);
       renderEstadisticasCharts(modalBody, series);
     } else {
       destroyCharts();
-      const rows = getAnuarioEstadistico(estacion, currentYear);
       renderAnuarioTable(modalBody, estacion, rows, currentYear);
     }
   }

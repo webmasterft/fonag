@@ -7,6 +7,7 @@ import { fetchEstaciones } from '../services/estaciones-service.js';
 import {
   VARIABLES_CONFIG,
   estacionTieneVariable,
+  fetchSeriesDeTiempo,
   getSeriesDeTiempo,
   exportarSerieCsv
 } from '../services/periodo-service.js';
@@ -136,24 +137,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') closeModal();
   });
 
-  function openModal(estacion) {
+  async function openModal(estacion) {
     if (!modal) return;
     currentModalEstacion = estacion;
 
     const varCode = selectVariable?.value || 'PRE';
     const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
-    const sDate = inputFechaInicio?.value || '2026-01-01';
-    const eDate = inputFechaFin?.value || '2026-09-03';
+    const sDate = inputFechaInicio?.value || '2023-01-01';
+    const eDate = inputFechaFin?.value || '2023-12-31';
     const freq = selectFrecuencia?.value || 'diario';
 
-    const series = getSeriesDeTiempo(estacion, varCode, sDate, eDate, freq);
+    // Mostrar modal con estado de carga mientras consulta la API real
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+
+    renderModalHeader(estacion, varCfg, sDate, eDate, freq, []);
+    if (tablePreviewContainer) {
+      tablePreviewContainer.innerHTML = `
+        <div style="padding: 2rem; text-align: center; color: #64748b;">
+          <div class="stat-spinner" style="display:inline-block; width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#0284c7; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px;"></div>
+          <div>Consultando datos en vivo de la API SEDC...</div>
+        </div>
+      `;
+    }
+
+    const series = await fetchSeriesDeTiempo(estacion, varCode, sDate, eDate, freq);
 
     renderModalHeader(estacion, varCfg, sDate, eDate, freq, series);
     renderPeriodoChart(chartCanvas, series, varCfg);
     renderTablePreview(series, varCfg);
-
-    modal.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
   }
 
   function closeModal() {
@@ -371,15 +383,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     cardsContainer.querySelectorAll('.btn-card-descargar-periodo').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const codigo = btn.getAttribute('data-codigo');
         const est = allEstaciones.find((e) => e.codigo === codigo);
         if (est) {
-          const sDate = inputFechaInicio?.value || '2026-01-01';
-          const eDate = inputFechaFin?.value || '2026-09-03';
+          const sDate = inputFechaInicio?.value || '2023-01-01';
+          const eDate = inputFechaFin?.value || '2023-12-31';
           const freq = selectFrecuencia?.value || 'diario';
-          const series = getSeriesDeTiempo(est, varCode, sDate, eDate, freq);
-          exportarSerieCsv(est, varCode, series, freq);
+          btn.disabled = true;
+          const origText = btn.innerHTML;
+          btn.innerHTML = 'Descargando...';
+          try {
+            const series = await fetchSeriesDeTiempo(est, varCode, sDate, eDate, freq);
+            exportarSerieCsv(est, varCode, series, freq);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+          }
         }
       });
     });

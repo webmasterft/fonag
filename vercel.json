@@ -6,6 +6,10 @@
       "destination": "/api/telemetria"
     },
     {
+      "source": "/api/sedc/reportes/consultas_periodo",
+      "destination": "/api/periodo"
+    },
+    {
       "source": "/api/sedc/:path*",
       "destination": "https://sedc.fonag.org.ec/:path*"
     }

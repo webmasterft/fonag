@@ -165,7 +165,76 @@ export default defineConfig(({ mode }) => {
                 res.setHeader('Content-Type', 'application/json');
                 res.end(sedcResponse.body);
               } catch (error) {
-                console.error('[SEDC Middleware Error]:', error);
+                console.error('[SEDC Telemetria Middleware Error]:', error);
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: error.message }));
+              }
+            });
+          });
+
+          // Endpoint dedicado para consultas por periodo con autenticación SEDC
+          server.middlewares.use('/api/sedc/reportes/consultas_periodo', async (req, res) => {
+            if (req.method !== 'POST') {
+              res.statusCode = 405;
+              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+              return;
+            }
+
+            let rawBody = '';
+            req.on('data', (chunk) => (rawBody += chunk));
+            req.on('end', async () => {
+              try {
+                let parsed = {};
+                try {
+                  parsed = JSON.parse(rawBody);
+                } catch {
+                  const sp = new URLSearchParams(rawBody);
+                  for (const [k, v] of sp) parsed[k] = v;
+                }
+
+                const estacionId = parsed.estacion || '50';
+                const variableId = parsed.variable || '1';
+                const frecuenciaId = parsed.frecuencia || '4';
+                const fechaInicio = parsed.fecha_inicio || '2023-01-01';
+                const fechaFin = parsed.fecha_fin || '2023-12-31';
+
+                const session = await getSedcSession(baseUrl, username, password);
+                if (!session) {
+                  res.statusCode = 502;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
+                  return;
+                }
+
+                const postPayload =
+                  'estacion=' + encodeURIComponent(estacionId) +
+                  '&variable=' + encodeURIComponent(variableId) +
+                  '&frecuencia=' + encodeURIComponent(frecuenciaId) +
+                  '&fecha_inicio=' + encodeURIComponent(fechaInicio) +
+                  '&fecha_fin=' + encodeURIComponent(fechaFin) +
+                  '&csrfmiddlewaretoken=' + encodeURIComponent(session.csrf);
+
+                const sedcResponse = await requestHttps(
+                  `${baseUrl}/reportes/consultas_periodo`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                      Cookie: session.cookie,
+                      'X-CSRFToken': session.csrf,
+                      Referer: `${baseUrl}/reportes/consultas_periodo`,
+                      'X-Requested-With': 'XMLHttpRequest',
+                    },
+                  },
+                  postPayload
+                );
+
+                res.statusCode = sedcResponse.status;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(sedcResponse.body);
+              } catch (error) {
+                console.error('[SEDC Periodo Middleware Error]:', error);
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ error: error.message }));

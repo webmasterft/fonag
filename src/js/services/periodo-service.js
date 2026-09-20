@@ -107,8 +107,82 @@ export function estacionTieneVariable(estacion, variableCode = 'PRE') {
   return config.tiposCompatibles.includes(tipo);
 }
 
+export const VARIABLE_SEDC_IDS = {
+  'PRE': 1,      // Precipitación
+  'TEM': 2,      // Temperatura del aire (TAI)
+  'HUM': 3,      // Humedad del aire (HAI)
+  'VIE': 4,      // Velocidad del viento (VVI)
+  'RAD': 7,      // Radiación solar (RAD)
+  'PRE_ATM': 8,  // Presión atmosférica (PAT)
+  'CAU': 10,     // Caudal (CAU)
+  'NIV': 11      // Nivel de agua (NAG)
+};
+
+export const FRECUENCIA_SEDC_IDS = {
+  'horario': 3,
+  'diario': 4,
+  'mensual': 5
+};
+
 /**
- * Genera puntos de serie de tiempo entre startDate y endDate para una estación y variable.
+ * Consulta la API en vivo de SEDC de FONAG para datos por periodo.
+ * Endpoint: POST /api/sedc/reportes/consultas_periodo
+ * @param {Object} estacion
+ * @param {string} variableCode
+ * @param {string} startDate
+ * @param {string} endDate
+ * @param {string} frecuencia
+ * @returns {Promise<Array<{ fecha: string, valor: number, validado: boolean }>>}
+ */
+export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startDate = '2023-01-01', endDate = '2023-12-31', frecuencia = 'diario') {
+  const estId = estacion.id || estacion.est_id || 50;
+  const varId = VARIABLE_SEDC_IDS[variableCode] || 1;
+  const frecId = FRECUENCIA_SEDC_IDS[frecuencia] || 4;
+
+  try {
+    const res = await fetch('/api/sedc/reportes/consultas_periodo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        estacion: estId,
+        variable: varId,
+        frecuencia: frecId,
+        fecha_inicio: startDate,
+        fecha_fin: endDate
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.response && data.grafico && Array.isArray(data.grafico.data) && data.grafico.data.length > 0) {
+        const trace = data.grafico.data[0];
+        const xs = trace.x || [];
+        const ys = trace.y || [];
+
+        const points = [];
+        for (let i = 0; i < xs.length; i++) {
+          const rawVal = parseFloat(ys[i]);
+          points.push({
+            fecha: xs[i].replace('T', ' ').substring(0, 19),
+            valor: isNaN(rawVal) ? 0 : rawVal,
+            validado: true
+          });
+        }
+        return points;
+      }
+    }
+  } catch (err) {
+    console.warn('[PeriodoService] Error al consultar API SEDC en vivo:', err);
+  }
+
+  // Fallback si la API no reporta datos para ese rango específico
+  return getSeriesDeTiempo(estacion, variableCode, startDate, endDate, frecuencia);
+}
+
+/**
+ * Genera puntos de serie de tiempo entre startDate y endDate para una estación y variable (Fallback).
  * @param {Object} estacion
  * @param {string} variableCode
  * @param {string} startDate 'YYYY-MM-DD'
