@@ -246,31 +246,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : '';
+    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
     const ejeName = estacion.cuenca || estacion.eje || 'Pita';
-    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '4111 m.s.n.m.';
+    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
+    const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
 
     modalHeader.innerHTML = `
-      <div class="modal-header-top-row">
-        <div class="modal-station-meta-badges">
-          <span class="modal-station-type-badge ${tipoClass}">${estacion.tipo || 'Pluviométrica'}</span>
-          <span class="modal-station-code">${estacion.codigo}</span>
+      <div class="modal-header-top">
+        <div class="modal-header-left">
+          <div class="modal-title-row">
+            <span class="modal-title-dot"></span>
+            <h3 class="modal-station-title">${stationName}</h3>
+          </div>
+          <div class="modal-station-code">${estacion.codigo}</div>
+          <div class="modal-type-pill ${tipoClass}">
+            <span class="pill-dot"></span>
+            <span>${estacion.tipo || 'Hidrológica'}</span>
+          </div>
         </div>
-        <div class="modal-header-actions">
-          <button type="button" class="btn-modal-excel" id="btn-modal-download-excel">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Descargar Excel
-          </button>
-          <button type="button" class="btn-modal-close" id="btn-close-modal" aria-label="Cerrar modal">&times;</button>
-        </div>
+        <button type="button" class="btn-modal-close-x" id="btn-close-modal" aria-label="Cerrar modal">X</button>
       </div>
-      <h3 class="modal-station-title" id="modal-station-title">${estacion.codigo} (${estacion.nombre})</h3>
-      <p class="modal-station-subtitle">Eje: ${ejeName} &middot; Altura: ${alturaVal} &middot; A&ntilde;o: ${currentYear}</p>
-      
+
+      <div class="modal-header-bottom">
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Año: ${currentYear}</p>
+        <button type="button" class="btn-modal-download-navy" id="btn-modal-download-excel">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar
+        </button>
+      </div>
+
       <div class="modal-nav-tabs">
         <button type="button" class="modal-tab-btn ${currentModalTab === 'charts' ? 'is-active' : ''}" id="tab-btn-charts">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

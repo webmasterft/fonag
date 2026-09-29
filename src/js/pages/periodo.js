@@ -177,30 +177,43 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderModalHeader(estacion, varCfg, sDate, eDate, freq, series) {
     if (!modalHeader) return;
+
+    const normalizedTipo = (estacion.tipo || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
+    const ejeName = estacion.cuenca || estacion.eje || 'Pita';
+    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
+    const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
+
     modalHeader.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="periodo-station-pill ${estacion.tipo === 'Hidrológica' ? 'tipo-hidro' : (estacion.tipo === 'Pluviométrica' ? 'tipo-pluvio' : 'tipo-meteo')}">
-            ${estacion.tipo}
-          </span>
-          <span style="font-size: 13px; font-weight: 700; color: #64748b;">${estacion.codigo}</span>
+      <div class="modal-header-top">
+        <div class="modal-header-left">
+          <div class="modal-title-row">
+            <span class="modal-title-dot"></span>
+            <h3 class="modal-station-title">${stationName}</h3>
+          </div>
+          <div class="modal-station-code">${estacion.codigo}</div>
+          <div class="modal-type-pill ${tipoClass}">
+            <span class="pill-dot"></span>
+            <span>${estacion.tipo || 'Hidrológica'}</span>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <button id="btn-modal-periodo-csv" class="btn-card-descargar-periodo" style="padding: 6px 12px; font-size: 12px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Exportar CSV
-          </button>
-          <button id="btn-periodo-close-modal" style="background: transparent; border: none; font-size: 24px; color: #64748b; cursor: pointer;">&times;</button>
-        </div>
+        <button type="button" class="btn-modal-close-x" id="btn-periodo-close-modal" aria-label="Cerrar modal">X</button>
       </div>
-      <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.nombre} (${estacion.codigo})</h3>
-      <p style="margin: 0; font-size: 13px; color: #64748b;">
-        Variable: <strong>${varCfg.name} (${varCfg.unit})</strong> &middot; Periodo: ${sDate} a ${eDate} &middot; Frecuencia: ${freq}
-      </p>
+
+      <div class="modal-header-bottom">
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${sDate} - ${eDate} &bull; Frecuencia: ${freq}</p>
+        <button type="button" class="btn-modal-download-navy" id="btn-modal-periodo-csv">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar
+        </button>
+      </div>
     `;
 
     modalHeader.querySelector('#btn-periodo-close-modal')?.addEventListener('click', closeModal);
