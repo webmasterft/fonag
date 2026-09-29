@@ -235,6 +235,11 @@
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-columnas-dropdown svg:first-child {
+  color: var(--color-palette-blue, #41a6e5);
 }
 
 .btn-columnas-dropdown:hover {
@@ -243,7 +248,7 @@
 }
 
 .btn-descargar-estaciones {
-  background-color: #1e2347;
+  background-color: var(--color-palette-navy, #242857);
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -254,12 +259,12 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(30, 35, 71, 0.15);
+  box-shadow: 0 2px 8px rgba(36, 40, 87, 0.2);
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .btn-descargar-estaciones:hover {
-  background-color: #2a3163;
+  background-color: #1a1d3f;
   transform: translateY(-1px);
 }
 
@@ -481,6 +486,8 @@
   border-radius: 50%;
   display: inline-block;
   background-color: #ec4899;
+  border: 1px solid #707070;
+  box-sizing: border-box;
 }
 
 /* Transmission Status Pill */

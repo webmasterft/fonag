@@ -6,6 +6,7 @@
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
+import { initColumnFilter } from '../molecules/data-table/column-filter.js';
 import ejesGeojsonData from '../../data/ejes_2026.json';
 
 // Helper geométrico para asociar estaciones al Eje de Trabajo exacto
@@ -98,6 +99,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   let sortColumn = null;
   let sortDirection = 'asc'; // 'asc' | 'desc'
   let activePillTipo = 'ALL';
+  let columnFilterController = null;
+
+  // Inicializar filtro de columnas
+  const btnColumnas = document.querySelector('.btn-columnas-dropdown');
+  const tableEstaciones = document.querySelector('.estaciones-table');
+  if (btnColumnas && tableEstaciones) {
+    columnFilterController = initColumnFilter(btnColumnas, tableEstaciones, [
+      { key: 'codigo', label: 'Código', defaultVisible: true },
+      { key: 'nombre', label: 'Nombre', defaultVisible: true },
+      { key: 'tipo', label: 'Tipo', defaultVisible: true },
+      { key: 'provincia', label: 'Provincia', defaultVisible: true },
+      { key: 'ejeDeTrabajo', label: 'Eje de trabajo', defaultVisible: true },
+      { key: 'transmision', label: 'Transmisión', defaultVisible: true }
+    ]);
+  }
 
   // 1. Cargar Estaciones del Servicio
   const rawList = await fetchEstaciones();
@@ -198,26 +214,26 @@ document.addEventListener('DOMContentLoaded', async () => {
           return `
             <tr>
               <td class="cell-no">${item.no}</td>
-              <td class="cell-codigo">
+              <td class="cell-codigo" data-col="codigo">
                 <a href="/consultas/anuario/?codigo=${item.codigo}" style="color: #1e2347; text-decoration: none; font-weight: 700;">
                   ${item.codigo}
                 </a>
               </td>
-              <td class="cell-nombre">${item.nombre}</td>
-              <td>
+              <td class="cell-nombre" data-col="nombre">${item.nombre}</td>
+              <td data-col="tipo">
                 <span class="badge-pill-tipo ${badgeClass}">
                   <span class="dot"></span>
                   ${item.tipo}
                 </span>
               </td>
-              <td>${item.provincia}</td>
-              <td>
+              <td data-col="provincia">${item.provincia}</td>
+              <td data-col="ejeDeTrabajo">
                 <span class="cell-eje">
                   <span class="eje-mini-dot"></span>
                   ${item.ejeDeTrabajo}
                 </span>
               </td>
-              <td>
+              <td data-col="transmision">
                 <span class="status-pill-transmision ${transClass}">
                   <span class="status-dot"></span>
                   ${transLabel}
@@ -226,6 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             </tr>
           `;
         }).join('');
+      }
+
+      if (columnFilterController) {
+        columnFilterController.applyVisibility();
       }
     }
 

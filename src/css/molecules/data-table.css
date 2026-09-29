@@ -92,7 +92,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background-color: #f8fafc;
+  background-color: var(--color-palette-white, #ffffff);
   border: 1px solid #e2e8f0;
   border-bottom: none;
   border-top-left-radius: var(--radius-md, 8px);
@@ -109,7 +109,7 @@
 }
 
 .station-tag {
-  background-color: #242857;
+  background-color: var(--color-palette-navy, #242857);
   color: #ffffff;
   padding: 3px 8px;
   border-radius: 4px;
@@ -121,7 +121,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #242857;
+  color: var(--color-palette-navy, #242857);
 }
 
 .station-type-badge {
@@ -134,13 +134,13 @@
 }
 
 .btn-navy-export {
-  background-color: #242857;
+  background-color: var(--color-palette-navy, #242857);
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -150,4 +150,83 @@
 
 .btn-navy-export:hover {
   background-color: #1a1d3f;
+}
+
+/* ==========================================================================
+   Column Filter Dropdown Component (Reusable)
+   ========================================================================== */
+
+.column-filter-container {
+  position: relative;
+  display: inline-block;
+}
+
+.column-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  min-width: 170px;
+  background-color: #f1f3f7;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+.column-filter-container.is-open .column-filter-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.column-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: var(--font-family-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-palette-navy, #242857);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.column-filter-item:hover {
+  background-color: #e5e8f0;
+}
+
+.column-filter-item .check-icon {
+  width: 14px;
+  height: 14px;
+  stroke: var(--color-palette-orange, #f19001);
+  stroke-width: 3;
+  fill: none;
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+.column-filter-item.is-checked .check-icon {
+  visibility: visible;
+}
+
+.column-filter-item.is-unchecked {
+  color: #64748b;
+  font-weight: 500;
+  padding-left: 34px;
+}
+
+/* Ocultar columnas por CSS cuando tienen data-col deshabilitado */
+th.col-hidden,
+td.col-hidden {
+  display: none !important;
 }
