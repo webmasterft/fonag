@@ -73,8 +73,20 @@
             <p class="contacto-intro-subtitle">Las opiniones que provienen de las comunidades nos importan. Para el FONAG es una forma de ayudar al trabajo que realizamos.</p>
           </div>
 
-          <!-- Contact Form -->
-          <form class="contacto-form" id="contacto-form" action="#" method="POST" novalidate>
+          <!-- Contact Form (FormSubmit Serverless Integration) -->
+          <form class="contacto-form" id="contacto-form" action="https://formsubmit.co/diseno1@gestionpublicidad.com" method="POST">
+            <!-- Honeypot Field for Anti-Spam Protection -->
+            <input type="text" name="_honey" style="display:none !important;" tabindex="-1" autocomplete="off" />
+            <input type="hidden" name="_gotcha" value="" style="display:none !important;" />
+
+            <!-- CC Recipient -->
+            <input type="hidden" name="_cc" value="webmasterft@gmail.com" />
+
+            <!-- Form Customizations -->
+            <input type="hidden" name="_subject" value="Nuevo Mensaje de Contacto - Sitio Web FONAG" />
+            <input type="hidden" name="_template" value="table" />
+            <input type="hidden" name="_captcha" value="false" />
+            
             <div class="contacto-form-grid">
               <input type="text" name="nombre" class="contacto-input" placeholder="Nombre y Apellido" required />
               <input type="text" name="edad" class="contacto-input" placeholder="Edad" />
@@ -88,8 +100,9 @@
             <textarea name="mensaje" class="contacto-textarea" placeholder="Escriba su mensaje" rows="5" required></textarea>
             
             <div class="contacto-submit-row">
-              <button type="submit" class="btn-contacto-enviar">Enviar</button>
+              <button type="submit" class="btn-contacto-enviar" id="btn-submit-contacto">Enviar</button>
             </div>
+            <div id="contacto-form-feedback" class="contacto-feedback" style="display: none; margin-top: 10px; font-size: 14px; font-weight: 600;"></div>
           </form>
         </div>
       </section>
