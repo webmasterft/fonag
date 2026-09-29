@@ -1,0 +1,42 @@
+/* ==========================================================================
+   Atom: Logos Sprite Utility Classes
+   ========================================================================== */
+
+.logo-sprite {
+  display: inline-block;
+  background-image: url('/src/images/logos/logos-sprite.webp');
+  background-repeat: no-repeat;
+  background-size: 1057px 151px;
+  width: 151px;
+  height: 151px;
+  vertical-align: middle;
+}
+
+/* Individual Logo Classes */
+.logo-sprite-camaren {
+  background-position: 0px 0px;
+}
+
+.logo-sprite-cerveceria {
+  background-position: -151px 0px;
+}
+
+.logo-sprite-eeq {
+  background-position: -302px 0px;
+}
+
+.logo-sprite-enlace {
+  background-position: -453px 0px;
+}
+
+.logo-sprite-epmaps {
+  background-position: -604px 0px;
+}
+
+.logo-sprite-tesalia {
+  background-position: -755px 0px;
+}
+
+.logo-sprite-tnc {
+  background-position: -906px 0px;
+}

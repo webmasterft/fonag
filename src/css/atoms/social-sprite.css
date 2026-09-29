@@ -1,0 +1,29 @@
+/* ==========================================================================
+   Atom: Social Media Sprite Classes
+   ========================================================================== */
+
+.social-sprite-icon {
+  display: inline-block;
+  background-image: url('/src/images/social-sprite.webp');
+  background-repeat: no-repeat;
+  background-size: 125px 34px;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.social-sprite-facebook {
+  background-position: -4px -7px;
+}
+
+.social-sprite-x {
+  background-position: -33px -7px;
+}
+
+.social-sprite-instagram {
+  background-position: -67px -7px;
+}
+
+.social-sprite-tiktok {
+  background-position: -100px -7px;
+}

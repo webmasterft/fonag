@@ -1,0 +1,74 @@
+/* ==========================================================================
+   Atom: Icons Sprite Utility Classes
+   ========================================================================== */
+
+.icon-sprite {
+  display: inline-block;
+  background-image: url('/src/images/icons-sprite.webp');
+  background-repeat: no-repeat;
+  background-size: 310px 31px;
+  width: 31px;
+  height: 31px;
+  vertical-align: middle;
+}
+
+/* Individual Icon Classes */
+.icon-sprite-01 {
+  width: 26px;
+  height: 26px;
+  background-position: 0px 0px;
+}
+
+.icon-sprite-02 {
+  width: 26px;
+  height: 26px;
+  background-position: -31px 0px;
+}
+
+.icon-sprite-03 {
+  width: 26px;
+  height: 26px;
+  background-position: -62px 0px;
+}
+
+.icon-sprite-04 {
+  width: 26px;
+  height: 26px;
+  background-position: -93px 0px;
+}
+
+.icon-sprite-circle-copy {
+  width: 31px;
+  height: 31px;
+  background-position: -124px 0px;
+}
+
+.icon-sprite-circle {
+  width: 30px;
+  height: 31px;
+  background-position: -155px 0px;
+}
+
+.icon-sprite-full-01 {
+  width: 30px;
+  height: 31px;
+  background-position: -186px 0px;
+}
+
+.icon-sprite-full-02 {
+  width: 31px;
+  height: 31px;
+  background-position: -217px 0px;
+}
+
+.icon-sprite-full-03 {
+  width: 31px;
+  height: 31px;
+  background-position: -248px 0px;
+}
+
+.icon-sprite-full-04 {
+  width: 31px;
+  height: 31px;
+  background-position: -279px 0px;
+}

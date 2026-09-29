@@ -62,6 +62,8 @@
 .embla {
   overflow: hidden;
   width: 100%;
+  padding: 12px 0;
+  margin: -12px 0;
 }
 
 .embla-container {

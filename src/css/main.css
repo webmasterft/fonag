@@ -69,6 +69,9 @@ body {
 @import "./atoms/badges.css";
 @import "./atoms/social-link.css";
 @import "./atoms/loader.css";
+@import "./atoms/icons-sprite.css";
+@import "./atoms/logos-sprite.css";
+@import "./atoms/social-sprite.css";
 
 @import "./molecules/nav-menu.css";
 @import "./molecules/hero-search.css";

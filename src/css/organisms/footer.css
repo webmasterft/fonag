@@ -102,6 +102,13 @@
   align-items: center;
 }
 
+#footer-contact-btn {
+  padding: 0 30px;
+  border: 1px solid #FFFFFF;
+  border-radius: var(--radius-12, 12px);
+  opacity: 1;
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 960px) {
   .footer-top-tier {

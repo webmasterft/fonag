@@ -9,7 +9,7 @@
   max-width: 580px;
   margin: 0 auto;
   background-color: #ffffff;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-18);
   padding: 6px 8px 6px 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.6);
@@ -53,7 +53,7 @@
   font-size: 14px;
   font-weight: var(--font-weight-bold);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-12);
   padding: 0.65rem 2rem;
   cursor: pointer;
   flex-shrink: 0;
