@@ -128,7 +128,7 @@
   border: 1px solid #efefef;
   border-radius: 16px;
   padding: 1.25rem 1.75rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0px 3px 6px #00000029;
   display: flex;
   align-items: flex-end;
   gap: 1.25rem;
@@ -172,6 +172,7 @@
   font-size: 13.5px;
   color: #1e293b;
   outline: none;
+  box-shadow: 0px 3px 6px #00000029;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -190,6 +191,7 @@
   color: #1e293b;
   outline: none;
   cursor: pointer;
+  box-shadow: 0px 3px 6px #00000029;
   transition: border-color 0.15s ease;
 }
 
@@ -275,7 +277,7 @@
   background-color: #ffffff;
   border-radius: 14px;
   border: 1px solid #f1f5f9;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0px 3px 6px #00000029;
   overflow: hidden;
   margin-bottom: 1.5rem;
 }
