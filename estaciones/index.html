@@ -164,32 +164,32 @@
         </div>
       </div>
 
-      <!-- Table Toolbar: Counter + Buttons -->
-      <div class="estaciones-table-toolbar">
-        <span class="estaciones-found-counter" id="estaciones-found-count">61 estaciones encontradas</span>
-        <div class="estaciones-toolbar-actions">
-          <button type="button" class="btn-columnas-dropdown">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 6h16M4 12h16M4 18h7"/>
-            </svg>
-            Columnas
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <button type="button" class="btn-descargar-estaciones" id="btn-descargar-estaciones">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Descargar
-          </button>
-        </div>
-      </div>
-
       <!-- Data Table Card -->
       <div class="estaciones-table-card">
+        <!-- Table Toolbar: Counter + Buttons -->
+        <div class="estaciones-table-toolbar">
+          <span class="estaciones-found-counter" id="estaciones-found-count">61 estaciones encontradas</span>
+          <div class="estaciones-toolbar-actions">
+            <button type="button" class="btn-columnas-dropdown">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h16M4 12h16M4 18h7"/>
+              </svg>
+              Columnas
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="btn-descargar-estaciones" id="btn-descargar-estaciones">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Descargar
+            </button>
+          </div>
+        </div>
+
         <!-- Table Dedicated Animated Loading Overlay -->
         <div id="estaciones-table-loader" class="estaciones-table-loader" aria-live="polite" aria-busy="true">
           <div class="table-spinner-ring"></div>

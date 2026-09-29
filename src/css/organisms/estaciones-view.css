@@ -203,7 +203,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  padding: 16px 20px;
+  background-color: var(--color-palette-white, #ffffff);
+  border-bottom: 1px solid #f1f5f9;
   flex-wrap: wrap;
   gap: 1rem;
 }
