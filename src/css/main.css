@@ -80,6 +80,7 @@ body {
 @import "./molecules/data-table.css";
 @import "./molecules/search-field.css";
 @import "./molecules/card.css";
+@import "./molecules/custom-datepicker.css";
 
 @import "./organisms/portal-header.css";
 @import "./organisms/hero-portal.css";

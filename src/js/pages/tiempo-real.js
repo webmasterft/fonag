@@ -11,10 +11,12 @@ import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js
 import { renderPeriodoChart, destroyPeriodoChart } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
+import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalHttpLoader();
   initThemeToggle();
+  initCustomDatePickers();
 
   let activeEje = 'ALL';
 

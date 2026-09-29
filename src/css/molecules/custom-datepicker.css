@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Molecule: Custom DatePicker Popup (Matching Figma exact design)
+   ========================================================================== */
+
+.custom-datepicker-popup {
+  position: absolute;
+  z-index: 1000000;
+  background-color: #f4f5f7;
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  width: 245px;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: datepicker-fade-in 0.18s ease-out;
+}
+
+@keyframes datepicker-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header bar: Month/Year + Navigation Chevrons */
+.cdp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2px;
+}
+
+.cdp-month-year-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #389ce8;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cdp-month-year-selector svg {
+  color: #707993;
+}
+
+.cdp-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cdp-nav-btn {
+  background: transparent;
+  border: none;
+  color: #1e2347;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.12s ease;
+}
+
+.cdp-nav-btn:hover {
+  background-color: #e2e8f0;
+}
+
+/* Weekday header grid (M T W T F S S) */
+.cdp-weekdays-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.cdp-weekday-item {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e2347;
+  padding: 2px 0;
+}
+
+/* Days grid */
+.cdp-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+}
+
+.cdp-day-cell {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e2347;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.cdp-day-cell:hover:not(.cdp-day-selected):not(.cdp-day-disabled) {
+  background-color: #e2e8f0;
+}
+
+.cdp-day-other-month {
+  color: #a0aec0;
+  font-weight: 500;
+}
+
+.cdp-day-selected {
+  background-color: #389ce8 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 6px;
+}
+
+.cdp-day-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Footer bar: Clear & Today */
+.cdp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cdp-footer-btn {
+  background: transparent;
+  border: none;
+  color: #389ce8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: opacity 0.12s ease;
+}
+
+.cdp-footer-btn:hover {
+  opacity: 0.75;
+}
