@@ -99,7 +99,7 @@
   font: 500 14px/20px 'Inter', sans-serif;
   color: #475569;
   margin: 0;
-  max-width: 800px;
+  max-width: 457px;
 }
 
 /* Filter Card */
@@ -108,7 +108,7 @@
   border: 1px solid #eef2f6;
   border-radius: 16px;
   padding: 1.35rem 1.75rem;
-  box-shadow: 0px 3px 6px #00000029;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -164,7 +164,6 @@
   font-size: 13px;
   color: #1e293b;
   outline: none;
-  box-shadow: 0px 3px 6px #00000029;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -184,27 +183,19 @@
   outline: none;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
-  box-shadow: 0px 3px 6px #00000029;
 }
 
 .tiempo-real-filter-select {
-  padding: 8px 32px 8px 12px;
+  padding: 8px 12px;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-palette-navy, #242857);
+  color: #1e293b;
   outline: none;
   cursor: pointer;
   min-width: 160px;
-  box-shadow: 0px 3px 6px #00000029;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23242857' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
 }
 
 .tiempo-real-filter-select:focus,
@@ -313,7 +304,7 @@
   border: 1px solid #eef2f6;
   border-radius: 14px;
   padding: 1.2rem 1.35rem 1.25rem;
-  box-shadow: 0px 3px 6px #00000029;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   gap: 10px;
