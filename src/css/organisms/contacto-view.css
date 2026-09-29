@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .contacto-page {
-  background-color: #f8fafc;
+  background-color: #ffffff;
   min-height: 100vh;
 }
 
@@ -22,14 +22,15 @@
   object-position: center;
 }
 
-/* Main Container */
+/* Main Container (Form area - White Background) */
 .contacto-container {
   max-width: 860px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: #ffffff;
 }
 
 /* Intro Text */
@@ -146,10 +147,24 @@
   transform: translateY(-1px);
 }
 
+/* Map Section with #F9FAFC Background */
+.contacto-map-section {
+  width: 100%;
+  background-color: #F9FAFC;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.contacto-map-container {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Location Text Box */
 .contacto-location-box {
   text-align: center;
-  margin-top: 3.5rem;
   margin-bottom: 2rem;
 }
 
