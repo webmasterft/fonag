@@ -269,6 +269,7 @@ export default defineConfig(({ mode }) => {
           periodo: resolve(__dirname, 'consultas/periodo/index.html'),
           estaciones: resolve(__dirname, 'estaciones/index.html'),
           tiempoReal: resolve(__dirname, 'tiempo-real/index.html'),
+          contacto: resolve(__dirname, 'contacto/index.html'),
         },
       },
     },
