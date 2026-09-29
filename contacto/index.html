@@ -64,32 +64,34 @@
         <img src="/src/images/panoramica-contacto-sin-filtro.webp" alt="Vista panorámica de Quito y montañas" />
       </section>
 
-      <!-- Contact Form Container -->
-      <section class="contacto-container">
-        <!-- Intro Message -->
-        <div class="contacto-intro-box">
-          <p class="contacto-intro-title">Creamos alianzas para la conservación basadas en la confianza, voluntad y compromiso.</p>
-          <p class="contacto-intro-subtitle">Las opiniones que provienen de las comunidades nos importan. Para el FONAG es una forma de ayudar al trabajo que realizamos.</p>
-        </div>
+      <!-- Contact Form Section (White Background) -->
+      <section class="contacto-form-section">
+        <div class="contacto-container">
+          <!-- Intro Message -->
+          <div class="contacto-intro-box">
+            <p class="contacto-intro-title">Creamos alianzas para la conservación basadas en la confianza, voluntad y compromiso.</p>
+            <p class="contacto-intro-subtitle">Las opiniones que provienen de las comunidades nos importan. Para el FONAG es una forma de ayudar al trabajo que realizamos.</p>
+          </div>
 
-        <!-- Contact Form -->
-        <form class="contacto-form" id="contacto-form" action="#" method="POST" novalidate>
-          <div class="contacto-form-grid">
-            <input type="text" name="nombre" class="contacto-input" placeholder="Nombre y Apellido" required />
-            <input type="text" name="edad" class="contacto-input" placeholder="Edad" />
-            <input type="text" name="etnia" class="contacto-input" placeholder="Etnia" />
-            <input type="text" name="comunidad" class="contacto-input" placeholder="Comunidad" />
-            <input type="text" name="direccion" class="contacto-input" placeholder="Dirección" />
-            <input type="tel" name="telefono" class="contacto-input" placeholder="Teléfono" />
-            <input type="email" name="email" class="contacto-input" placeholder="Correo electrónico" required />
-            <input type="text" name="tema" class="contacto-input" placeholder="Tema para contáctanos" />
-          </div>
-          <textarea name="mensaje" class="contacto-textarea" placeholder="Escriba su mensaje" rows="5" required></textarea>
-          
-          <div class="contacto-submit-row">
-            <button type="submit" class="btn-contacto-enviar">Enviar</button>
-          </div>
-        </form>
+          <!-- Contact Form -->
+          <form class="contacto-form" id="contacto-form" action="#" method="POST" novalidate>
+            <div class="contacto-form-grid">
+              <input type="text" name="nombre" class="contacto-input" placeholder="Nombre y Apellido" required />
+              <input type="text" name="edad" class="contacto-input" placeholder="Edad" />
+              <input type="text" name="etnia" class="contacto-input" placeholder="Etnia" />
+              <input type="text" name="comunidad" class="contacto-input" placeholder="Comunidad" />
+              <input type="text" name="direccion" class="contacto-input" placeholder="Dirección" />
+              <input type="tel" name="telefono" class="contacto-input" placeholder="Teléfono" />
+              <input type="email" name="email" class="contacto-input" placeholder="Correo electrónico" required />
+              <input type="text" name="tema" class="contacto-input" placeholder="Tema para contáctanos" />
+            </div>
+            <textarea name="mensaje" class="contacto-textarea" placeholder="Escriba su mensaje" rows="5" required></textarea>
+            
+            <div class="contacto-submit-row">
+              <button type="submit" class="btn-contacto-enviar">Enviar</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <!-- Location & Google Maps Section (Background #F9FAFC) -->
@@ -115,17 +117,21 @@
       </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-container">
-        <!-- Tier 1: Social & Contact Info -->
+    <!-- Organism: FONAG Footer -->
+    <footer class="fonag-footer" id="main-footer">
+      <div class="footer-inner">
+        <!-- Tier 1: Contact info & Socials -->
         <div class="footer-top-tier">
-          <!-- Social Networks -->
-          <div class="footer-info-item">
-            <div class="footer-social-links">
+          <!-- Contacto + Social Links -->
+          <div class="footer-social-group">
+            <h2 class="footer-heading">Contacto</h2>
+            <div class="footer-social-list" aria-label="Redes sociales de FONAG">
+              <!-- X (Twitter) -->
               <a href="https://x.com/fonag" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) de FONAG">
                 <span class="social-sprite-icon social-sprite-x" aria-hidden="true"></span>
               </a>
+
+              <!-- TikTok -->
               <a href="https://www.tiktok.com/@fonaguio" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="TikTok de FONAG">
                 <span class="social-sprite-icon social-sprite-tiktok" aria-hidden="true"></span>
               </a>
