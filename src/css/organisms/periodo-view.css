@@ -72,7 +72,7 @@
   border: 1px solid #efefef;
   border-radius: 14px;
   padding: 1.25rem 1.75rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  box-shadow: 0px 3px 6px #00000029;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -239,7 +239,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0px 3px 6px #00000029;
   position: relative;
   min-height: 600px;
 }
@@ -282,7 +282,7 @@
   border: 1px solid #eef2f6;
   border-radius: 14px;
   padding: 1.15rem 1.25rem 1.25rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  box-shadow: 0px 3px 6px #00000029;
   display: flex;
   flex-direction: column;
   gap: 10px;
