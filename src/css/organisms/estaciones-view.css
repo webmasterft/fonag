@@ -363,10 +363,41 @@
 }
 
 .sort-icon {
-  display: inline-block;
-  margin-left: 4px;
-  font-size: 11px;
-  color: #94a3b8;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 5px;
+  width: 10px;
+  height: 12px;
+  gap: 1px;
+}
+
+.sort-icon::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-bottom: 5px solid var(--color-palette-orange, #f19001);
+}
+
+.sort-icon::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-top: 5px solid #8c95a6;
+}
+
+.th-sortable.asc .sort-icon::after {
+  opacity: 0.3;
+}
+
+.th-sortable.desc .sort-icon::before {
+  opacity: 0.3;
 }
 
 .estaciones-table tbody tr {
