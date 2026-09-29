@@ -258,7 +258,7 @@
 }
 
 .btn-descargar-estaciones {
-  background-color: var(--color-palette-navy, #242857);
+  background-color: #1e2347;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -274,7 +274,7 @@
 }
 
 .btn-descargar-estaciones:hover {
-  background-color: #1a1d3f;
+  background-color: #2b3263;
   transform: translateY(-1px);
 }
 

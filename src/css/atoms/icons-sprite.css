@@ -12,28 +12,43 @@
   vertical-align: middle;
 }
 
+.icon-sprite.icon-white {
+  filter: brightness(0) invert(1);
+}
+
+.btn-card-ver-estadisticas .icon-sprite,
+.btn-card-ver-datos-periodo .icon-sprite,
+.btn-card-ver-datos-tr .icon-sprite {
+  width: 16px;
+  height: 18px;
+  background-size: 180px 18px;
+  background-position: 0px 0px;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
 /* Individual Icon Classes */
 .icon-sprite-01 {
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   background-position: 0px 0px;
 }
 
 .icon-sprite-02 {
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   background-position: -31px 0px;
 }
 
 .icon-sprite-03 {
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   background-position: -62px 0px;
 }
 
 .icon-sprite-04 {
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   background-position: -93px 0px;
 }
 

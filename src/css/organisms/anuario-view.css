@@ -69,44 +69,65 @@
 /* Year Control Bar */
 .anuario-year-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1.5rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
+  background-color: #ffffff;
+  padding-block: 10px;
+  padding-inline: 1.25rem;
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .year-selector-group {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .year-selector-label {
-  font-weight: 600;
-  font-size: 13px;
-  color: #475569;
+  font-weight: 500;
+  font-size: 14px;
+  color: #707993;
+}
+
+.year-control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .year-select-box {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 6px 12px;
-  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 5px 12px;
+  box-shadow: 0px 3px 6px #00000029;
 }
 
 .year-select {
   border: none;
   background: transparent;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: #242857;
   outline: none;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23242857' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+.year-calendar-icon {
+  flex-shrink: 0;
 }
 
 .year-notice-text {
@@ -177,6 +198,8 @@
   position: relative;
   display: flex;
   align-items: center;
+  box-shadow: 0px 3px 6px #00000029;
+  border-radius: 8px;
 }
 
 .filter-input-wrap svg {
@@ -184,6 +207,7 @@
   left: 12px;
   color: #94a3b8;
   pointer-events: none;
+  z-index: 1;
 }
 
 .filter-input {
@@ -212,6 +236,7 @@
   color: #1e293b;
   outline: none;
   cursor: pointer;
+  box-shadow: 0px 3px 6px #00000029;
 }
 
 .btn-limpiar {
@@ -290,7 +315,7 @@
   gap: 10px;
   max-height: 600px;
   overflow-y: auto;
-  padding-right: 6px;
+  padding: 6px 6px 6px 4px;
 }
 
 .cards-loading-overlay,
@@ -454,9 +479,9 @@
 }
 
 .btn-card-descargar {
-  background-color: #f8fafc;
-  color: #1e2347;
-  border: 1px solid #e2e8f0;
+  background-color: #1e2347;
+  color: #ffffff;
+  border: none;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
@@ -466,12 +491,12 @@
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .btn-card-descargar:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+  background-color: #2b3263;
+  transform: translateY(-1px);
 }
 
 /* Modal for Data Table & Charts */

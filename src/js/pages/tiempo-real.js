@@ -416,16 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <div class="tiempo-real-station-actions">
             <button class="btn-card-ver-datos-tr" data-codigo="${est.codigo}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 3v18h18"/>
-                <path d="M18 17V9"/>
-                <path d="M13 17V5"/>
-                <path d="M8 17v-3"/>
-                <circle cx="8" cy="14" r="1" fill="currentColor"/>
-                <circle cx="13" cy="5" r="1" fill="currentColor"/>
-                <circle cx="18" cy="9" r="1" fill="currentColor"/>
-                <path d="M8 14l5-9 5 4" stroke-dasharray="1 1"/>
-              </svg>
+              <span class="icon-sprite icon-sprite-01 icon-white" aria-hidden="true"></span>
               Ver datos
             </button>
           </div>
