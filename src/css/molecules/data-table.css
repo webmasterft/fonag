@@ -28,7 +28,7 @@
 }
 
 .fonag-data-table thead th {
-  background-color: #f8fafc;
+  background-color: var(--color-palette-offwhite-1);
   color: var(--color-palette-navy, #242857);
   font-weight: 700;
   font-size: 12px;
@@ -40,7 +40,7 @@
 
 .fonag-data-table thead th.col-group {
   text-align: center;
-  background-color: #f1f5f9;
+  background-color: var(--color-palette-offwhite-1);
 }
 
 .fonag-data-table thead th.col-group-precip {

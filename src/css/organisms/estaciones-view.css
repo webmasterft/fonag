@@ -341,7 +341,7 @@
 }
 
 .estaciones-table thead th {
-  background-color: #ffffff;
+  background-color: var(--color-palette-offwhite-1);
   color: #1e2347;
   font-weight: 800;
   font-size: 13px;
