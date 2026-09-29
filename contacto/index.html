@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacto - FONAG</title>
+  <meta name="description" content="Página de contacto del Fondo para la Protección del Agua - FONAG." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/css/main.css" />
+</head>
+<body class="contacto-page">
+  <div class="app-layout">
+    <!-- Header Navigation -->
+    <header class="portal-header" id="portal-header">
+      <div class="portal-header-container">
+        <!-- Brand Logo -->
+        <a href="/" class="portal-brand" aria-label="FONAG Inicio">
+          <img src="/src/images/lofo-fonag-color-01.webp" alt="Logo FONAG">
+        </a>
+
+        <!-- Center Navigation Menu -->
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li class="nav-item"><a href="/" class="nav-link">Inicio</a></li>
+            <li class="nav-item"><a href="/estaciones/" class="nav-link">Estaciones</a></li>
+            <li class="nav-item nav-item-dropdown">
+              <a href="javascript:void(0)" role="button" class="nav-link nav-link-dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-content">
+                  Consultas
+                  <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </a>
+              <div class="nav-dropdown-menu" role="menu">
+                <a href="/consultas/anuario/" class="nav-dropdown-item" role="menuitem">Anuario Hidroclimático</a>
+                <a href="/consultas/periodo/" class="nav-dropdown-item" role="menuitem">Consultas por periodo</a>
+              </div>
+            </li>
+            <li class="nav-item"><a href="/tiempo-real/" class="nav-link">Tiempo Real</a></li>
+          </ul>
+        </nav>
+
+        <!-- Right Header Actions -->
+        <div class="portal-header-actions">
+          <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login" id="btn-login" rel="noopener noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" x2="3" y1="12" y2="12"/>
+            </svg>
+            <span>Ingresar</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Top Banner Image -->
+      <section class="contacto-banner">
+        <img src="/src/images/panoramica-contacto-sin-filtro.webp" alt="Vista panorámica de Quito y montañas" />
+      </section>
+
+      <!-- Contact Container -->
+      <section class="contacto-container">
+        <!-- Intro Message -->
+        <div class="contacto-intro-box">
+          <p class="contacto-intro-title">Creamos alianzas para la conservación basadas en la confianza, voluntad y compromiso.</p>
+          <p class="contacto-intro-subtitle">Las opiniones que provienen de las comunidades nos importan. Para el FONAG es una forma de ayudar al trabajo que realizamos.</p>
+        </div>
+
+        <!-- Contact Form -->
+        <form class="contacto-form" id="contacto-form" action="#" method="POST" novalidate>
+          <div class="contacto-form-grid">
+            <input type="text" name="nombre" class="contacto-input" placeholder="Nombre y Apellido" required />
+            <input type="text" name="edad" class="contacto-input" placeholder="Edad" />
+            <input type="text" name="etnia" class="contacto-input" placeholder="Etnia" />
+            <input type="text" name="comunidad" class="contacto-input" placeholder="Comunidad" />
+            <input type="text" name="direccion" class="contacto-input" placeholder="Dirección" />
+            <input type="tel" name="telefono" class="contacto-input" placeholder="Teléfono" />
+            <input type="email" name="email" class="contacto-input" placeholder="Correo electrónico" required />
+            <input type="text" name="tema" class="contacto-input" placeholder="Tema para contáctanos" />
+          </div>
+          <textarea name="mensaje" class="contacto-textarea" placeholder="Escriba su mensaje" rows="5" required></textarea>
+          
+          <div class="contacto-submit-row">
+            <button type="submit" class="btn-contacto-enviar">Enviar</button>
+          </div>
+        </form>
+
+        <!-- Location Header -->
+        <div class="contacto-location-box">
+          <p class="contacto-location-title">También puedes presentar tu requerimiento a nuestro equipo, en las oficinas FONAG-Quito</p>
+          <p class="contacto-location-address">Avenida Mariana de Jesús y Martín de Utreras (junto al parque de la Mujer)</p>
+        </div>
+
+        <!-- Google Maps Embedded Card -->
+        <div class="contacto-map-card">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7913217743733!2d-78.49755492418873!3d-0.19036799980775955!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d59a689b141107%3A0xb3551525b68df45d!2sFONAG%20Fondo%20para%20la%20protecci%C3%B3n%20del%20Agua!5e0!3m2!1ses!2sec!4v1711800000000!5m2!1ses!2sec" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Ubicación de FONAG en Google Maps">
+          </iframe>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <!-- Tier 1: Social & Contact Info -->
+        <div class="footer-top-tier">
+          <!-- Social Networks -->
+          <div class="footer-info-item">
+            <div class="footer-social-links">
+              <a href="https://x.com/fonag" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) de FONAG">
+                <span class="social-sprite-icon social-sprite-x" aria-hidden="true"></span>
+              </a>
+              <a href="https://www.tiktok.com/@fonaguio" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="TikTok de FONAG">
+                <span class="social-sprite-icon social-sprite-tiktok" aria-hidden="true"></span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Phones -->
+          <div class="footer-info-item">
+            <a href="tel:+59322430233">(593 2) 2430 233</a>
+            <a href="tel:+59322439549">(593 2) 2439 549</a>
+          </div>
+
+          <!-- Address -->
+          <div class="footer-info-item">
+            <span>Mariana de Jesús y Martí</span>
+            <span>Utreras.</span>
+          </div>
+
+          <!-- Email -->
+          <div class="footer-info-item">
+            <a href="mailto:comunicacion@fonag.org.ec">comunicacion@fonag.org.ec</a>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="footer-divider" />
+
+        <!-- Tier 2: Brand & CTA -->
+        <div class="footer-bottom-tier">
+          <div class="footer-logo-wrapper">
+            <img src="/src/images/lofo-fonag-color-01-copy.webp" alt="Logo FONAG">
+          </div>
+
+          <div class="footer-cta-wrapper">
+            <a href="/contacto/" class="btn btn-cta-orange" id="footer-contact-btn">
+              Contáctanos
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/js/pages/contacto.js"></script>
+</body>
+</html>

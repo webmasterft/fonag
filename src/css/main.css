@@ -95,4 +95,5 @@ body {
 @import "./organisms/hero.css";
 @import "./organisms/footer.css";
 
+@import "./organisms/contacto-view.css";
 @import "./templates/layout.css";

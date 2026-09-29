@@ -1,0 +1,195 @@
+/* ==========================================================================
+   Organism: Contacto View (Figma Exact Match)
+   ========================================================================== */
+
+.contacto-page {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Banner Image */
+.contacto-banner {
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  position: relative;
+}
+
+.contacto-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Main Container */
+.contacto-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Intro Text */
+.contacto-intro-box {
+  text-align: center;
+  max-width: 680px;
+  margin-bottom: 2rem;
+}
+
+.contacto-intro-title {
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: #242857;
+  line-height: 24px;
+  margin: 0 0 4px;
+}
+
+.contacto-intro-subtitle {
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: #242857;
+  line-height: 22px;
+  margin: 0;
+}
+
+/* Contact Form */
+.contacto-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contacto-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.contacto-input {
+  width: 100%;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  box-shadow: 0px 3px 6px #00000029;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.contacto-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.contacto-input:focus {
+  border-color: #41a6e5;
+  box-shadow: 0px 3px 6px #00000029, 0 0 0 3px rgba(65, 166, 229, 0.15);
+}
+
+.contacto-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  box-shadow: 0px 3px 6px #00000029;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.contacto-textarea::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.contacto-textarea:focus {
+  border-color: #41a6e5;
+  box-shadow: 0px 3px 6px #00000029, 0 0 0 3px rgba(65, 166, 229, 0.15);
+}
+
+.contacto-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.btn-contacto-enviar {
+  background-color: #f19001;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 32px;
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(241, 144, 1, 0.25);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-contacto-enviar:hover {
+  background-color: #d97f00;
+  transform: translateY(-1px);
+}
+
+/* Location Text Box */
+.contacto-location-box {
+  text-align: center;
+  margin-top: 3.5rem;
+  margin-bottom: 2rem;
+}
+
+.contacto-location-title {
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: #242857;
+  margin: 0 0 4px;
+}
+
+.contacto-location-address {
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: #f19001;
+  margin: 0;
+}
+
+/* Google Maps Card */
+.contacto-map-card {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0px 3px 6px #00000029;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.contacto-map-card iframe {
+  width: 100%;
+  height: 420px;
+  border: none;
+}
+
+@media (max-width: 640px) {
+  .contacto-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .contacto-banner {
+    height: 200px;
+  }
+}
