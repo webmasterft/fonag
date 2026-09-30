@@ -85,6 +85,59 @@ La aplicación estará disponible en la URL local:
 
 ---
 
+## 📖 Guía de Extensión e Implementación para Desarrolladores
+
+Para extender la plataforma manteniendo la coherencia arquitectónica (Atomic Design, Vanilla JS y Vite MPA), sigue las convenciones establecidas a continuación:
+
+### 1. Agregar una Nueva Página (MPA)
+1. **Crear la vista HTML**: Añade una carpeta con un `index.html` en la raíz (ejemplo: `./reportes/index.html`).
+2. **Registrar la entrada en Vite**: Abre `./vite.config.js` y agrega el nuevo punto de entrada en `build.rollupOptions.input`:
+   ```javascript
+   reportes: resolve(__dirname, 'reportes/index.html')
+   ```
+3. **Crear su controlador JS**: Crea el archivo de lógica en `./src/js/pages/reportes.js` e impórtalo en el `<script type="module" src="/src/js/pages/reportes.js"></script>` del `index.html`.
+
+### 2. Agregar Estilos (Atomic Design & CSS Tokens)
+1. **Identificar la categoría**:
+   - `tokens/`: Variables canónicas (colores, fuentes, sombras).
+   - `atoms/`: Botones, inputs, badges.
+   - `molecules/`: Tarjetas de información, ítems de listas, grupos de controles.
+   - `organisms/`: Layouts completos de página, barras laterales, mapas complejos.
+2. **Importar en main.css**: Agrega el nuevo archivo CSS en `./src/css/main.css` respetando el orden de cascada.
+
+### 3. Agregar Nuevas Funciones y Endpoints / APIs
+1. **Definir la llamada a la API**: Añade la función en `./src/js/services/sedc-api.js` o `./src/js/services/api.js`. Usa siempre `SEDC_API_BASE_URL` o el proxy `/api-sedc/` para desarrollo.
+2. **Implementar Resiliencia (Fallback)**: Si el endpoint de red falla, proporciona un dataset o estructura por defecto:
+   ```javascript
+   try {
+     const data = await fetchEndpoint('/mi-nuevo-endpoint');
+     return data;
+   } catch (error) {
+     console.warn('Usando dataset estático de respaldo');
+     return DATASET_FALLBACK;
+   }
+   ```
+
+### 4. Crear Gráficos y Tablas Interactivos
+1. **Gráficos (Chart.js)**: Utiliza `Chart.js` y encapsula su instanciación en `./src/js/components/` o dentro de la página correspondiente. Asegúrate de destruir la instancia previa (`chartInstance.destroy()`) antes de re-renderizar datos nuevos.
+2. **Tablas**: Estructura las tablas con semántica HTML5 (`<thead>`, `<tbody>`) y aplica las clases atómicas de `./src/css/atoms/` para formatear filas y celdas.
+
+### 5. Agregar Imágenes y Recursos Estáticos
+- **Imágenes públicas**: Coloca logotipos o assets estáticos en la carpeta `./public/` y haz referencia a ellos mediante `/nombre-imagen.png`.
+- **Assets procesados**: Para recursos importados por JS o CSS, guárdalos en `./src/assets/`.
+
+### 6. Incorporar Nuevas Librerías
+- Instala dependencias únicamente mediante **npm**:
+  ```bash
+  npm install nombre-libreria
+  ```
+- Impórtala como módulo ES en el controlador de la página que la requiera:
+  ```javascript
+  import Libreria from 'nombre-libreria';
+  ```
+
+---
+
 ## 🏗️ Arquitectura Técnica Resumida
 
 - **Arquitectura**: Multi-Page Application (MPA) basada en **Vite 6** y **Vanilla JS**.
@@ -92,4 +145,4 @@ La aplicación estará disponible en la URL local:
 - **Diseño**: CSS Tokens canónicos + Atomic Design (`tokens/`, `atoms/`, `molecules/`, `organisms/`).
 - **Resiliencia**: Consumo API-First autenticado con fallback transparente a datasets de 61 estaciones oficiales.
 
-Para consultar la documentación técnica minuciosa dirigida a desarrolladores, lee el archivo [ARCHITECTURE.md](file:///c:/FTORRES/projects/Gestion/FONAG/ARCHITECTURE.md).
+Para consultar la documentación técnica minuciosa dirigida a desarrolladores, lee el archivo [ARCHITECTURE.md](./ARCHITECTURE.md).
