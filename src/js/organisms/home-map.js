@@ -561,16 +561,62 @@ export async function initHomeStationsMap() {
     });
   });
 
-  // Inicialización
+  // Inicialización API-First con Fallback Local
   showLoading(true);
   try {
     renderEjesPolygons();
-    renderSidebar();
     const geojson = await fetchPointGeojson('hydroclimate');
     currentFeatures = geojson?.features || [];
+
+    // Recalcular conteos totales dinámicamente según la API en vivo
+    const liveCounts = {};
+    currentFeatures.forEach(feature => {
+      const coords = feature.geometry?.coordinates;
+      const props = feature.properties || {};
+      const tipo = (props.tipo || '').trim();
+
+      let eje = null;
+      if (coords && coords.length >= 2) {
+        eje = getEjeForCoords(coords[0], coords[1]);
+      }
+      if (!eje) {
+        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
+        if (sistema.includes('PITA')) eje = 'Pita';
+        else if (sistema.includes('PICHINCHA') || sistema.includes('CENTRO') || sistema.includes('SALOYA')) eje = 'Pichincha Atacazo';
+        else if (sistema.includes('ANTISANA') || sistema.includes('MICA')) eje = 'Antisana';
+        else if (sistema.includes('PAPALLACTA') || sistema.includes('OYACACHI')) eje = 'Papallacta - Oyacachi';
+        else if (sistema.includes('NOROCCIDENTE')) eje = 'Noroccidente';
+        else eje = 'Nororiente DMQ';
+      }
+
+      const key = eje.toUpperCase();
+      if (!liveCounts[key]) {
+        liveCounts[key] = { total: 0, meteo: 0, pluvio: 0, hidro: 0 };
+      }
+      liveCounts[key].total++;
+      if (tipo === 'Meteorológica') liveCounts[key].meteo++;
+      else if (tipo === 'Pluviométrica') liveCounts[key].pluvio++;
+      else if (tipo === 'Hidrológica') liveCounts[key].hidro++;
+    });
+
+    // Actualizar EJES_CONFIG dinámicamente si la API está disponible
+    const totalGlobal = currentFeatures.length || 61;
+    Object.keys(EJES_CONFIG).forEach(k => {
+      if (liveCounts[k]) {
+        EJES_CONFIG[k].total = liveCounts[k].total;
+        EJES_CONFIG[k].meteo = liveCounts[k].meteo;
+        EJES_CONFIG[k].pluvio = liveCounts[k].pluvio;
+        EJES_CONFIG[k].hidro = liveCounts[k].hidro;
+        EJES_CONFIG[k].pct = Math.round((liveCounts[k].total / totalGlobal) * 100);
+      }
+    });
+
+    renderSidebar();
     renderMarkers();
   } catch (err) {
     console.error('Error cargando datos para el mapa de inicio:', err);
+    renderSidebar();
+    renderMarkers();
   } finally {
     showLoading(false);
     setTimeout(() => map.invalidateSize(), 200);
