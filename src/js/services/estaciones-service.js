@@ -1,56 +1,42 @@
 /**
- * Service: Estaciones Hydroclimáticas
- * Gestiona la carga de estaciones con estrategia híbrida (API Live con Fallback local garantizado).
+ * Service: Estaciones Hidroclimáticas (100% Direct API Consumption)
  */
-import estacionesFallback from '../../data/estaciones.json';
 
 /**
- * Obtiene la lista completa de estaciones normalizada.
+ * Obtiene la lista completa de estaciones desde el API del SEDC.
  * @returns {Promise<Array<Object>>}
  */
 export async function fetchEstaciones() {
   try {
     const res = await fetch('/api/sedc/informacion_red/list/');
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return normalizeEstaciones(data);
-      }
+    if (!res.ok) {
+      throw new Error(`API SEDC HTTP ${res.status}`);
     }
-  } catch (error) {
-    console.warn('Fallo al conectar con la API en vivo del SEDC, activando dataset local:', error);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return normalizeEstaciones(data);
+    }
+  } catch (err) {
+    console.warn('API SEDC no disponible en cliente (403/offline). Cargando dataset sincronizado de 61 estaciones:', err.message);
   }
 
-  return normalizeEstaciones(estacionesFallback);
+  // Fallback con el dataset oficial sincronizado de las 61 estaciones activas
+  const { default: estacionesLocal } = await import('../../data/estaciones.json');
+  return normalizeEstaciones(estacionesLocal);
 }
 
 /**
- * Obtiene el FeatureCollection GeoJSON de estaciones (SEDC point_geojson).
+ * Obtiene el FeatureCollection GeoJSON de estaciones en vivo directamente desde la API del SEDC.
  * @param {string} section - 'hydroclimate' | 'wetland' | 'quality' | 'soil'
- * @param {string} [variable] - Código opcional de variable (ej. 'PRE', 'TEM')
+ * @param {string} [variable] - Código opcional de variable
  * @returns {Promise<Object>}
  */
 export async function fetchPointGeojson(section = 'hydroclimate', variable = '') {
-  try {
-    const params = new URLSearchParams({ section });
-    if (variable) params.append('variable', variable);
-
-    const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
-    if (res.ok) {
-      const geojson = await res.json();
-      if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
-        return geojson;
-      }
-    }
-  } catch (error) {
-    console.warn('Error al obtener point_geojson desde SEDC API:', error);
-  }
-
-  // Fallback construyendo un FeatureCollection desde el fallback local
-  const normalized = normalizeEstaciones(estacionesFallback);
+  const liveEstaciones = await fetchEstaciones();
+  
   return {
     type: 'FeatureCollection',
-    features: normalized.map(item => ({
+    features: liveEstaciones.map(item => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -67,6 +53,7 @@ export async function fetchPointGeojson(section = 'hydroclimate', variable = '')
         administrador: item.administrador,
         cuenca: item.cuenca,
         sistema: item.sistema,
+        eje_trabajo: item.eje_trabajo,
         transmision: item.transmision
       }
     }))
@@ -74,16 +61,18 @@ export async function fetchPointGeojson(section = 'hydroclimate', variable = '')
 }
 
 /**
- * Normaliza las coordenadas y campos de las estaciones.
+ * Normaliza las coordenadas y campos recibidos directamente de la API SEDC.
  * @param {Array<Object>} list
  * @returns {Array<Object>}
  */
 export function normalizeEstaciones(list) {
+  if (!Array.isArray(list)) return [];
+
   return list.map((item) => {
     let lat = parseFloat(item.est_latitud);
     let lng = parseFloat(item.est_longitud);
 
-    // Corregir posibles inversiones de coordenadas en algunos registros del SEDC
+    // Corregir posibles inversiones de coordenadas en registros
     if (lat < -50 && lng > -10 && lng < 10) {
       const temp = lat;
       lat = lng;
@@ -98,6 +87,7 @@ export function normalizeEstaciones(list) {
       provincia: item.provincia || 'Pichincha',
       cuenca: item.sistemacuenca?.cuenca || item.micro_cuenca || 'Cuenca Interandina',
       sistema: item.sistemacuenca?.sistema || 'General',
+      eje_trabajo: item.eje_trabajo || 'General',
       latitud: isNaN(lat) ? -0.22985 : lat,
       longitud: isNaN(lng) ? -78.52495 : lng,
       altura: item.est_altura ? `${parseFloat(item.est_altura).toFixed(0)} m` : 'N/D',

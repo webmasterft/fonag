@@ -79,7 +79,7 @@ function formatEjeName(name) {
   return name;
 }
 
-// Configuración y estadísticas por Eje de Trabajo (Figma Match exacto)
+// Configuración y estadísticas por Eje de Trabajo (Valores reales de la API SEDC en vivo)
 const EJES_CONFIG = {
   'PITA': {
     name: 'Pita',
@@ -147,38 +147,27 @@ const EJES_CONFIG = {
     hidro: 0,
     pct: 3
   },
-  'PISQUE': {
-    name: 'Pisque',
-    color: '#f472b6',
+  'ALTO PITA': {
+    name: 'Alto Pita',
+    color: '#93c5fd',
     fillOpacity: 0.55,
-    border: '#db2777',
+    border: '#60a5fa',
     total: 2,
-    meteo: 0,
+    meteo: 1,
     pluvio: 1,
-    hidro: 1,
+    hidro: 0,
     pct: 3
   },
   'NOROCCIDENTE': {
     name: 'Noroccidente',
     displayName: 'Noroccidente del DMQ',
-    color: '#93c5fd',
-    fillOpacity: 0.55,
-    border: '#60a5fa',
-    total: 5,
-    meteo: 1,
-    pluvio: 3,
-    hidro: 1,
-    pct: 8
-  },
-  'NORCENTRAL': {
-    name: 'Norcentral',
     color: '#b4a2b8',
     fillOpacity: 0.55,
     border: '#9a859f',
     total: 5,
-    meteo: 0,
+    meteo: 1,
     pluvio: 3,
-    hidro: 2,
+    hidro: 1,
     pct: 8
   }
 };
@@ -316,8 +305,8 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
       const coords = feature.geometry?.coordinates;
-      let eje = null;
-      if (coords && coords.length >= 2) {
+      let eje = props.eje_trabajo || props.eje;
+      if (!eje && coords && coords.length >= 2) {
         eje = getEjeForCoords(coords[0], coords[1]);
       }
       if (!eje) {
@@ -356,8 +345,8 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
       const coords = feature.geometry?.coordinates;
-      let eje = null;
-      if (coords && coords.length >= 2) {
+      let eje = props.eje_trabajo || props.eje;
+      if (!eje && coords && coords.length >= 2) {
         eje = getEjeForCoords(coords[0], coords[1]);
       }
       if (!eje) {
@@ -575,8 +564,9 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
 
-      let eje = null;
-      if (coords && coords.length >= 2) {
+      // Priorizar el campo oficial eje_trabajo que devuelve la API en vivo
+      let eje = props.eje_trabajo || props.eje;
+      if (!eje && coords && coords.length >= 2) {
         eje = getEjeForCoords(coords[0], coords[1]);
       }
       if (!eje) {

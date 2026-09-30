@@ -400,6 +400,11 @@
 }
 
 /* Station Markers */
+.station-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
 .station-pin {
   width: 14px;
   height: 14px;
