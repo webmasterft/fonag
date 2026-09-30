@@ -182,7 +182,14 @@ Para mostrar tablas de datos paginadas, filtrables y ordenables sin frameworks:
 
 ---
 
-### 7. Manejo de Estado y Paradigma de Programación
+### 7. Manejo de Estado, Componentes Globales y Paradigma de Programación
+- **Interceptor HTTP Global y Loader (`src/js/atoms/global-loader.js`)**:
+  - Intercepta automáticamente las peticiones `fetch` del cliente. Muestra una barra de progreso discreta y un widget animado (`Consultando servidor...`) durante las solicitudes activas.
+  - *Para modificar el loader global*: Ajusta los elementos HTML creados en `ensureLoaderElement()` dentro de `global-loader.js` o sus estilos atómicos en `global-loader.css`.
+- **Tema VisualFONAG Canónico (`src/js/organisms/theme-toggle.js`)**:
+  - La plataforma está estandarizada bajo el tema claro oficial del FONAG (`data-theme` limpio y paleta canónica). `initThemeToggle()` resetea configuraciones heredadas.
+- **Motor de Cálculo Espacial GIS en Cliente (`pointInPoly` / `getEjeForCoords`)**:
+  - En la vista de catálogo (`estaciones.js`), la función matemática `pointInPoly()` evalúa dinámicamente en cliente las coordenadas `[longitud, latitud]` contra los polígonos GeoJSON (`ejes_2026.json`) para adscribir de forma determinista cada estación a su **Eje de Trabajo** real sin sobrecargar el servidor backend.
 - **Programación Funcional e Inmutable**: Prohibido usar estado global mutable no controlado. Utiliza funciones puras para procesar datos de estaciones o filtros de fecha.
 - **Manipulación Directa del DOM**: Selecciona elementos con `document.querySelector` o mantén referencias aisladas en las funciones inicializadoras de las páginas.
 
@@ -205,7 +212,7 @@ Para mostrar tablas de datos paginadas, filtrables y ordenables sin frameworks:
 
 ### 10. Metodología de Trabajo y Commits (SDD & Git)
 1. **Spec-Driven Development (SDD)**: Antes de realizar cambios complejos en la arquitectura o interfaz, revisa y documenta la especificación del cambio en `openspec/changes/`.
-2. **Mensajes de Commit Canónicos**: Utiliza estrictamente la convención de **Conventional Commits**:
+2. **Mensajes de Commit Canónicos**: Utiliza strictly la convención de **Conventional Commits**:
    - `feat: ...` (Nuevas funcionalidades)
    - `fix: ...` (Corrección de errores)
    - `docs: ...` (Documentación)
