@@ -1,191 +1,290 @@
-# Arquitectura del Frontend: FONAG SEDC
+# Arquitectura Técnica y Especificación de Ingeniería: FONAG SEDC
 
-Documentación arquitectónica oficial para la modernización de la plataforma web del **SEDC (Sistema de Estandarización de Datos Crudos Hidroclimáticos de FONAG)**.
-
----
-
-## 1. Principios de Ingeniería y Filosofía
-
-1. **Concepts > Code**: Estructuras sólidas, separación estricta de responsabilidades (SoC) y diseño antes que frameworks.
-2. **Cero Dependencias Pesadas**: Erradicación total de librerías legadas como **jQuery** y **Bootstrap 5**, y evasión de runtimes pesados virtuales (React/Preact).
-3. **Atomic Design Riguroso**: Estructuración modular en capas atómicas: *Tokens -> Átomos -> Moléculas -> Organismos -> Plantillas -> Páginas*.
-4. **Programación Funcional en Vanilla JS**:
-   - Funciones puras para cómputo de datos (inmutabilidad, sin efectos secundarios).
-   - Renderizadores puros desacoplados de la lógica de negocio.
-   - Flujo de datos unidireccional: `Estado -> Acción -> Cómputo Puro -> Render`.
-5. **Arquitectura Multi-Page (MPA)**: Mapeo nativo de URLs del navegador con las aplicaciones del backend Django SEDC original (`/`, `/estaciones/`, `/variables/`).
+Documentación arquitectónica detallada y minuciosa para desarrolladores sobre la modernización de la plataforma web del **SEDC (Sistema de Estandarización de Datos Crudos Hidroclimáticos del FONAG - Fondo para la Protección del Agua)**.
 
 ---
 
-## 2. Árbol de Directorios del Proyecto
+## 1. Visión General y Principios Arquitectónicos
+
+La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Dependencias Ruidosas**, concebido para servir como la interfaz oficial de consulta hidroclimática, telemetría y anuarios estadísticos de las cuencas que abastecen de agua al Distrito Metropolitano de Quito (DMQ).
+
+### 1.1. Principios Fundamentales
+1. **Concepts > Code**: Separación estricta de responsabilidades (SoC), modularidad limpia y diseño arquitectónico robusto antes que el uso irreflexivo de frameworks.
+2. **Cero Runtimes Pesados (Vanilla JS)**: Erradicación total de jQuery, Bootstrap y virtual DOMs (React, Vue, Angular). El navegador ejecuta manipular directamente el DOM de manera determinista e inmutable.
+3. **Arquitectura Multi-Page (MPA)**: Mapeo nativo de URLs del navegador con los puntos de entrada del servidor (`/`, `/estaciones/`, `/consultas/periodo/`, `/consultas/anuario/`, `/tiempo-real/`, `/contacto/`).
+4. **Resiliencia API-First con Fallback Transparente**: La aplicación prioriza el consumo en vivo de la API autenticada del SEDC. En entornos offline o restricciones de credenciales, el cliente conmuta suavemente a datasets locales estáticos y sincronizados sin romper la experiencia de usuario.
+5. **Atomic Design & CSS Tokens**: Organización de hojas de estilo en tokens canónicos de diseño (colores HSL/HEX, tipografías, escalas) y componentes atómicos.
+
+---
+
+## 2. Estructura del Proyecto y Scaffolding
+
+El proyecto sigue una estructura limpia de **Multi-Page Application (MPA)** gestionada por **Vite 6**:
 
 ```
-FONAG/
-├── index.html                           # Landing Page / Portal Principal (Aislado)
+c:/FTORRES/projects/Gestion/FONAG/
+├── index.html                           # Entry point: Landing Page / Portal Principal
 ├── estaciones/
-│   └── index.html                       # Página del módulo de Estaciones (MPA)
+│   └── index.html                       # Entry point: Visor de Estaciones Hidroclimáticas
+├── consultas/
+│   ├── periodo/
+│   │   └── index.html                   # Entry point: Consultas por Periodo y Gráficas
+│   └── anuario/
+│       └── index.html                   # Entry point: Anuario Hidroclimático Estadístico
+├── tiempo-real/
+│   └── index.html                       # Entry point: Telemetría en Vivo de Sensores
+├── contacto/
+│   └── index.html                       # Entry point: Formulario de Contacto y Ubicación
 ├── src/
 │   ├── css/
-│   │   ├── main.css                     # Entrada CSS principal (Vite + Tailwind v4 Bridge)
-│   │   ├── tokens/                      # Tokens de Diseño Canónicos
-│   │   │   ├── colors.css               # Paleta de 30 colores extraída del manual de marca
-│   │   │   ├── typography.css           # Inter (pesos 400, 500, 600, 700, 800)
-│   │   │   ├── spacing.css              # Escala modular de espaciado y contenedores
-│   │   │   ├── borders.css              # Radios (8px estándar en botones, etc.)
-│   │   │   └── index.css                # Índice agregador de tokens
-│   │   ├── atoms/                       # Bloques indivisibles
+│   │   ├── main.css                     # Punto de entrada CSS (Vite + CSS Tokens Bridge)
+│   │   ├── tokens/                      # Tokens Canónicos de Diseño
+│   │   │   ├── colors.css               # Paleta oficial FONAG (Navy #242857, Orange #F19001, Cyan #41A6E5)
+│   │   │   ├── typography.css           # Inter Font (Pesos 400, 500, 600, 700, 800)
+│   │   │   ├── spacing.css              # Escala modular de espaciados
+│   │   │   ├── borders.css              # Radios de bordes (8px, 12px, 14px, 18px, full)
+│   │   │   └── index.css                # Agregador central de tokens
+│   │   ├── atoms/                       # Estilos de elementos indivisibles
 │   │   │   ├── buttons.css              # Botones primarios, CTA naranja, outline
-│   │   │   ├── inputs.css               # Campos de texto, selectores
-│   │   │   ├── badges.css               # Chips de estado y tipo
-│   │   │   └── social-link.css          # Enlaces sociales con SVG
+│   │   │   ├── inputs.css               # Inputs de texto, selectores, datepickers
+│   │   │   ├── badges.css               # Chips de tipo de estación y estado
+│   │   │   ├── icons-sprite.css         # Sprites e íconos SVG vectoriales
+│   │   │   └── global-loader.css        # Indicador global de carga HTTP
 │   │   ├── molecules/                   # Combinación de átomos
-│   │   │   ├── nav-menu.css             # Menú de enlaces con subrayado activo
-│   │   │   ├── hero-search.css          # Cápsula flotante de búsqueda
-│   │   │   ├── stat-card.css            # Tarjeta de cifras con acento cian
-│   │   │   ├── constituent-item.css     # Medallón circular de logos institucionales
-│   │   │   └── data-table.css           # Estilos de la tabla de datos semántica
-│   │   ├── organisms/                   # Secciones de interfaz completas
-│   │   │   ├── portal-header.css        # Encabezado principal y navegación
-│   │   │   ├── hero-portal.css          # Hero con fondo de cuenca y SEDC lockup
-│   │   │   ├── stats-section.css        # Cuadrícula responsiva de 4 cifras clave
-│   │   │   ├── constituents-carousel.css# Carrusel con flechas al 50% del borde
-│   │   │   └── footer.css               # Pie de página de 2 niveles corporativo
+│   │   │   ├── nav-menu.css             # Navegación con dropdowns accesibles
+│   │   │   ├── hero-search.css          # Estilos de búsqueda
+│   │   │   ├── stat-card.css            # Tarjetas de cifras y métricas
+│   │   │   ├── constituent-item.css     # Medallones institucionales
+│   │   │   └── data-table.css           # Tablas de datos semánticas
+│   │   ├── organisms/                   # Secciones complejas de la UI
+│   │   │   ├── portal-header.css        # Navegación global del portal
+│   │   │   ├── hero-portal.css          # Hero banner institucional
+│   │   │   ├── home-map-section.css     # Sección de Mapa + Tarjeta lateral de Ejes
+│   │   │   ├── periodo-view.css         # Layout split de Consultas por Periodo
+│   │   │   ├── anuario-view.css         # Layout del Anuario Hidroclimático
+│   │   │   ├── tiempo-real-view.css     # Layout de Telemetría en Vivo
+│   │   │   ├── contacto-view.css        # Layout de Contacto y Formulario
+│   │   │   └── footer.css               # Pie de página corporativo
 │   │   └── templates/
-│   │       └── layout.css               # Contenedores con max-width: 1366px
-│   │
+│   │       └── layout.css               # Estructura del grid principal y contenedores (1366px)
+│   ├── data/                            # Datasets Locales Sincronizados (Fallbacks)
+│   │   ├── estaciones.json              # 61 estaciones hidroclimáticas activas oficiales
+│   │   └── ejes_2026.json               # GeoJSON de Polígonos de los 8 Ejes de Trabajo FONAG
 │   └── js/
-│       ├── main.js                      # Bootstrap del Portal Principal
+│       ├── main.js                      # Controller: Landing Page
 │       ├── atoms/
-│       │   └── button.js                # Comportamiento accesible y ripple de botones
+│       │   ├── button.js                # Ripple effect y accesibilidad en botones
+│       │   └── global-loader.js         # Interceptor visual de peticiones HTTP
 │       ├── molecules/
-│       │   ├── search.js                # Lógica del buscador reactivo
-│       │   └── data-table/              # MOTOR FUNCIONAL DE TABLAS
-│       │       ├── table-core.js        # Funciones puras (filtro, sort, paginación, CSV)
-│       │       ├── table-renderer.js    # Generadores puros de DOM / HTML semántico
-│       │       └── data-table.js        # Orquestador del componente (Factory Pattern)
+│       │   ├── datepicker/              # Componente custom DatePicker
+│       │   ├── map/
+│       │   │   └── leaflet-map.js       # Controlador modular del Mapa Leaflet (GeoJSON + Markers)
+│       │   ├── charts/
+│       │   │   ├── periodo-charts.js    # Renderizador Chart.js para Series de Tiempo
+│       │   │   └── anuario-charts.js    # Renderizador Chart.js para Estadísticas Anuales
+│       │   └── data-table/              # MOTOR FUNCIONAL DE TABLAS DE DATOS
+│       │       ├── table-core.js        # Lógica pura de filtrado, ordenación, paginación y CSV/XLSX
+│       │       ├── table-renderer.js    # Generación pura de elementos DOM
+│       │       └── anuario-table.js     # Tablas divididas por variable para el Anuario
 │       ├── organisms/
-│       │   ├── theme-toggle.js          # Modo claro/oscuro
+│       │   ├── home-map.js              # Orquestador del mapa e interacción de Ejes en la Home
+│       │   ├── theme-toggle.js          # Gestor de tema claro/oscuro
 │       │   └── constituents-carousel.js # Controlador de Embla Carousel
-│       └── pages/
-│           └── estaciones.js            # Controlador específico de la vista de Estaciones
-├── vite.config.js                       # Configuración MPA de Vite (Rollup inputs)
-└── package.json                         # Dependencias y scripts de linting/build
+│       ├── services/                    # CAPA DE SERVICIOS Y API INTEGRACIÓN
+│       │   ├── estaciones-service.js    # Consumo de red de estaciones (Live API + Fallback)
+│       │   ├── periodo-service.js       # Consumo de series históricas por periodo
+│       │   ├── anuario-service.js       # Consumo de resúmenes estadísticos anuales
+│       │   └── telemetria-service.js    # Consumo de lecturas telemétricas en tiempo real
+│       └── pages/                       # Controllers por Entrada MPA
+│           ├── estaciones.js            # Controller: /estaciones/
+│           ├── periodo.js               # Controller: /consultas/periodo/
+│           ├── anuario.js               # Controller: /consultas/anuario/
+│           ├── tiempo-real.js           # Controller: /tiempo-real/
+│           └── contacto.js              # Controller: /contacto/
+├── vite.config.js                       # Configuración MPA + Server Proxy Autenticado SEDC
+├── vercel.json                          # Configuración de despliegue y Clean URLs
+└── package.json                         # Scripts y dependencias del proyecto
 ```
 
 ---
 
-## 3. Capa de Diseño y Design Tokens
+## 3. Especificación HTML5 Semántico y Accesibilidad (a11y)
 
-### 3.1. Colores Semánticos Principales
-- **Azul Primario (Brand Navy)**: `#242857` (Texto principal, títulos H1/H2, fondos del footer).
-- **Naranja Acento (Brand Orange)**: `#F19001` (Eyebrows, botones CTA, subrayados activos, acentos de interacción).
-- **Cian Acento (Data / Water)**: `#41A6E5` (Indicadores de cifras métricas e íconos hidroclimáticos).
-- **Fondos de Superficie**: `#FFFFFF` (Tarjetas), `#F8FAFC` (Contenedores secundarios).
+Todas las vistas de la aplicación cumplen con **WCAG 2.2** y estructura semántica estricta:
 
-### 3.2. Restricciones Canónicas
-- **Contenedor Máximo**: `1366px` (`--container-max-width`).
-- **Radio de Botones**: `border-radius: 8px;`.
-- **Tipografía Base**: `Inter, system-ui, sans-serif`. Pesos estrictos: `400` (Regular), `500` (Medium), `600` (SemiBold), `700` (Bold).
-
----
-
-## 4. Comparativa de Arquitectura: SEDC Legado vs. Frontend Moderno
-
-| Área | SEDC Original (`paulchicaiza/sedc`) | Frontend Moderno FONAG | Razón de Ingeniería |
-| :--- | :--- | :--- | :--- |
-| **Pila Tecnológica** | Django Templates + Bootstrap 5 + jQuery | Vite + Vanilla JS + CSS Tokens | Rendimiento, cero dependencias pesadas, mantenibilidad |
-| **Motor de Tablas** | `Bootstrap Table` v1.21.0 sobre jQuery | `DataTable` funcional en Vanilla JS nativo | Control 100% estético con tokens, código testeable y modular |
-| **Manipulación de Datos** | Procedural en `functions.js` | Funciones puras e inmutables en `table-core.js` | Previene efectos secundarios y condiciones de carrera |
-| **Navegación** | Django Views / URL routing | Multi-Page Application (MPA) con Vite | Mapeo 1:1 de URLs sin complejidad de routers SPA |
-| **Componentes Visuales** | Monolito CSS Bootstrap | Atomic Design modular (`tokens/`, `atoms/`, etc.) | Escalabilidad y consistencia de diseño visual |
+1. **Jerarquía Única de Encabezados**:
+   - Cada página contiene un único elemento `<h1>` representativo (`Datos en Tiempo Real`, `Consultas por Periodo`, `Estaciones Hidroclimáticas`).
+   - Jerarquía descendente sin saltos de nivel (`<h1>` -> `<h2>` -> `<h3>`).
+2. **Landmarks Semánticos**:
+   - `<header class="portal-header">`: Encabezado global y navegación.
+   - `<nav aria-label="...">`: Migas de pan y menús principales.
+   - `<main>`: Contenedor primario de la vista.
+   - `<section>` y `<article>`: Secciones de tarjetas y bloques de mapas.
+   - `<footer>`: Pie de página corporativo de dos niveles.
+3. **Controles Interactivos y Form Formularios**:
+   - Todos los campos de entrada (`<input>`, `<select>`) tienen asociadas etiquetas explícitas `<label for="...">`.
+   - Modales interactivos con `role="dialog"`, `aria-modal="true"`, foco contenido y cierre vía tecla `Escape`.
+   - Botones con atributos `aria-label` en controles de icono solo (`close`, `zoom`, `descarga`).
 
 ---
 
-## 5. Arquitectura del Motor Funcional de Tablas (`table-core.js`)
+## 4. Arquitectura CSS: Tokens y Atomic Design
 
-El componente de tabla no acopla la lógica de negocio al DOM. Se estructura en tres capas desacopladas:
+El sistema visual está construido en Vanilla CSS utilizando **Custom Properties (CSS Variables)** y principios de **Atomic Design**.
 
-```mermaid
-graph TD
-    Data[Dataset Inmutable] --> Core[table-core.js: Funciones Puras]
-    Filters[Filtros y Búsqueda] --> Core
-    Sort[Criterio de Orden] --> Core
-    Pagination[Página y Tamaño] --> Core
-    
-    Core -->|Output Computado| Renderer[table-renderer.js: Generación DOM]
-    Renderer -->|HTML Semántico / Fragment| View[Contenedor DOM de la Página]
-    View -->|Eventos de Usuario| Core
+### 4.1. Design Tokens (`src/css/tokens/`)
+Las constantes del sistema de diseño se declaran centralizadamente en `:root`:
+
+```css
+:root {
+  /* Paleta Canónica FONAG */
+  --color-palette-navy: #242857;          /* Azul Primario Corporativo */
+  --color-palette-navy-hover: #1e2347;
+  --color-brand-orange: #F19001;          /* Naranja Acento / CTA */
+  --color-brand-orange-hover: #d97f00;
+  --color-brand-cyan: #41A6E5;            /* Cian Datos / Agua */
+
+  /* Tipografía */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Escala de Espaciado Modular */
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem;  /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1.00rem; /* 16px */
+  --spacing-6: 1.50rem; /* 24px */
+  --spacing-8: 2.00rem; /* 32px */
+
+  /* Radios de Bordes */
+  --radius-8: 8px;      /* Botones e inputs */
+  --radius-12: 12px;    /* Tarjetas pequeñas y badges */
+  --radius-14: 14px;    /* Tarjetas de filtros y modales */
+  --radius-18: 18px;    /* Contenedores de mapa y hero */
+  --radius-full: 9999px;/* Pill badges y botones circulares */
+
+  /* Layout Boundaries */
+  --container-max-width: 1366px;
+}
 ```
 
-### 5.1. Funciones Puras (`table-core.js`)
-- `filterRows(rows, filters, searchFields)`: Genera un nuevo array filtrado sin mutar el original.
-- `sortRows(rows, key, direction)`: Ordena inmutablemente por claves anidadas o directas.
-- `paginateRows(rows, page, pageSize)`: Calcula el slice exacto de datos e índices `start/end/total`.
-- `exportRowsToCsv(columns, rows, filename)`: Construye un RFC4180 CSV y dispara descarga nativa vía `Blob`.
-
-### 5.2. Renderizadores Puros (`table-renderer.js`)
-- `renderHeader(columns, sortState)`: Emite `<thead>` con encabezados accesibles y flechas de ordenamiento SVG.
-- `renderBody(columns, pageRows, formatters)`: Emite `<tbody>` aplicando formateadores desacoplados para celdas y botones de acción.
-- `renderPagination(paginationState)`: Genera controles de página anterior, siguiente, páginas numeradas e indicador "Mostrando X de Y".
+### 4.2. Estructura Atómica
+- **Átomos (`src/css/atoms/`)**: Reglas de estilos elementales como `.btn`, `.btn-primary`, `.form-input`, `.badge-tipo`, `.station-pin`.
+- **Moléculas (`src/css/molecules/`)**: Composiciones como `.nav-menu`, `.stat-card`, `.periodo-station-pill`, `.anuario-grid-table`.
+- **Organismos (`src/css/organisms/`)**: Layouts complejos como `.home-map-layout`, `.periodo-split-layout`, `.portal-header`, `.periodo-filter-card`.
 
 ---
 
-## 6. Pipeline de Calidad y Verificación
+## 5. Paradigmas Javascript: Programación Funcional y Motor de Tablas
 
-- **CSS Linting**: `stylelint "src/css/**/*.css"` con `stylelint-config-standard`.
-- **JS Linting**: `eslint "src/js/**/*.js"` con ESLint v9 Flat Config.
-- **Production Build**: `vite build` con validación cruzada de todos los puntos de entrada MPA.
+### 5.1. Paradigma Funcional Inmutable
+Se prohíbe el uso de estado global mutable descontrolado. La lógica de filtrado y transformación utiliza funciones puras:
+
+```javascript
+// Ejemplo: Filtrado puro de estaciones en periodo.js
+const filtered = allEstaciones.filter((est) => {
+  const matchPeriod = !est.fechaInicio || est.fechaInicio <= eDate;
+  const matchVar = estacionTieneVariable(est, varCode);
+  const matchEje = (activeEje === 'ALL') || (est.ejeCalculado?.toUpperCase() === activeEje.toUpperCase());
+  const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
+  const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
+  const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
+
+  return matchVar && matchEje && matchTipo && matchCodigo && matchNombre && matchPeriod;
+});
+```
+
+### 5.2. Motor Funcional de Tablas (`src/js/molecules/data-table/table-core.js`)
+El motor de tablas no acopla la lógica al DOM:
+
+```
+[Dataset Inmutable] ──> [table-core.js (Filtro / Ordenación / Paginación Pura)]
+                              │
+                              ▼
+                     [table-renderer.js (Generación de DOM HTML Semántico)]
+                              │
+                              ▼
+                     [Vistas / Modales del Portal]
+```
+
+1. **`filterRows(rows, filters, searchFields)`**: Genera un nuevo array filtrado sin modificar el original.
+2. **`sortRows(rows, key, direction)`**: Ordena inmutablemente por claves simples o compuestas.
+3. **`paginateRows(rows, page, pageSize)`**: Computa los slices exactos e índices de paginación.
+4. **`exportRowsToCsv(columns, rows, filename)` / `exportAnuarioCsv`**: Genera archivos estructurados RFC4180 CSV o planillas Excel (`.xlsx`) y dispara la descarga cliente nativa vía Blob.
 
 ---
 
-## 7. Integración con Servicios SEDC (API Proxy & Seguridad de Credenciales)
+## 6. Arquitectura de Integración API & Proxy de Desarrollo
 
-Para la consulta de datos hidroclimáticos reales desde el backend SEDC (`https://sedc.fonag.org.ec`), se implementó una arquitectura de proxy inverso local con autenticación delegada.
+Para conectar con la infraestructura autenticada del backend Django del **SEDC FONAG** (`https://sedc.fonag.org.ec`), se construyó una arquitectura de **Proxy Inverso Autenticado en el Servidor de Desarrollo** (`vite.config.js`).
+
+### 6.1. Diagrama de Secuencia de Peticiones HTTP
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Browser as Frontend (Vanilla JS)
-    participant Proxy as Vite Dev Server (:9000)
-    participant Env as .env.local (Node.js)
-    participant SEDC as Backend SEDC FONAG
-    
-    Browser->>Proxy: GET /api/sedc/estacion/list/
-    Note over Proxy,Env: Inyecta credenciales sin exponerlas al cliente
-    Env-->>Proxy: SEDC_USERNAME + SEDC_PASSWORD
-    Proxy->>SEDC: GET /estacion/list/ (Header: Authorization Basic base64)
-    SEDC-->>Proxy: JSON 200 OK (Dataset completo autenticado)
-    Proxy-->>Browser: JSON 200 OK
+    actor Cliente as Frontend (Vanilla JS)
+    participant Proxy as Vite Server Proxy (Node.js)
+    participant Auth as Auth Manager (vite.config.js)
+    participant SEDC as Backend SEDC FONAG (sedc.fonag.org.ec)
+
+    Cliente->>Proxy: POST /api/sedc/telemetria/consulta (Body: {estacion: "1", inicio: "2026-09-01"})
+    Note over Proxy,Auth: Verifica validez de galleta de sesión
+    alt Sesión expirada o no iniciada
+        Auth->>SEDC: GET /login/
+        SEDC-->>Auth: 200 OK (Set-Cookie: csrftoken=...)
+        Auth->>SEDC: POST /login/ (Body: username, password, csrftoken)
+        SEDC-->>Auth: 302 Found (Set-Cookie: sessionid=..., csrftoken=...)
+    end
+    Proxy->>SEDC: POST /telemetria/consulta (Header: Cookie: csrftoken=...; sessionid=...)
+    SEDC-->>Proxy: 200 OK (JSON con mediciones reales)
+    Proxy-->>Cliente: 200 OK (JSON en vivo)
 ```
 
-### 7.1. Modelo de Seguridad y Variables de Entorno
-1. **Aislamiento de Secretos**: Las credenciales se almacenan exclusivamente en `.env.local`, el cual está estrictamente excluido del control de versiones (`.gitignore`).
-2. **Prevención de Fuga en Bundles (`VITE_` guard)**:
-   - En Vite, cualquier variable con prefijo `VITE_` se inyecta estáticamente en el código JS compilado del cliente.
-   - Las variables sensibles (`SEDC_USERNAME`, `SEDC_PASSWORD`) se definen **sin** dicho prefijo para que únicamente residan en el runtime de Node.js del servidor de desarrollo.
-3. **Plantilla Pública**: Se mantiene `.env.example` con valores de muestra como referencia limpia de integración para el equipo.
+### 6.2. Seguridad de Credenciales y Entorno
+1. **Aislamiento en `.env`**: Las credenciales (`SEDC_USERNAME`, `SEDC_PASSWORD`) se configuran únicamente en variables de entorno sin el prefijo `VITE_`.
+2. **Protección contra fugas**: Al no usar el prefijo `VITE_`, las contraseñas residen exclusivamente en el runtime de Node.js en el proxy y nunca se empaquetan en el cliente frontend.
 
-### 7.2. Catálogo de Endpoints SEDC Integrados
+### 6.3. Catálogo de Servicios SEDC Integrados
 
-| # | Servicio / Función | Endpoint SEDC Remoto | Ruta Proxy Local | Autenticación |
-| :--- | :--- | :--- | :--- | :--- |
-| **01** | **Listado de Estaciones** | `/estacion/list/` | `/api/sedc/estacion/list/` | HTTP Basic Auth |
-| **02** | **GeoJSON de Estaciones** | `/point_geojson` | `/api/sedc/point_geojson` | HTTP Basic Auth |
-| **03** | **Catálogo de Variables** | `/variable/{seccion}/list` | `/api/sedc/variable/{seccion}/list` | HTTP Basic Auth |
-| **04** | **Telemetría en Tiempo Real** | `/ajax/telemetria/consulta` | `/api/sedc/ajax/telemetria/consulta` | HTTP Basic Auth |
-| **05** | **Datos Históricos por Periodo** | `/reportes/consultas_periodo` | `/api/sedc/reportes/consultas_periodo` | HTTP Basic Auth |
+| # | Servicio | Endpoint SEDC Remoto | Ruta Proxy Local | Formato |
+|---|---|---|---|---|
+| **01** | **Red de Estaciones** | `/informacion_red/list/` | `/api/sedc/informacion_red/list/` | JSON List |
+| **02** | **Series por Periodo** | `/reportes/consultas_periodo` | `/api/sedc/reportes/consultas_periodo` | JSON Graph Data |
+| **03** | **Telemetría en Vivo** | `/telemetria/consulta` | `/api/sedc/telemetria/consulta` | JSON Sensor Data |
 
-### 7.3. Patrón de Consumo en Clientes Frontend
-Los módulos JS del cliente consumen exclusivamente la ruta `/api/sedc/*` mediante `fetch()`, eliminando problemas de CORS en desarrollo y evitando almacenar tokens o contraseñas en el `localStorage` o memoria del navegador:
+---
 
-```javascript
-// Ejemplo canónico de consumo desacoplado
-export async function fetchEstaciones() {
-  const response = await fetch('/api/sedc/estacion/list/');
-  if (!response.ok) {
-    throw new Error(`Error SEDC [${response.status}]: ${response.statusText}`);
-  }
-  return response.json();
-}
-```
+## 7. Estrategia de Fallbacks Resilientes (Offline-First)
 
+Para asegurar la disponibilidad operativa continua cuando el backend del SEDC no está accesible, requiere autenticación manual o en entornos de demostración sin conexión:
+
+1. **`src/data/estaciones.json`**: Dataset estático que contiene las **61 estaciones hidroclimáticas activas oficiales** (17 Meteorológicas, 24 Pluviométricas y 20 Hidrológicas).
+2. **`src/data/ejes_2026.json`**: Polígonos GeoJSON de los **8 Ejes de Trabajo** de FONAG (*Antisana, Pita, Pichincha Atacazo, Nororiente DMQ, Papallacta - Oyacachi, San Pedro, Alto Pita, Noroccidente*).
+3. **Mecanismo Graceful Degradation en Servicios**:
+   - `fetchEstaciones()` intenta consultar el proxy en vivo. Si responde `403` o falla la red, importa dinámicamente `estaciones.json`.
+   - `fetchAnuarioEstadistico()` conmuta al generador de promedios deterministas `getAnuarioEstadistico()`.
+   - `fetchTelemetriaReal()` conmuta al motor determinista telemétrico `mockSeries`.
+
+---
+
+## 8. Metodología de Desarrollo: Spec-Driven Development (SDD)
+
+El desarrollo del portal siguió rigurosamente **Spec-Driven Development (SDD)**:
+
+1. **Especificación Formal de Cambios**: Cada iteración visual o lógica se documenta mediante artefactos en `openspec/changes/`.
+2. **Garantía de Regresión**: Ninguna funcionalidad previa se altera sin actualización de la especificación técnica.
+3. **Flujo de Ejecución**:
+   - `sdd-explore`: Análisis del código base y requerimientos.
+   - `sdd-propose` / `sdd-spec`: Definición de deltas arquitectónicos.
+   - `sdd-apply`: Implementación atómica del código.
+   - `sdd-verify`: Validación visual en navegador y pruebas de compilación (`vite build`).
+
+---
+
+## 9. Scripts de Compilación y Calidad
+
+El proyecto incluye comandos de automatización en `package.json`:
+
+- `npm run dev`: Inicia el servidor de desarrollo Vite en `http://localhost:9000/` con Proxy SEDC activo.
+- `npm run build`: Ejecuta la compilación de producción Multi-Page Application (MPA) optimizando bundles JS/CSS.
+- `npm run preview`: Sirve la build de producción localmente para pruebas de rendimiento.
