@@ -13,7 +13,20 @@ La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Depen
 2. **Cero Runtimes Pesados (Vanilla JS)**: Erradicación total de jQuery, Bootstrap y virtual DOMs (React, Vue, Angular). El navegador ejecuta manipular directamente el DOM de manera determinista e inmutable.
 3. **Arquitectura Multi-Page (MPA)**: Mapeo nativo de URLs del navegador con los puntos de entrada del servidor (`/`, `/estaciones/`, `/consultas/periodo/`, `/consultas/anuario/`, `/tiempo-real/`, `/contacto/`).
 4. **Resiliencia API-First con Fallback Transparente**: La aplicación prioriza el consumo en vivo de la API autenticada del SEDC. En entornos offline o restricciones de credenciales, el cliente conmuta suavemente a datasets locales estáticos y sincronizados sin romper la experiencia de usuario.
-5. **Atomic Design & CSS Tokens**: Organización de hojas de estilo en tokens canónicos de diseño (colores HSL/HEX, tipografías, escalas) y componentes atómicos.
+### 1.2. Tech Stack (Pila Tecnológica Detallada)
+
+| Capa / Categoría | Tecnología / Librería | Versión | Propósito Arquitectónico |
+|---|---|---|---|
+| **Core Client** | Vanilla JavaScript (ES6+ / ESM) | ECMAScript 2024 | Lógica de cliente reactiva funcional inmutable sin sobrecarga de virtual DOM. |
+| **Markup Semántico** | HTML5 Standard + WAI-ARIA | HTML5 W3C | Estructura semántica accesible con migas de pan, landmarks y accesibilidad WCAG 2.2. |
+| **Bundler & Dev Server** | Vite | `^6.2.0` | Empaquetador ultra-rápido ESM, soporte Multi-Page (MPA), HMR y Proxy HTTP Inverso. |
+| **CSS Engine** | Vanilla CSS Tokens + Tailwind CSS Bridge | `^4.0.9` | Design tokens canónicos en `:root`, variables CSS nativas e integración modular. |
+| **Cartografía Interactiva** | Leaflet.js | `^1.9.4` | Renderizado ligero de polígonos GeoJSON de Ejes y marcadores vectoriales interactivos. |
+| **Visualización de Datos** | Chart.js | `^4.5.1` | Gráficos estadísticos de series de tiempo, precipitación, temperatura y humedad. |
+| **Carrusel Component** | Embla Carousel | `^8.6.0` | Controlador fluido de carrusel con soporte para gestos táctiles y accesibilidad en socios. |
+| **Calidad y Linting** | ESLint + Stylelint | `^10.10.0` / `^17.15.0` | Validación estática estricta de código JS y estándares CSS canónicos. |
+| **Proxy API Inverso** | Node.js HTTPS Native Module | `v18+ / v20+` | Gestor de sesión persistente con autenticación `sessionid` y `csrftoken` contra SEDC. |
+| **Despliegue & Hosting** | Vercel Platform | Clean URLs | Hosting global edge con soporte para rewrites y rutas limpias (`cleanUrls: true`). |
 
 ---
 
