@@ -35,7 +35,7 @@ La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Depen
 El proyecto sigue una estructura limpia de **Multi-Page Application (MPA)** gestionada por **Vite 6**:
 
 ```
-c:/FTORRES/projects/Gestion/FONAG/
+./ (Raíz del Repositorio FONAG)
 ├── index.html                           # Entry point: Landing Page / Portal Principal
 ├── estaciones/
 │   └── index.html                       # Entry point: Visor de Estaciones Hidroclimáticas
@@ -301,3 +301,19 @@ El proyecto incluye comandos de automatización en `package.json`:
 - `npm run dev`: Inicia el servidor de desarrollo Vite en `http://localhost:9000/` con Proxy SEDC activo.
 - `npm run build`: Ejecuta la compilación de producción Multi-Page Application (MPA) optimizando bundles JS/CSS.
 - `npm run preview`: Sirve la build de producción localmente para pruebas de rendimiento.
+
+---
+
+## 10. Detalle y Configuración del Repositorio Git
+
+### 10.1. Identificación del Repositorio
+- **Nombre del Repositorio**: `fonag`
+- **URL Remota (SSH)**: `git@github.com:webmasterft/fonag.git`
+- **URL Remota (HTTPS)**: `https://github.com/webmasterft/fonag.git`
+- **Rama Principal de Producción**: `main`
+
+### 10.2. Convenciones de Control de Versiones
+1. **Conventional Commits**: Todos los commits siguen el estándar canónico de mensajes (`feat: ...`, `fix: ...`, `docs: ...`, `style: ...`, `refactor: ...`, `perf: ...`).
+2. **Cero Atribución AI**: Se prohíbe el uso de pie de página "Co-Authored-By" o firmas automáticas en los mensajes de commit.
+3. **Flujo de Integración**: Pushes directos y Pull Requests validados mediante compilación limpia de Vite (`npm run build`).
+
