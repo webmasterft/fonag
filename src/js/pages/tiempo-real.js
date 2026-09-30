@@ -163,9 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <button id="btn-tr-close-modal" style="background: transparent; border: none; font-size: 24px; color: #64748b; cursor: pointer;">&times;</button>
         </div>
-        <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.nombre} (${estacion.codigo})</h3>
+        <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.codigo} - ${estacion.nombre}</h3>
         <p style="margin: 0; font-size: 13px; color: #64748b;">
-          Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Periodo: ${sDate} a ${eDate}
+          Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Periodo: ${sDate.replace('T', ' ')} a ${eDate.replace('T', ' ')}
         </p>
       `;
       modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
@@ -272,16 +272,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
     const ejeName = estacion.ejeCalculado || estacion.cuenca || 'Pita';
     const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
-    const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
+    const stationName = estacion.nombre || estacion.codigo || 'Estación';
+    // Calcular estadísticas de la serie activa (Máximo, Mínimo y Último dato)
+    const validValues = series.map((s) => s.valor).filter((v) => typeof v === 'number' && !isNaN(v));
+    const maxVal = validValues.length > 0 ? Math.max(...validValues) : 'N/D';
+    const minVal = validValues.length > 0 ? Math.min(...validValues) : 'N/D';
+    const lastPoint = series.length > 0 ? series[series.length - 1] : null;
+    const lastVal = lastPoint ? `${lastPoint.valor} ${varCfg.unit}` : 'N/D';
+    const lastTime = lastPoint ? lastPoint.fecha : 'N/D';
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">${stationName}</h3>
+            <h3 class="modal-station-title">${estacion.codigo} - ${stationName}</h3>
           </div>
-          <div class="modal-station-code">${estacion.codigo}</div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>
             <span>${estacion.tipo || 'Hidrológica'}</span>
@@ -290,15 +296,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         <button type="button" class="btn-modal-close-x" id="btn-tr-close-modal" aria-label="Cerrar modal">X</button>
       </div>
 
+      <!-- Tarjetas resumidas: Máximo, Mínimo y Último Dato -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 10px 0 12px;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Último Dato</div>
+          <div style="font-size: 15px; font-weight: 800; color: #242857; margin-top: 2px;">${lastVal}</div>
+          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">${lastTime}</div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
+          <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase;">Valor Máximo</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${maxVal} ${varCfg.unit}</div>
+          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
+          <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase;">Valor Mínimo</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${minVal} ${varCfg.unit}</div>
+          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
+        </div>
+      </div>
+
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${sDate} - ${eDate}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Rango: ${sDate.replace('T', ' ')} a ${eDate.replace('T', ' ')}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-tr-csv">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Descargar
+          Descargar datos
         </button>
       </div>
       ${telResult.variables.length > 1 ? `

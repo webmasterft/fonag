@@ -35,40 +35,83 @@ export function renderAnuarioTable(container, estacion, rows, year = 2025) {
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
-          <button id="btn-export-csv" class="btn btn-navy-export" title="Exportar a CSV">
+          <button id="btn-export-csv" class="btn btn-navy-export" title="Descargar a Excel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Exportar CSV
+            Descargar Excel
           </button>
         </div>
       </div>
 
-      <div class="table-responsive-container">
-        <table class="fonag-data-table anuario-grid-table">
-          <thead>
-            <tr>
-              <th rowspan="2" class="col-mes" data-col="mes">Mes</th>
-              <th colspan="3" class="col-group col-group-precip" data-col="precipitacion">Precipitación (mm)</th>
-              <th colspan="3" class="col-group col-group-temp" data-col="temperatura">Temperatura (°C)</th>
-              <th rowspan="2" data-col="caudal">Caudal Medio</th>
-              <th rowspan="2" data-col="humedad">Humedad Media</th>
-            </tr>
-            <tr>
-              <th data-col="precipitacion">Máx Abs</th>
-              <th data-col="precipitacion">Día</th>
-              <th data-col="precipitacion">Total Mensual</th>
-              <th data-col="temperatura">Máx Abs</th>
-              <th data-col="temperatura">Mín Abs</th>
-              <th data-col="temperatura">Media</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map((row) => renderRow(row)).join('')}
-          </tbody>
-        </table>
+      <div class="table-responsive-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Tabla 1: Precipitación -->
+        ${estacion.tipo !== 'Hidrológica' ? `
+        <div class="anuario-subtable-block">
+          <h5 style="margin: 0 0 8px; font-size: 13.5px; font-weight: 700; color: #1e244a;">1. Tabla de Precipitación (mm)</h5>
+          <table class="fonag-data-table anuario-grid-table">
+            <thead>
+              <tr style="background-color: #f1f5f9;">
+                <th class="col-mes">Mes</th>
+                <th>Precipitación Máx Abs (mm)</th>
+                <th>Día de Ocurrencia</th>
+                <th>Total Mensual (mm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `
+                <tr class="${row.esResumen ? 'row-resumen' : ''}">
+                  <td class="col-mes">${row.mes}</td>
+                  <td>${row.precipitacionMax}</td>
+                  <td>${row.precipitacionDia}</td>
+                  <td class="font-bold">${row.precipitacionTotal}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <!-- Tabla 2: Temperatura y Humedad / Caudal -->
+        <div class="anuario-subtable-block">
+          <h5 style="margin: 0 0 8px; font-size: 13.5px; font-weight: 700; color: #1e244a;">
+            ${estacion.tipo === 'Hidrológica' ? '1. Tabla de Caudal y Temperatura del Agua' : '2. Tabla de Temperatura del Aire (°C) y Humedad'}
+          </h5>
+          <table class="fonag-data-table anuario-grid-table">
+            <thead>
+              <tr style="background-color: #f1f5f9;">
+                <th class="col-mes">Mes</th>
+                ${estacion.tipo === 'Hidrológica' ? `
+                  <th>Caudal Medio (m³/s)</th>
+                  <th>Temp. Agua (°C)</th>
+                ` : `
+                  <th>Temp. Máx Abs (°C)</th>
+                  <th>Temp. Mín Abs (°C)</th>
+                  <th>Temp. Media (°C)</th>
+                  <th>Humedad Media (%)</th>
+                `}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `
+                <tr class="${row.esResumen ? 'row-resumen' : ''}">
+                  <td class="col-mes">${row.mes}</td>
+                  ${estacion.tipo === 'Hidrológica' ? `
+                    <td class="font-bold">${row.caudalMedio}</td>
+                    <td>${row.tempMedia} °C</td>
+                  ` : `
+                    <td>${row.tempMaxAbs} °C</td>
+                    <td>${row.tempMinAbs} °C</td>
+                    <td class="font-bold">${row.tempMedia} °C</td>
+                    <td>${row.humedadRelativa}</td>
+                  `}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   `;

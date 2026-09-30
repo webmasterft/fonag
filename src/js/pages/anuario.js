@@ -256,9 +256,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">${stationName}</h3>
+            <h3 class="modal-station-title">${estacion.codigo} - ${stationName}</h3>
           </div>
-          <div class="modal-station-code">${estacion.codigo}</div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>
             <span>${estacion.tipo || 'Hidrológica'}</span>
@@ -275,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Descargar
+          Descargar Excel
         </button>
       </div>
 
@@ -488,7 +487,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            Descargar
+            Descargar Excel
           </button>
         </div>
       </article>

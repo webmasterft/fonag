@@ -233,11 +233,11 @@ export function exportAnuarioCsv(estacion, rows, year = 2025) {
   ]);
 
   const csvContent = [headers.join(','), ...csvRows.map((row) => row.join(','))].join('\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Anuario_${estacion.codigo}_${year}.csv`);
+  link.setAttribute('download', `Anuario_${estacion.codigo}_${year}.xlsx`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

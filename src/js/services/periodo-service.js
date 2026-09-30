@@ -10,7 +10,7 @@ export const VARIABLES_CONFIG = {
     name: 'Precipitación',
     unit: 'mm',
     label: 'Precipitación (mm)',
-    tiposCompatibles: ['Meteorológica', 'Pluviométrica', 'Hidrológica'],
+    tiposCompatibles: ['Meteorológica', 'Pluviométrica'],
     chartType: 'bar',
     color: '#3b82f6',
     defaultMin: 0,
@@ -261,26 +261,30 @@ export function getSeriesDeTiempo(estacion, variableCode = 'PRE', startDate = '2
  */
 export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'diario') {
   const config = VARIABLES_CONFIG[variableCode] || VARIABLES_CONFIG['PRE'];
+  const isSubhorario = frecuencia.toLowerCase().includes('subhorario') || frecuencia.toLowerCase().includes('horario');
+  const ext = isSubhorario ? 'csv' : 'xlsx';
 
-  let csv = `FONAG - SEDC Sistema de Estandarización de Datos Crudos\n`;
-  csv += `Consulta: Series de tiempo por periodo\n`;
-  csv += `Estación: ${estacion.codigo} - ${estacion.nombre}\n`;
-  csv += `Tipo: ${estacion.tipo}\n`;
-  csv += `Variable: ${config.name} (${config.unit})\n`;
-  csv += `Frecuencia: ${frecuencia}\n`;
-  csv += `Fecha de exportación: ${new Date().toISOString().substring(0, 10)}\n\n`;
+  let content = `FONAG - SEDC Sistema de Estandarización de Datos Crudos\n`;
+  content += `Consulta: Series de tiempo por periodo\n`;
+  content += `Código Estación: ${estacion.codigo}\n`;
+  content += `Nombre Estación: ${estacion.nombre}\n`;
+  content += `Tipo: ${estacion.tipo}\n`;
+  content += `Variable: ${config.name} (${config.unit})\n`;
+  content += `Frecuencia: ${frecuencia}\n`;
+  content += `Fecha de exportación: ${new Date().toISOString().substring(0, 10)}\n\n`;
 
-  csv += `Fecha,Valor_${config.code}_${config.unit},Estado\n`;
+  content += `Fecha,Valor_${config.code}_${config.unit},Estado\n`;
 
   series.forEach((item) => {
-    csv += `"${item.fecha}",${item.valor},${item.validado ? 'Validado' : 'Sin validar'}\n`;
+    content += `"${item.fecha}",${item.valor},${item.validado ? 'Validado' : 'Sin validar'}\n`;
   });
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const mimeType = isSubhorario ? 'text/csv;charset=utf-8;' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Serie_${estacion.codigo}_${config.code}_${frecuencia}.csv`);
+  link.setAttribute('download', `${estacion.codigo}_${config.code}_${frecuencia}.${ext}`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
