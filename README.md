@@ -85,56 +85,122 @@ La aplicación estará disponible en la URL local:
 
 ---
 
-## 📖 Guía de Extensión e Implementación para Desarrolladores
+## 📖 Guía Completa de Extensión e Implementación para Desarrolladores
 
-Para extender la plataforma manteniendo la coherencia arquitectónica (Atomic Design, Vanilla JS y Vite MPA), sigue las convenciones establecidas a continuación:
+Para mantener la robustez, determinismo y coherencia de la plataforma (Atomic Design, Vanilla JS, Vite MPA y SDD), sigue minuciosamente los estándares de desarrollo detallados a continuación:
 
-### 1. Agregar una Nueva Página (MPA)
-1. **Crear la vista HTML**: Añade una carpeta con un `index.html` en la raíz (ejemplo: `./reportes/index.html`).
-2. **Registrar la entrada en Vite**: Abre `./vite.config.js` y agrega el nuevo punto de entrada en `build.rollupOptions.input`:
+---
+
+### 1. Agregar una Nueva Página o Vista (Vite MPA)
+1. **Crear la Estructura HTML Semántica**: Crea una carpeta con su `index.html` (ej. `./reportes/index.html`). Define el `<header>` (Nav Portal), `<main>` y `<footer>`.
+2. **Registrar la Entrada en Vite**: Abre `./vite.config.js` y añade el nuevo punto de entrada en `build.rollupOptions.input`:
    ```javascript
    reportes: resolve(__dirname, 'reportes/index.html')
    ```
-3. **Crear su controlador JS**: Crea el archivo de lógica en `./src/js/pages/reportes.js` e impórtalo en el `<script type="module" src="/src/js/pages/reportes.js"></script>` del `index.html`.
+3. **Crear Controlador JavaScript**: Crea `./src/js/pages/reportes.js` e impórtalo en la vista:
+   ```html
+   <script type="module" src="/src/js/pages/reportes.js"></script>
+   ```
 
-### 2. Agregar Estilos (Atomic Design & CSS Tokens)
-1. **Identificar la categoría**:
-   - `tokens/`: Variables canónicas (colores, fuentes, sombras).
-   - `atoms/`: Botones, inputs, badges.
-   - `molecules/`: Tarjetas de información, ítems de listas, grupos de controles.
-   - `organisms/`: Layouts completos de página, barras laterales, mapas complejos.
-2. **Importar en main.css**: Agrega el nuevo archivo CSS en `./src/css/main.css` respetando el orden de cascada.
+---
 
-### 3. Agregar Nuevas Funciones y Endpoints / APIs
-1. **Definir la llamada a la API**: Añade la función en `./src/js/services/sedc-api.js` o `./src/js/services/api.js`. Usa siempre `SEDC_API_BASE_URL` o el proxy `/api-sedc/` para desarrollo.
-2. **Implementar Resiliencia (Fallback)**: Si el endpoint de red falla, proporciona un dataset o estructura por defecto:
+### 2. Convenciones de Estilos (CSS Tokens & Atomic Design)
+Los estilos se organizan bajo la arquitectura de **Atomic Design** en `./src/css/`:
+- **`tokens/`** (`variables.css`): Variables canónicas globales para colores (`--color-palette-navy`, `--color-brand-orange`), fuentes, radios (`--radius-14`) y escalas de espaciado. *Prohibido hardcodear colores hex directos.*
+- **`atoms/`**: Reglas elementales reutilizables como botones (`.btn-primary`), campos de texto (`.form-input`), badges de estado (`.badge-tipo`) o pins del mapa.
+- **`molecules/`**: Composiciones pequeñas como tarjetas de métricas (`.stat-card`), ítems de listas (`.constituent-item`) o selectores de filtros.
+- **`organisms/`**: Layouts complejos de pantalla como la vista de contacto, el mapa principal (`.home-map-layout`) o rejillas de anuarios.
+- **Registro**: Todo nuevo archivo `.css` creado debe importarse en `./src/css/main.css` respetando el orden de cascada.
+
+---
+
+### 3. Integración de Servicios, Endpoints y Resiliencia (Offline-First)
+1. **Creación de Servicios de Red**: Agrega las funciones de fetch en `./src/js/services/sedc-api.js` usando siempre el prefijo de proxy `/api-sedc/` para desarrollo local:
+   ```javascript
+   export async function fetchNuevosReportes(params) {
+     return fetchWithAuth('/reportes/nuevos/', {
+       method: 'POST',
+       body: JSON.stringify(params)
+     });
+   }
+   ```
+2. **Implementación de Fallbacks Resilientes**: Ante fallos de red o falta de conexión, conecta la vista con datasets locales en `./src/data/`:
    ```javascript
    try {
-     const data = await fetchEndpoint('/mi-nuevo-endpoint');
-     return data;
+     const data = await fetchNuevosReportes();
+     renderData(data);
    } catch (error) {
-     console.warn('Usando dataset estático de respaldo');
-     return DATASET_FALLBACK;
+     console.warn('API inaccesible. Activando dataset estático de fallback.');
+     renderData(FALLBACK_DATASET);
    }
    ```
 
-### 4. Crear Gráficos y Tablas Interactivos
-1. **Gráficos (Chart.js)**: Utiliza `Chart.js` y encapsula su instanciación en `./src/js/components/` o dentro de la página correspondiente. Asegúrate de destruir la instancia previa (`chartInstance.destroy()`) antes de re-renderizar datos nuevos.
-2. **Tablas**: Estructura las tablas con semántica HTML5 (`<thead>`, `<tbody>`) y aplica las clases atómicas de `./src/css/atoms/` para formatear filas y celdas.
+---
 
-### 5. Agregar Imágenes y Recursos Estáticos
-- **Imágenes públicas**: Coloca logotipos o assets estáticos en la carpeta `./public/` y haz referencia a ellos mediante `/nombre-imagen.png`.
-- **Assets procesados**: Para recursos importados por JS o CSS, guárdalos en `./src/assets/`.
+### 4. Construcción de Tablas Interactivas y Exportación (`table-core.js`)
+Para mostrar tablas de datos paginadas, filtrables y ordenables sin frameworks:
+1. **Lógica de Datos Inmutable**: Utiliza el motor puro `./src/js/molecules/data-table/table-core.js`:
+   - `filterRows(rows, filters, searchFields)`: Filtra registros sin mutar el array original.
+   - `sortRows(rows, key, direction)`: Ordena registros por columnas numéricas o texto.
+   - `paginateRows(rows, page, pageSize)`: Calcula la página activa y devuelve la porción exacta de filas.
+2. **Renderizado de DOM**: Emplea `./src/js/molecules/data-table/table-renderer.js` para inyectar semánticamente `<thead>`, `<tbody>` y controles de paginación.
+3. **Exportación a CSV / Excel**: Dispara descargas automáticas llamando a:
+   ```javascript
+   import { exportRowsToCsv } from '/src/js/molecules/data-table/table-core.js';
+   exportRowsToCsv(columnas, filasFiltradas, 'reporte_estaciones.csv');
+   ```
 
-### 6. Incorporar Nuevas Librerías
-- Instala dependencias únicamente mediante **npm**:
+---
+
+### 5. Visualización de Gráficos Interactivos (Chart.js)
+1. **Encapsulamiento de Instancias**: En las vistas telemétricas o de anuarios, encapsula la creación de gráficos con `Chart.js`.
+2. **Destrucción Preventiva de Memoria**: Destruye la instancia previa antes de actualizar la gráfica para prevenir *memory leaks*:
+   ```javascript
+   if (miGraficoInstance) {
+     miGraficoInstance.destroy();
+   }
+   miGraficoInstance = new Chart(ctx, config);
+   ```
+
+---
+
+### 6. Mapas Geoespaciales e Interacción GIS (Leaflet)
+1. **Contenedores de Mapa**: Define un elemento `<div id="map"></div>` con dimensiones explícitas en CSS.
+2. **Carga de GeoJSON**: Para dibujar los 8 Ejes de Trabajo de FONAG o puntos de estaciones, importa `./src/data/ejes_2026.json` o `./src/data/estaciones.json` y cargalos en la capa Leaflet (`L.geoJSON` / `L.markerClusterGroup`).
+3. **Controladores de Capas y Popups**: Diseña los popups usando templates HTML semánticos y vincúlalos a los eventos `click` de los marcadores.
+
+---
+
+### 7. Manejo de Estado y Paradigma de Programación
+- **Programación Funcional e Inmutable**: Prohibido usar estado global mutable no controlado. Utiliza funciones puras para procesar datos de estaciones o filtros de fecha.
+- **Manipulación Directa del DOM**: Selecciona elementos con `document.querySelector` o mantén referencias aisladas en las funciones inicializadoras de las páginas.
+
+---
+
+### 8. Gestión de Imágenes y Assets Estáticos
+- **Directorio Public (`./public/`)**: Almacena logotipos corporativos y favicons que deban ser servidos directamente en la raíz de producción.
+- **Assets Procesados (`./src/assets/`)**: Almacena iconos SVG, marcadores personalizados o imágenes importadas dinámicamente en los módulos JS o archivos CSS.
+
+---
+
+### 9. Incorporación de Librerías de Terceros
+- Instala nuevas dependencias exclusivamente por **npm**:
   ```bash
   npm install nombre-libreria
   ```
-- Impórtala como módulo ES en el controlador de la página que la requiera:
-  ```javascript
-  import Libreria from 'nombre-libreria';
-  ```
+- Importa la librería mediante módulos ES en el controlador correspondiente sin saturar el bundle global.
+
+---
+
+### 10. Metodología de Trabajo y Commits (SDD & Git)
+1. **Spec-Driven Development (SDD)**: Antes de realizar cambios complejos en la arquitectura o interfaz, revisa y documenta la especificación del cambio en `openspec/changes/`.
+2. **Mensajes de Commit Canónicos**: Utiliza estrictamente la convención de **Conventional Commits**:
+   - `feat: ...` (Nuevas funcionalidades)
+   - `fix: ...` (Corrección de errores)
+   - `docs: ...` (Documentación)
+   - `style: ...` (Ajustes visuales/CSS sin cambio de lógica)
+   - `refactor: ...` (Reestructuración de código)
+3. **Sin Firmas AI**: No añada pies de página tipo `Co-Authored-By` o notas automáticas de herramientas de IA en las contribuciones.
 
 ---
 
