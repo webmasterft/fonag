@@ -135,6 +135,17 @@ Los estilos se organizan bajo la arquitectura de **Atomic Design** en `./src/css
    }
    ```
 
+3. **Procedimiento para Actualizar los Datasets de Fallback**:
+   Los datos estáticos garantizan la operatividad Offline-First y se encuentran ubicados en el directorio `./src/data/`:
+   - **Catálogo de Estaciones (`./src/data/estaciones.json`)**:
+     - Contiene el array de objetos de las 61 estaciones hidroclimáticas.
+     - *Cómo actualizarlo*: Exporta el JSON desde el endpoint oficial SEDC `/informacion_red/list/` o edita el archivo respetando la estructura del objeto (campos `est_id`, `est_codigo`, `est_nombre`, `est_altura`, `est_latitud`, `est_longitud`, `tipo`, `administrador`, `sistemacuenca`, `eje_trabajo`, `transmision`).
+   - **Polígonos de Ejes de Trabajo (`./src/data/ejes_2026.json`)**:
+     - Formato estándar **GeoJSON** (`FeatureCollection`) que contiene la geometría de los 8 Ejes de Trabajo de FONAG.
+     - *Cómo actualizarlo*: Reemplaza las coordenadas dentro de la propiedad `geometry.coordinates` o actualiza los nombres de las zonas en `properties.NOMBRE`.
+   - **Generadores Simulados / Mocks (`./src/js/services/sedc-api.js`)**:
+     - `mockSeries()`: Motor determinista que genera curvas telemétricas teóricas. Para ajustar rangos de simulación, modifica los factores de min/máx en la función `mockSeries` de `sedc-api.js`.
+
 ---
 
 ### 4. Construcción de Tablas Interactivas y Exportación (`table-core.js`)
