@@ -115,23 +115,72 @@ Los estilos se organizan bajo la arquitectura de **Atomic Design** en `./src/css
 ---
 
 ### 3. Integración de Servicios, Endpoints y Resiliencia (Offline-First)
-1. **Creación de Servicios de Red**: Agrega las funciones de fetch en `./src/js/services/sedc-api.js` usando siempre el prefijo de proxy `/api-sedc/` para desarrollo local:
+
+El desarrollo local utiliza las credenciales de `.env` (`SEDC_USERNAME`, `SEDC_PASSWORD`) a través del Proxy Inverso de Vite (`/api-sedc/`). La aplicación interactúa con los **5 servicios oficiales de la API del SEDC FONAG**:
+
+#### Catálogo Oficial de Endpoints de la API SEDC
+
+| # | Servicio | Método | Endpoint SEDC Remoto | Ruta Proxy Local | Autenticación |
+|---|---|---|---|---|---|
+| **01** | **Listado de Estaciones** | `GET` | `/estacion/list/` | `/api-sedc/estacion/list/` | Opcional (amplía información) |
+| **02** | **Ubicación GeoJSON** | `GET` | `/point_geojson` | `/api-sedc/point_geojson` | Pública |
+| **03** | **Catálogo de Variables** | `GET` | `/variable/<seccion>/list` | `/api-sedc/variable/<seccion>/list` | Requerida (sesión activa) |
+| **04** | **Telemetría en Vivo** | `POST` | `/ajax/telemetria/consulta` | `/api-sedc/ajax/telemetria/consulta` | CSRF Token + Cookie (`csrftoken`) |
+| **05** | **Datos Históricos por Periodo** | `POST` | `/reportes/consultas_periodo` | `/api-sedc/reportes/consultas_periodo` | Requerida + Permiso Periodo |
+
+---
+
+#### Detalles de Uso de la API en el Cliente (`./src/js/services/sedc-api.js`)
+
+1. **`GET /estacion/list/` (Listado de Estaciones)**:
+   - *Parámetros útiles*: `nombre`, `codigo`, `administrador` (`FONAG`, `EPMAPS`), `est_estado` (`true`/`false`), `order`, `limit`, `offset`.
+   - *Uso*: Retorna el `est_id` necesario para consultar series históricas.
+
+2. **`GET /point_geojson` (Mapa GeoJSON)**:
+   - *Parámetros*: `section` (`hydroclimate`, `wetland`, `quality`, `soil`), `variable` (ej. `PRE`), `parameter`.
+   - *Uso*: Capa de puntos georreferenciados para visualizar en Leaflet.
+
+3. **`GET /variable/<seccion>/list` (Catálogo de Variables)**:
+   - *Secciones*: `hidro` (hidroclimáticas), `humed` (humedales), `cagua` (calidad de agua), `suelo`, `isoto`.
+   - *Uso*: Retorna el `var_id` y `var_codigo` requeridos para consultas por periodo.
+
+4. **`POST /ajax/telemetria/consulta` (Telemetría en Tiempo Real)**:
+   - *Body (form-data/json)*: `estacion` (ID estación), `inicio` (`YYYY-MM-DD`).
+   - *Seguridad*: Requiere cabecera `X-CSRFToken` y cookie de sesión. Límite de 100 peticiones/hora por IP.
+
+5. **`POST /reportes/consultas_periodo` (Datos Históricos por Periodo)**:
+   - *Body*: `estacion` (`est_id`), `variable` (`var_id`), `frecuencia` (`1`=Sub-horario Crudo, `2`=Sub-horario Validado, `3`=Horario, `4`=Diario, `5`=Mensual, `6`=Anual), `fecha_inicio`, `fecha_fin`, `transmision`.
+   - *Cabecera Obligatoria*: **`X-Requested-With: XMLHttpRequest`** (necesaria para recibir la respuesta en formato JSON en lugar de HTML).
+
+---
+
+#### Ejemplos de Implementación y Fallbacks
+
+1. **Creación de Servicios de Red**:
    ```javascript
-   export async function fetchNuevosReportes(params) {
-     return fetchWithAuth('/reportes/nuevos/', {
+   import { fetchWithAuth } from './api.js';
+
+   export async function fetchConsultasPeriodo(params) {
+     return fetchWithAuth('/reportes/consultas_periodo', {
        method: 'POST',
-       body: JSON.stringify(params)
+       headers: {
+         'X-Requested-With': 'XMLHttpRequest',
+         'Content-Type': 'application/x-www-form-urlencoded'
+       },
+       body: new URLSearchParams(params)
      });
    }
    ```
-2. **Implementación de Fallbacks Resilientes**: Ante fallos de red o falta de conexión, conecta la vista con datasets locales en `./src/data/`:
+
+2. **Implementación de Fallbacks Resilientes**:
+   Ante fallos de red (`302`, `401`, `403` o sin conexión), la aplicación conmuta automáticamente al dataset local:
    ```javascript
    try {
-     const data = await fetchNuevosReportes();
-     renderData(data);
+     const data = await fetchConsultasPeriodo({ estacion: 12, variable: 1, frecuencia: 3 });
+     renderGraph(data);
    } catch (error) {
-     console.warn('API inaccesible. Activando dataset estático de fallback.');
-     renderData(FALLBACK_DATASET);
+     console.warn('API SEDC inalcanzable. Activando dataset estático de fallback.');
+     renderGraph(MOCK_PERIOD_DATASET);
    }
    ```
 
@@ -139,7 +188,7 @@ Los estilos se organizan bajo la arquitectura de **Atomic Design** en `./src/css
    Los datos estáticos garantizan la operatividad Offline-First y se encuentran ubicados en el directorio `./src/data/`:
    - **Catálogo de Estaciones (`./src/data/estaciones.json`)**:
      - Contiene el array de objetos de las 61 estaciones hidroclimáticas.
-     - *Cómo actualizarlo*: Exporta el JSON desde el endpoint oficial SEDC `/informacion_red/list/` o edita el archivo respetando la estructura del objeto (campos `est_id`, `est_codigo`, `est_nombre`, `est_altura`, `est_latitud`, `est_longitud`, `tipo`, `administrador`, `sistemacuenca`, `eje_trabajo`, `transmision`).
+     - *Cómo actualizarlo*: Exporta el JSON desde el endpoint oficial SEDC `/estacion/list/` o edita el archivo respetando la estructura del objeto (`est_id`, `est_codigo`, `est_nombre`, `est_altura`, `est_latitud`, `est_longitud`, `tipo`, `administrador`, `sistemacuenca`, `eje_trabajo`, `transmision`).
    - **Polígonos de Ejes de Trabajo (`./src/data/ejes_2026.json`)**:
      - Formato estándar **GeoJSON** (`FeatureCollection`) que contiene la geometría de los 8 Ejes de Trabajo de FONAG.
      - *Cómo actualizarlo*: Reemplaza las coordenadas dentro de la propiedad `geometry.coordinates` o actualiza los nombres de las zonas en `properties.NOMBRE`.
