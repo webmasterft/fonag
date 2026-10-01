@@ -118,21 +118,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Cargar Estaciones del Servicio
   const rawList = await fetchEstaciones();
   allEstaciones = rawList.map((item, idx) => {
-    // Respetar al 100% el eje_trabajo devuelto por la API del SEDC
-    let eje = item.eje_trabajo;
-    if (!eje || eje === 'General') {
-      eje = getEjeForCoords(item.longitud, item.latitud);
-    }
-    if (!eje) {
-      eje = item.cuenca || item.sistema || 'General';
-    }
-
-    eje = formatEjeName(eje);
-
     return {
       no: idx + 1,
       ...item,
-      ejeDeTrabajo: eje
+      ejeDeTrabajo: item.eje_trabajo || 'General'
     };
   });
 

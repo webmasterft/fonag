@@ -1,5 +1,89 @@
 [
   {
+    "est_id": 249,
+    "est_codigo": "M5183F",
+    "est_nombre": "Bellavista - Casa",
+    "est_altura": "2245.0",
+    "est_latitud": "-0.01597400000000000",
+    "est_longitud": "-78.6808510000000",
+    "tipo": "Pluviométrica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Mindo" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": false,
+    "provincia": "Pichincha"
+  },
+  {
+    "est_id": 250,
+    "est_codigo": "M5185F",
+    "est_nombre": "Estación Científica San José",
+    "est_altura": "1800.0",
+    "est_latitud": "-0.04351600000000000",
+    "est_longitud": "-78.6534570000000",
+    "tipo": "Pluviométrica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Mindo" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": false,
+    "provincia": "Pichincha"
+  },
+  {
+    "est_id": 251,
+    "est_codigo": "M5186F",
+    "est_nombre": "San José - Tandayapa",
+    "est_altura": "1730.0",
+    "est_latitud": "-0.04332200000000000",
+    "est_longitud": "-78.6578050000000",
+    "tipo": "Pluviométrica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Mindo" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": false,
+    "provincia": "Pichincha"
+  },
+  {
+    "est_id": 252,
+    "est_codigo": "P5262",
+    "est_nombre": "Bellavista - Camping",
+    "est_altura": "2245.0",
+    "est_latitud": "-0.01597400000000000",
+    "est_longitud": "-78.6808510000000",
+    "tipo": "Pluviométrica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Mindo" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": false,
+    "provincia": "Pichincha"
+  },
+  {
+    "est_id": 253,
+    "est_codigo": "PEC",
+    "est_nombre": "Encantada",
+    "est_altura": "2200.0",
+    "est_latitud": "-0.01200000000000000",
+    "est_longitud": "-78.6700000000000",
+    "tipo": "Hidrológica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Mindo" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": false,
+    "provincia": "Pichincha"
+  },
+  {
+    "est_id": 254,
+    "est_codigo": "M0014",
+    "est_nombre": "Noroccidente Yunguilla",
+    "est_altura": "2650.0",
+    "est_latitud": "-0.00500000000000000",
+    "est_longitud": "-78.6400000000000",
+    "tipo": "Meteorológica",
+    "administrador": "FONAG",
+    "sistemacuenca": { "sistema": "Noroccidente", "cuenca": "Alambí" },
+    "eje_trabajo": "Noroccidente",
+    "transmision": true,
+    "provincia": "Pichincha"
+  },
+  {
     "est_id": 1,
     "est_codigo": "M0001",
     "est_nombre": "Antisana Humboldt",
@@ -10,7 +94,8 @@
     "administrador": "FONAG",
     "sistemacuenca": { "sistema": "Mica Quito Sur (Antisana)", "cuenca": "Antisana" },
     "eje_trabajo": "Antisana",
-    "transmision": true
+    "transmision": true,
+    "provincia": "Napo"
   },
   {
     "est_id": 2,
@@ -23,7 +108,8 @@
     "administrador": "FONAG",
     "sistemacuenca": { "sistema": "Mica Quito Sur (Antisana)", "cuenca": "Antisana" },
     "eje_trabajo": "Antisana",
-    "transmision": true
+    "transmision": true,
+    "provincia": "Napo"
   },
   {
     "est_id": 3,
@@ -36,7 +122,8 @@
     "administrador": "FONAG",
     "sistemacuenca": { "sistema": "Mica Quito Sur (Antisana)", "cuenca": "Antisana" },
     "eje_trabajo": "Antisana",
-    "transmision": true
+    "transmision": true,
+    "provincia": "Napo"
   },
   {
     "est_id": 4,
@@ -45,19 +132,6 @@
     "est_altura": "4730.0",
     "est_latitud": "-0.473000",
     "est_longitud": "-78.169600",
-    "tipo": "Pluviométrica",
-    "administrador": "FONAG",
-    "sistemacuenca": { "sistema": "Mica Quito Sur (Antisana)", "cuenca": "Antisana" },
-    "eje_trabajo": "Antisana",
-    "transmision": true
-  },
-  {
-    "est_id": 5,
-    "est_codigo": "P0002",
-    "est_nombre": "Antisana Paredón",
-    "est_altura": "4350.0",
-    "est_latitud": "-0.465100",
-    "est_longitud": "-78.238900",
     "tipo": "Pluviométrica",
     "administrador": "FONAG",
     "sistemacuenca": { "sistema": "Mica Quito Sur (Antisana)", "cuenca": "Antisana" },

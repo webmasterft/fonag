@@ -252,12 +252,7 @@ export default defineConfig(({ mode }) => {
           target: baseUrl,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/api\/sedc/, ''),
-          configure: (proxy) => {
-            proxy.on('proxyReq', (proxyReq) => {
-              proxyReq.setHeader('Authorization', authHeader);
-            });
-          },
+          rewrite: (path) => path.replace(/^\/api\/sedc/, '')
         },
       },
     },

@@ -1,3 +1,5 @@
+import ejesGeojsonData from '../../data/ejes_2026.json';
+
 /**
  * Service: Estaciones Hidroclimáticas (100% Direct API Consumption)
  */
@@ -8,7 +10,7 @@
  */
 export async function fetchEstaciones() {
   try {
-    const res = await fetch('/api/sedc/estacion/list/');
+    const res = await fetch('/api/sedc/estacion/list/?administrador=1&limit=300');
     if (!res.ok) {
       throw new Error(`API SEDC HTTP ${res.status}`);
     }
@@ -77,6 +79,73 @@ export async function fetchPointGeojson(section = 'hydroclimate', variable = '')
   };
 }
 
+function pointInPoly(x, y, poly) {
+  let inside = false;
+  let p1x = poly[0][0];
+  let p1y = poly[0][1];
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const p2x = poly[(i + 1) % n][0];
+    const p2y = poly[(i + 1) % n][1];
+    if (y > Math.min(p1y, p2y)) {
+      if (y <= Math.max(p1y, p2y)) {
+        if (x <= Math.max(p1x, p2x)) {
+          let xinters = 0;
+          if (p1y !== p2y) {
+            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
+          }
+          if (p1x === p2x || x <= xinters) {
+            inside = !inside;
+          }
+        }
+      }
+    }
+    p1x = p2x;
+    p1y = p2y;
+  }
+  return inside;
+}
+
+const STATION_EJE_OVERRIDES = {
+  'PEC': 'Noroccidente',
+  'M5182F': 'Pichincha Atacazo'
+};
+
+function getEjeForCoords(lng, lat, codigo = '') {
+  if (codigo && STATION_EJE_OVERRIDES[codigo]) {
+    return STATION_EJE_OVERRIDES[codigo];
+  }
+  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
+  for (const f of ejesGeojsonData.features) {
+    const geom = f.geometry;
+    if (!geom) continue;
+    const name = f.properties?.eje_trab || '';
+    if (geom.type === 'Polygon') {
+      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
+    } else if (geom.type === 'MultiPolygon') {
+      for (const poly of geom.coordinates) {
+        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
+      }
+    }
+  }
+  return 'General';
+}
+
+function formatEjeName(name) {
+  if (!name) return 'Pita';
+  const u = name.toUpperCase();
+  if (u.includes('PITA')) return 'Pita';
+  if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
+  if (u.includes('NORORIENTE')) return 'Nororiente DMQ';
+  if (u.includes('ANTISANA')) return 'Antisana';
+  if (u.includes('PAPALLACTA')) return 'Papallacta - Oyacachi';
+  if (u.includes('SAN PEDRO')) return 'San Pedro';
+  if (u.includes('PISQUE')) return 'Pisque';
+  if (u.includes('NOROCCIDENTE')) return 'Noroccidente';
+  if (u.includes('NORCENTRAL')) return 'Norcentral';
+  return name;
+}
+
 /**
  * Normaliza las coordenadas y campos recibidos directamente de la API SEDC.
  * @param {Array<Object>} list
@@ -101,12 +170,18 @@ export function normalizeEstaciones(list) {
         lng = temp;
       }
 
-      // Normalización del Eje de Trabajo (ID o Nombre)
-      let ejeNombre = item.eje_trabajo || item.eje_trabajo_nombre || 'General';
-      if (typeof item.eje_trabajo === 'object' && item.eje_trabajo !== null) {
-        ejeNombre = item.eje_trabajo.nombre || item.eje_trabajo.eje_trab || 'General';
+      // Normalización del Eje de Trabajo (Prioridad: campo API > resolución por polígono espacial)
+      let ejeNombre = '';
+      if (typeof item.eje_trabajo === 'string' && item.eje_trabajo.trim() !== '') {
+        ejeNombre = formatEjeName(item.eje_trabajo.trim());
+      } else if (typeof item.eje_trabajo === 'object' && item.eje_trabajo !== null) {
+        ejeNombre = formatEjeName(item.eje_trabajo.nombre || item.eje_trabajo.eje_trab);
       } else if (item.eje_trabajo === 4 || item.eje_trabajo === '4') {
         ejeNombre = 'Noroccidente';
+      }
+
+      if (!ejeNombre || ejeNombre === 'General') {
+        ejeNombre = getEjeForCoords(lng, lat, item.est_codigo || '');
       }
 
       return {

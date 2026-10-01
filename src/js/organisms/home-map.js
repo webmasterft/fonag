@@ -305,20 +305,7 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
       const coords = feature.geometry?.coordinates;
-      let eje = props.eje_trabajo || props.eje;
-      if (!eje && coords && coords.length >= 2) {
-        eje = getEjeForCoords(coords[0], coords[1]);
-      }
-      if (!eje) {
-        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
-        if (sistema.includes('PITA')) eje = 'Pita';
-        else if (sistema.includes('PICHINCHA') || sistema.includes('CENTRO') || sistema.includes('SALOYA')) eje = 'Pichincha Atacazo';
-        else if (sistema.includes('ANTISANA') || sistema.includes('MICA')) eje = 'Antisana';
-        else if (sistema.includes('PAPALLACTA') || sistema.includes('OYACACHI')) eje = 'Papallacta - Oyacachi';
-        else if (sistema.includes('NOROCCIDENTE')) eje = 'Noroccidente';
-        else eje = 'Pita';
-      }
-
+      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
       const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
       const matchAdmin = admin.includes('FONAG');
       const matchEjeForCounts = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
@@ -348,18 +335,7 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
       const coords = feature.geometry?.coordinates;
-      let eje = props.eje_trabajo || props.eje;
-      if (!eje && coords && coords.length >= 2) {
-        eje = getEjeForCoords(coords[0], coords[1]);
-      }
-      if (!eje) {
-        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
-        if (sistema.includes('PITA')) eje = 'Pita';
-        else if (sistema.includes('PICHINCHA')) eje = 'Pichincha Atacazo';
-        else if (sistema.includes('ANTISANA')) eje = 'Antisana';
-        else if (sistema.includes('PAPALLACTA')) eje = 'Papallacta - Oyacachi';
-        else eje = 'Pita';
-      }
+      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
 
       // Filtro administrador (exclusivo FONAG)
       const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
@@ -574,21 +550,7 @@ export async function initHomeStationsMap() {
       const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
       if (!admin.includes('FONAG')) return;
 
-      let eje = props.eje_trabajo || props.eje;
-      if (!eje && coords && coords.length >= 2) {
-        eje = getEjeForCoords(coords[0], coords[1]);
-      }
-      if (!eje) {
-        const sistema = (props.sistema || props.cuenca || '').toUpperCase();
-        if (sistema.includes('PITA')) eje = 'Pita';
-        else if (sistema.includes('PICHINCHA') || sistema.includes('CENTRO') || sistema.includes('SALOYA')) eje = 'Pichincha Atacazo';
-        else if (sistema.includes('ANTISANA') || sistema.includes('MICA')) eje = 'Antisana';
-        else if (sistema.includes('PAPALLACTA') || sistema.includes('OYACACHI')) eje = 'Papallacta - Oyacachi';
-        else if (sistema.includes('NOROCCIDENTE')) eje = 'Noroccidente';
-        else eje = 'Nororiente DMQ';
-      }
-
-      eje = formatEjeName(eje);
+      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
       const key = eje.toUpperCase();
       if (!liveCounts[key]) {
         liveCounts[key] = { total: 0, meteo: 0, pluvio: 0, hidro: 0 };
