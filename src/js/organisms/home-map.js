@@ -79,84 +79,84 @@ function formatEjeName(name) {
   return name;
 }
 
-// Configuración y estadísticas por Eje de Trabajo (Valores reales de la API SEDC en vivo)
+// Configuración y estadísticas por Eje de Trabajo (Valores calculados dinámicamente)
 const EJES_CONFIG = {
   'PITA': {
     name: 'Pita',
     color: '#f9b872',
     fillOpacity: 0.55,
     border: '#e0984c',
-    total: 12,
-    meteo: 3,
-    pluvio: 4,
-    hidro: 5,
-    pct: 20
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'PICHINCHA ATACAZO': {
     name: 'Pichincha Atacazo',
     color: '#a3c97e',
     fillOpacity: 0.55,
     border: '#83a85e',
-    total: 11,
-    meteo: 2,
-    pluvio: 5,
-    hidro: 4,
-    pct: 18
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'NORORIENTE DMQ': {
     name: 'Nororiente DMQ',
     color: '#c98a75',
     fillOpacity: 0.55,
     border: '#ad725e',
-    total: 8,
-    meteo: 2,
-    pluvio: 4,
-    hidro: 2,
-    pct: 13
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'ANTISANA': {
     name: 'Antisana',
     color: '#5c7cfa',
     fillOpacity: 0.55,
     border: '#4263eb',
-    total: 16,
-    meteo: 3,
-    pluvio: 6,
-    hidro: 7,
-    pct: 26
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'PAPALLACTA - OYACACHI': {
     name: 'Papallacta - Oyacachi',
     color: '#f1dfbb',
     fillOpacity: 0.65,
     border: '#d6c096',
-    total: 5,
-    meteo: 3,
-    pluvio: 1,
-    hidro: 1,
-    pct: 8
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'SAN PEDRO': {
     name: 'San Pedro',
     color: '#63b39d',
     fillOpacity: 0.55,
     border: '#4a9984',
-    total: 2,
-    meteo: 2,
+    total: 0,
+    meteo: 0,
     pluvio: 0,
     hidro: 0,
-    pct: 3
+    pct: 0
   },
   'ALTO PITA': {
     name: 'Alto Pita',
     color: '#93c5fd',
     fillOpacity: 0.55,
     border: '#60a5fa',
-    total: 2,
-    meteo: 1,
-    pluvio: 1,
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
     hidro: 0,
-    pct: 3
+    pct: 0
   },
   'NOROCCIDENTE': {
     name: 'Noroccidente',
@@ -164,11 +164,11 @@ const EJES_CONFIG = {
     color: '#b4a2b8',
     fillOpacity: 0.55,
     border: '#9a859f',
-    total: 5,
-    meteo: 1,
-    pluvio: 3,
-    hidro: 1,
-    pct: 8
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   }
 };
 
