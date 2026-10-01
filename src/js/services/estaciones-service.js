@@ -1,153 +1,63 @@
-import ejesGeojsonData from '../../data/ejes_2026.json';
-
 /**
- * Service: Estaciones Hidroclimáticas (100% Direct API Consumption)
+ * Service: Estaciones Hidroclimáticas
+ *
+ * Estrategia de datos:
+ * 1. Primero intenta el endpoint local autenticado (/api/sedc/estacion/list)
+ *    que inyecta sesión SEDC y devuelve eje_trabajo completo.
+ * 2. Si falla (sesión expirada, sin red), usa el JSON canónico generado
+ *    desde el API con credenciales (src/data/estaciones.json).
+ *
+ * El JSON estático es la fuente de verdad — fue generado autenticado.
+ * Se actualiza ejecutando: node scripts/update-estaciones.js
  */
+import canonicalData from '../../data/estaciones.json';
 
 /**
- * Obtiene la lista completa de estaciones desde el API del SEDC.
+ * Obtiene la lista completa de estaciones.
  * @returns {Promise<Array<Object>>}
  */
 export async function fetchEstaciones() {
   try {
     const res = await fetch('/api/sedc/estacion/list/?administrador=1&limit=300');
-    if (!res.ok) {
-      throw new Error(`API SEDC HTTP ${res.status}`);
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.results || []);
+      if (Array.isArray(list) && list.length > 0 && list[0].eje_trabajo !== undefined) {
+        return normalizeEstaciones(list);
+      }
     }
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : (data.results || []);
-    if (Array.isArray(list) && list.length > 0) {
-      return normalizeEstaciones(list);
-    }
-  } catch (err) {
-    console.warn('API SEDC no disponible en cliente (403/offline). Cargando dataset sincronizado de 61 estaciones:', err.message);
+  } catch (_) {
+    // Silent — fallback to canonical JSON below
   }
 
-  // Fallback con el dataset oficial sincronizado de las 61 estaciones activas
-  const { default: estacionesLocal } = await import('../../data/estaciones.json');
-  return normalizeEstaciones(estacionesLocal);
+  // Fallback: canonical JSON generated from authenticated API
+  const list = Array.isArray(canonicalData) ? canonicalData : (canonicalData.results || []);
+  return normalizeEstaciones(list);
 }
 
 /**
- * Obtiene el FeatureCollection GeoJSON de estaciones en vivo directamente desde la API del SEDC.
+ * Obtiene el FeatureCollection GeoJSON de estaciones desde la API del SEDC.
  * @param {string} section - 'hydroclimate' | 'wetland' | 'quality' | 'soil'
  * @param {string} [variable] - Código opcional de variable
  * @returns {Promise<Object>}
  */
 export async function fetchPointGeojson(section = 'hydroclimate', variable = '') {
-  try {
-    const params = new URLSearchParams({ section });
-    if (variable) params.append('variable', variable);
+  const params = new URLSearchParams({ section });
+  if (variable) params.append('variable', variable);
 
-    const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
-    if (res.ok) {
-      const geojson = await res.json();
-      if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
-        return geojson;
-      }
-    }
-  } catch (error) {
-    console.warn('Error consultando /point_geojson directo desde API SEDC, activando fallback local:', error.message);
-  }
-
-  // Fallback con estaciones filtradas y procesadas
-  const liveEstaciones = await fetchEstaciones();
-  
-  return {
-    type: 'FeatureCollection',
-    features: liveEstaciones.map(item => ({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [item.longitud, item.latitud]
-      },
-      properties: {
-        est_id: item.id,
-        est_codigo: item.codigo,
-        est_nombre: item.nombre,
-        est_altura: item.altura,
-        est_latitud: item.latitud,
-        est_longitud: item.longitud,
-        tipo: item.tipo,
-        administrador: item.administrador,
-        cuenca: item.cuenca,
-        sistema: item.sistema,
-        eje_trabajo: item.eje_trabajo,
-        transmision: item.transmision
-      }
-    }))
-  };
-}
-
-function pointInPoly(x, y, poly) {
-  let inside = false;
-  let p1x = poly[0][0];
-  let p1y = poly[0][1];
-  const n = poly.length;
-  for (let i = 0; i < n; i++) {
-    const p2x = poly[(i + 1) % n][0];
-    const p2y = poly[(i + 1) % n][1];
-    if (y > Math.min(p1y, p2y)) {
-      if (y <= Math.max(p1y, p2y)) {
-        if (x <= Math.max(p1x, p2x)) {
-          let xinters = 0;
-          if (p1y !== p2y) {
-            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
-          }
-          if (p1x === p2x || x <= xinters) {
-            inside = !inside;
-          }
-        }
-      }
-    }
-    p1x = p2x;
-    p1y = p2y;
-  }
-  return inside;
-}
-
-const STATION_EJE_OVERRIDES = {
-  'PEC': 'Noroccidente',
-  'M5182F': 'Pichincha Atacazo'
-};
-
-function getEjeForCoords(lng, lat, codigo = '') {
-  if (codigo && STATION_EJE_OVERRIDES[codigo]) {
-    return STATION_EJE_OVERRIDES[codigo];
-  }
-  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
-  for (const f of ejesGeojsonData.features) {
-    const geom = f.geometry;
-    if (!geom) continue;
-    const name = f.properties?.eje_trab || '';
-    if (geom.type === 'Polygon') {
-      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
-    } else if (geom.type === 'MultiPolygon') {
-      for (const poly of geom.coordinates) {
-        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
-      }
+  const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
+  if (res.ok) {
+    const geojson = await res.json();
+    if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
+      return geojson;
     }
   }
-  return 'General';
-}
-
-function formatEjeName(name) {
-  if (!name) return 'Pita';
-  const u = name.toUpperCase();
-  if (u.includes('PITA')) return 'Pita';
-  if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
-  if (u.includes('NORORIENTE')) return 'Nororiente DMQ';
-  if (u.includes('ANTISANA')) return 'Antisana';
-  if (u.includes('PAPALLACTA')) return 'Papallacta - Oyacachi';
-  if (u.includes('SAN PEDRO')) return 'San Pedro';
-  if (u.includes('PISQUE')) return 'Pisque';
-  if (u.includes('NOROCCIDENTE')) return 'Noroccidente';
-  if (u.includes('NORCENTRAL')) return 'Norcentral';
-  return name;
+  throw new Error('Error en el API, intenta más tarde.');
 }
 
 /**
- * Normaliza las coordenadas y campos recibidos directamente de la API SEDC.
+ * Normaliza los campos recibidos de la API SEDC autenticada.
+ * eje_trabajo viene como string ya resuelto por el backend Django.
  * @param {Array<Object>} list
  * @returns {Array<Object>}
  */
@@ -156,33 +66,26 @@ export function normalizeEstaciones(list) {
 
   return list
     .filter((item) => {
-      const admin = (item.administrador || item.est_administrador || 'FONAG').toUpperCase();
-      return admin.includes('FONAG');
+      const admin = (item.administrador || '').toUpperCase();
+      // est_estado: false = estación inactiva/de prueba (igual que filtra la web Django)
+      const active = item.est_estado !== false;
+      return admin.includes('FONAG') && active;
     })
     .map((item) => {
       let lat = parseFloat(item.est_latitud);
       let lng = parseFloat(item.est_longitud);
 
-      // Corregir posibles inversiones de coordenadas en registros
+      // Corregir inversión de coordenadas en registros mal cargados
       if (lat < -50 && lng > -10 && lng < 10) {
         const temp = lat;
         lat = lng;
         lng = temp;
       }
 
-      // Normalización del Eje de Trabajo (Prioridad: campo API > resolución por polígono espacial)
-      let ejeNombre = '';
-      if (typeof item.eje_trabajo === 'string' && item.eje_trabajo.trim() !== '') {
-        ejeNombre = formatEjeName(item.eje_trabajo.trim());
-      } else if (typeof item.eje_trabajo === 'object' && item.eje_trabajo !== null) {
-        ejeNombre = formatEjeName(item.eje_trabajo.nombre || item.eje_trabajo.eje_trab);
-      } else if (item.eje_trabajo === 4 || item.eje_trabajo === '4') {
-        ejeNombre = 'Noroccidente';
-      }
-
-      if (!ejeNombre || ejeNombre === 'General') {
-        ejeNombre = getEjeForCoords(lng, lat, item.est_codigo || '');
-      }
+      // eje_trabajo viene directo del API — no se calcula, no se sobreescribe
+      const ejeNombre = (typeof item.eje_trabajo === 'string' && item.eje_trabajo.trim())
+        ? item.eje_trabajo.trim()
+        : 'General';
 
       return {
         id: item.est_id,

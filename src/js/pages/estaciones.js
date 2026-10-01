@@ -7,69 +7,6 @@ import { fetchEstaciones } from '../services/estaciones-service.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initColumnFilter } from '../molecules/data-table/column-filter.js';
-import ejesGeojsonData from '../../data/ejes_2026.json';
-
-// Helper geométrico para asociar estaciones al Eje de Trabajo exacto
-function pointInPoly(x, y, poly) {
-  let inside = false;
-  let p1x = poly[0][0];
-  let p1y = poly[0][1];
-  const n = poly.length;
-  for (let i = 0; i < n; i++) {
-    const p2x = poly[(i + 1) % n][0];
-    const p2y = poly[(i + 1) % n][1];
-    if (y > Math.min(p1y, p2y)) {
-      if (y <= Math.max(p1y, p2y)) {
-        if (x <= Math.max(p1x, p2x)) {
-          let xinters = 0;
-          if (p1y !== p2y) {
-            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
-          }
-          if (p1x === p2x || x <= xinters) {
-            inside = !inside;
-          }
-        }
-      }
-    }
-    p1x = p2x;
-    p1y = p2y;
-  }
-  return inside;
-}
-
-function getEjeForCoords(lng, lat) {
-  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
-
-  for (const f of ejesGeojsonData.features) {
-    const geom = f.geometry;
-    if (!geom) continue;
-    const name = f.properties?.eje_trab || '';
-
-    if (geom.type === 'Polygon') {
-      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
-    } else if (geom.type === 'MultiPolygon') {
-      for (const poly of geom.coordinates) {
-        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
-      }
-    }
-  }
-  return null;
-}
-
-function formatEjeName(name) {
-  if (!name) return 'Pita';
-  const u = name.toUpperCase();
-  if (u.includes('PITA')) return 'Pita';
-  if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
-  if (u.includes('NORORIENTE')) return 'Nororiente DMQ';
-  if (u.includes('ANTISANA')) return 'Antisana';
-  if (u.includes('PAPALLACTA')) return 'Papallacta - Oyacachi';
-  if (u.includes('SAN PEDRO')) return 'San Pedro';
-  if (u.includes('PISQUE')) return 'Pisque';
-  if (u.includes('NOROCCIDENTE')) return 'Noroccidente';
-  if (u.includes('NORCENTRAL')) return 'Norcentral';
-  return name;
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalHttpLoader();
@@ -115,15 +52,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     ]);
   }
 
-  // 1. Cargar Estaciones del Servicio
-  const rawList = await fetchEstaciones();
-  allEstaciones = rawList.map((item, idx) => {
-    return {
-      no: idx + 1,
-      ...item,
-      ejeDeTrabajo: item.eje_trabajo || 'General'
-    };
-  });
+  // 1. Cargar Estaciones del Servicio (100% API Directa)
+  try {
+    const rawList = await fetchEstaciones();
+    allEstaciones = rawList.map((item, idx) => {
+      return {
+        no: idx + 1,
+        ...item,
+        ejeDeTrabajo: item.eje_trabajo || 'General'
+      };
+    });
+  } catch (err) {
+    if (tableBody) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2.5rem; color: #ef4444; font-weight: 600;">
+            Error en el API, intenta más tarde.
+          </td>
+        </tr>
+      `;
+    }
+    if (tableLoaderEl) {
+      tableLoaderEl.classList.add('is-hidden');
+    }
+    return;
+  }
 
   // Poblar dinámicamente los desgloses de los Selects (Ejes y Provincias)
   if (selectEje) {
@@ -217,17 +170,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           </tr>
         `;
       } else {
-        tableBody.innerHTML = pageItems.map(item => {
+        tableBody.innerHTML = pageItems.map((item, idx) => {
           let badgeClass = 'meteo';
           if (item.tipo?.includes('Hidro')) badgeClass = 'hidro';
           else if (item.tipo?.includes('Pluvio')) badgeClass = 'pluvio';
 
           const transClass = item.transmision ? 'activo' : 'inactivo';
           const transLabel = item.transmision ? 'Activo' : 'Inactivo';
+          const rowNumber = startIdx + idx + 1;
 
           return `
             <tr>
-              <td class="cell-no">${item.no}</td>
+              <td class="cell-no">${rowNumber}</td>
               <td class="cell-codigo" data-col="codigo">
                 <a href="/consultas/anuario/?codigo=${item.codigo}" style="color: #1e2347; text-decoration: none; font-weight: 700;">
                   ${item.codigo}
@@ -359,9 +313,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const rows = [
         ['No', 'Codigo', 'Nombre', 'Tipo', 'Provincia', 'Eje de trabajo', 'Transmision', 'Altitud', 'Latitud', 'Longitud']
       ];
-      allEstaciones.forEach(item => {
+      allEstaciones.forEach((item, idx) => {
         rows.push([
-          item.no,
+          idx + 1,
           `"${item.codigo}"`,
           `"${item.nombre}"`,
           `"${item.tipo}"`,

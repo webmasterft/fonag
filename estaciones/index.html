@@ -145,6 +145,7 @@
           <select id="filter-eje" class="estaciones-select">
             <option value="">Todos los ejes</option>
             <option value="Pita">Pita</option>
+            <option value="Alto Pita">Alto Pita</option>
             <option value="Pichincha Atacazo">Pichincha Atacazo</option>
             <option value="Nororiente DMQ">Nororiente DMQ</option>
             <option value="Antisana">Antisana</option>
@@ -222,25 +223,25 @@
             <!-- Dynamic Rows -->
           </tbody>
         </table>
-      </div>
 
-      <!-- Pagination Footer Bar -->
-      <div class="estaciones-pagination-bar">
-        <div class="pagination-page-size">
-          <span id="pagination-range-text">Mostrando <strong>1 &ndash; 10</strong> de <strong>61</strong> resultados por página:</span>
-          <select id="select-page-size" class="select-page-size" aria-label="Resultados por página">
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-
-        <div class="pagination-controls">
-          <button type="button" class="btn-page-arrow" id="btn-prev-page" aria-label="Página anterior">&lt;</button>
-          <div class="page-numbers-list" id="page-numbers-container">
-            <!-- Dynamic Page Numbers -->
+        <!-- Table Card Footer Pagination -->
+        <div class="estaciones-pagination-bar">
+          <div class="pagination-page-size">
+            <span id="pagination-range-text">Mostrando <strong>1 &ndash; 10</strong> de <strong>61</strong> resultados por página:</span>
+            <select id="select-page-size" class="select-page-size" aria-label="Resultados por página">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
           </div>
-          <button type="button" class="btn-page-arrow" id="btn-next-page" aria-label="Página siguiente">&gt;</button>
+
+          <div class="pagination-controls">
+            <button type="button" class="btn-page-arrow" id="btn-prev-page" aria-label="Página anterior">&lt;</button>
+            <div class="page-numbers-list" id="page-numbers-container">
+              <!-- Dynamic Page Numbers -->
+            </div>
+            <button type="button" class="btn-page-arrow" id="btn-next-page" aria-label="Página siguiente">&gt;</button>
+          </div>
         </div>
       </div>
     </main>

@@ -99,15 +99,59 @@ export default defineConfig(({ mode }) => {
   const baseUrl = env.SEDC_API_BASE_URL || 'https://sedc.fonag.org.ec';
   const username = env.SEDC_USERNAME || '***REMOVED***';
   const password = env.SEDC_PASSWORD || '***REMOVED***';
-  const authHeader = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
 
   return {
     plugins: [
       tailwindcss(),
       {
-        name: 'sedc-telemetria-api-middleware',
+        name: 'sedc-authenticated-api-middleware',
         configureServer(server) {
-          // Endpoint dedicado para consultar telemetría en tiempo real con sesión autenticada
+          /**
+           * /api/sedc/estacion/list → autenticado con sesión SEDC
+           * Garantiza que eje_trabajo sea devuelto correctamente por el backend Django.
+           */
+          server.middlewares.use('/api/sedc/estacion/list', async (req, res) => {
+            console.log('[SEDC Estacion List] req.url:', req.url);
+            try {
+              const session = await getSedcSession(baseUrl, username, password);
+              console.log('[SEDC Estacion List] session ok:', !!session, 'has sessionId:', session?.cookie?.includes('sessionid='));
+              if (!session) {
+                res.statusCode = 502;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
+                return;
+              }
+              const urlObj = new URL(req.url, 'http://localhost');
+              const qs = urlObj.search || '?administrador=1&limit=300';
+              const targetUrl = `${baseUrl}/estacion/list/${qs}`;
+              console.log('[SEDC Estacion List] targetUrl:', targetUrl);
+              console.log('[SEDC Estacion List] cookie preview:', session.cookie.substring(0, 50));
+              const sedcResponse = await requestHttps(
+                targetUrl,
+                {
+                  headers: {
+                    Cookie: session.cookie,
+                    Referer: baseUrl,
+                    'X-Requested-With': 'XMLHttpRequest',
+                  },
+                }
+              );
+              console.log('[SEDC Estacion List] sedcResponse.status:', sedcResponse.status, 'body prefix:', sedcResponse.body.substring(0, 80));
+              res.statusCode = sedcResponse.status;
+              res.setHeader('Content-Type', 'application/json');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              res.end(sedcResponse.body);
+            } catch (error) {
+              console.error('[SEDC Estacion List Error]:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: error.message }));
+            }
+          });
+
+          /**
+           * /api/sedc/telemetria/consulta → POST autenticado
+           */
           server.middlewares.use('/api/sedc/telemetria/consulta', async (req, res) => {
             if (req.method !== 'POST') {
               res.statusCode = 405;
@@ -173,7 +217,9 @@ export default defineConfig(({ mode }) => {
             });
           });
 
-          // Endpoint dedicado para consultas por periodo con autenticación SEDC
+          /**
+           * /api/sedc/reportes/consultas_periodo → POST autenticado
+           */
           server.middlewares.use('/api/sedc/reportes/consultas_periodo', async (req, res) => {
             if (req.method !== 'POST') {
               res.statusCode = 405;
@@ -241,20 +287,36 @@ export default defineConfig(({ mode }) => {
               }
             });
           });
+
+          /**
+           * /api/sedc/* → proxy genérico sin autenticación de sesión
+           * (point_geojson y otros endpoints públicos)
+           */
+          server.middlewares.use('/api/sedc', async (req, res) => {
+            try {
+              const urlObj = new URL(req.url, 'http://localhost');
+              const sedcPath = urlObj.pathname.replace(/^\/api\/sedc/, '') + (urlObj.search || '');
+              const sedcResponse = await requestHttps(`${baseUrl}${sedcPath}`, {
+                headers: { Referer: baseUrl },
+              });
+              res.statusCode = sedcResponse.status;
+              res.setHeader('Content-Type', sedcResponse.headers['content-type'] || 'application/json');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              res.end(sedcResponse.body);
+            } catch (error) {
+              console.error('[SEDC Generic Proxy Error]:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: error.message }));
+            }
+          });
         },
       },
     ],
     server: {
       port: 9000,
       open: false,
-      proxy: {
-        '/api/sedc': {
-          target: baseUrl,
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/api\/sedc/, '')
-        },
-      },
+      // Sin proxy genérico — todo /api/sedc/* es manejado por los middlewares de arriba
     },
     build: {
       rollupOptions: {

@@ -534,7 +534,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px;
+  padding: 16px 20px;
+  border-top: 1px solid #f1f5f9;
+  background-color: var(--color-palette-offwhite-1);
+  border-bottom-left-radius: var(--border-radius-xl, 16px);
+  border-bottom-right-radius: var(--border-radius-xl, 16px);
   flex-wrap: wrap;
   gap: 1rem;
 }
