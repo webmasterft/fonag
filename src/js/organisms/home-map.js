@@ -319,8 +319,11 @@ export async function initHomeStationsMap() {
         else eje = 'Pita';
       }
 
+      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
+      const matchAdmin = admin.includes('FONAG');
       const matchEjeForCounts = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
-      if (matchEjeForCounts) {
+
+      if (matchAdmin && matchEjeForCounts) {
         if (tipo === 'Meteorológica') meteoCount++;
         else if (tipo === 'Pluviométrica') pluvioCount++;
         else if (tipo === 'Hidrológica') hidroCount++;
@@ -335,9 +338,9 @@ export async function initHomeStationsMap() {
       if (countPluvioEl) countPluvioEl.textContent = cfg ? cfg.pluvio : pluvioCount;
       if (countHidroEl) countHidroEl.textContent = cfg ? cfg.hidro : hidroCount;
     } else {
-      if (countMeteoEl) countMeteoEl.textContent = meteoCount || 16;
+      if (countMeteoEl) countMeteoEl.textContent = meteoCount || 17;
       if (countPluvioEl) countPluvioEl.textContent = pluvioCount || 24;
-      if (countHidroEl) countHidroEl.textContent = hidroCount || 21;
+      if (countHidroEl) countHidroEl.textContent = hidroCount || 20;
     }
 
     // Filtrar qué estaciones dibujar en el mapa
@@ -358,13 +361,17 @@ export async function initHomeStationsMap() {
         else eje = 'Pita';
       }
 
+      // Filtro administrador (exclusivo FONAG)
+      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
+      const matchAdmin = admin.includes('FONAG');
+
       // Filtro tipo
       const matchTipo = (activeTipo === 'ALL') || (tipo === activeTipo);
 
       // Filtro eje
       const matchEje = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
 
-      return matchTipo && matchEje;
+      return matchAdmin && matchTipo && matchEje;
     });
 
     filtered.forEach(feature => {
@@ -564,7 +571,9 @@ export async function initHomeStationsMap() {
       const props = feature.properties || {};
       const tipo = (props.tipo || '').trim();
 
-      // Priorizar el campo oficial eje_trabajo que devuelve la API en vivo
+      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
+      if (!admin.includes('FONAG')) return;
+
       let eje = props.eje_trabajo || props.eje;
       if (!eje && coords && coords.length >= 2) {
         eje = getEjeForCoords(coords[0], coords[1]);
@@ -579,6 +588,7 @@ export async function initHomeStationsMap() {
         else eje = 'Nororiente DMQ';
       }
 
+      eje = formatEjeName(eje);
       const key = eje.toUpperCase();
       if (!liveCounts[key]) {
         liveCounts[key] = { total: 0, meteo: 0, pluvio: 0, hidro: 0 };
@@ -589,8 +599,8 @@ export async function initHomeStationsMap() {
       else if (tipo === 'Hidrológica') liveCounts[key].hidro++;
     });
 
-    // Actualizar EJES_CONFIG dinámicamente si la API está disponible
-    const totalGlobal = currentFeatures.length || 61;
+    // Actualizar EJES_CONFIG 100% dinámicamente según la respuesta de la API en vivo de FONAG
+    const totalGlobal = Object.values(liveCounts).reduce((acc, curr) => acc + curr.total, 0) || 61;
     Object.keys(EJES_CONFIG).forEach(k => {
       if (liveCounts[k]) {
         EJES_CONFIG[k].total = liveCounts[k].total;

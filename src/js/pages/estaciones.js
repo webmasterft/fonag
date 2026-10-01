@@ -118,17 +118,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Cargar Estaciones del Servicio
   const rawList = await fetchEstaciones();
   allEstaciones = rawList.map((item, idx) => {
-    // Resolver eje geométricamente o por sistemacuenca
-    let eje = getEjeForCoords(item.longitud, item.latitud);
-    if (!eje) {
-      const sis = (item.sistema || item.cuenca || '').toLowerCase();
-      if (sis.includes('pita')) eje = 'Pita';
-      else if (sis.includes('centro') || sis.includes('cinto') || sis.includes('saloya')) eje = 'Pichincha Atacazo';
-      else if (sis.includes('mica') || sis.includes('antisana')) eje = 'Antisana';
-      else if (sis.includes('papallacta') || sis.includes('oyacachi')) eje = 'Papallacta - Oyacachi';
-      else if (sis.includes('noroccidente') || sis.includes('mindo')) eje = 'Noroccidente';
-      else eje = 'Pita';
+    // Respetar al 100% el eje_trabajo devuelto por la API del SEDC
+    let eje = item.eje_trabajo;
+    if (!eje || eje === 'General') {
+      eje = getEjeForCoords(item.longitud, item.latitud);
     }
+    if (!eje) {
+      eje = item.cuenca || item.sistema || 'General';
+    }
+
+    eje = formatEjeName(eje);
 
     return {
       no: idx + 1,
@@ -136,6 +135,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       ejeDeTrabajo: eje
     };
   });
+
+  // Poblar dinámicamente los desgloses de los Selects (Ejes y Provincias)
+  if (selectEje) {
+    const ejesUnicos = Array.from(new Set(allEstaciones.map(e => e.ejeDeTrabajo).filter(Boolean))).sort();
+    selectEje.innerHTML = '<option value="">Todos los ejes</option>' + 
+      ejesUnicos.map(eje => `<option value="${eje}">${eje}</option>`).join('');
+  }
+
+  if (selectProvincia) {
+    const provsUnicas = Array.from(new Set(allEstaciones.map(e => e.provincia).filter(Boolean))).sort();
+    selectProvincia.innerHTML = '<option value="">Todas</option>' + 
+      provsUnicas.map(p => `<option value="${p}">${p}</option>`).join('');
+  }
+
+  // Actualizar conteos de los Stat Pills superiores
+  const meteoCount = allEstaciones.filter(e => e.tipo === 'Meteorológica').length;
+  const pluvioCount = allEstaciones.filter(e => e.tipo === 'Pluviométrica').length;
+  const hidroCount = allEstaciones.filter(e => e.tipo === 'Hidrológica').length;
+
+  const pillMeteo = document.querySelector('.estaciones-stat-pill[data-tipo="Meteorológica"] span:last-child');
+  const pillPluvio = document.querySelector('.estaciones-stat-pill[data-tipo="Pluviométrica"] span:last-child');
+  const pillHidro = document.querySelector('.estaciones-stat-pill[data-tipo="Hidrológica"] span:last-child');
+
+  if (pillMeteo) pillMeteo.textContent = `Meteorológica (${meteoCount})`;
+  if (pillPluvio) pillPluvio.textContent = `Pluviométrica (${pluvioCount})`;
+  if (pillHidro) pillHidro.textContent = `Hidrológica (${hidroCount})`;
 
   // 2. Leer parámetros de URL si viene filtrado desde Home
   const urlParams = new URLSearchParams(window.location.search);

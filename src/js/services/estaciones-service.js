@@ -8,13 +8,14 @@
  */
 export async function fetchEstaciones() {
   try {
-    const res = await fetch('/api/sedc/informacion_red/list/');
+    const res = await fetch('/api/sedc/estacion/list/');
     if (!res.ok) {
       throw new Error(`API SEDC HTTP ${res.status}`);
     }
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      return normalizeEstaciones(data);
+    const list = Array.isArray(data) ? data : (data.results || []);
+    if (Array.isArray(list) && list.length > 0) {
+      return normalizeEstaciones(list);
     }
   } catch (err) {
     console.warn('API SEDC no disponible en cliente (403/offline). Cargando dataset sincronizado de 61 estaciones:', err.message);
@@ -32,6 +33,22 @@ export async function fetchEstaciones() {
  * @returns {Promise<Object>}
  */
 export async function fetchPointGeojson(section = 'hydroclimate', variable = '') {
+  try {
+    const params = new URLSearchParams({ section });
+    if (variable) params.append('variable', variable);
+
+    const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
+    if (res.ok) {
+      const geojson = await res.json();
+      if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
+        return geojson;
+      }
+    }
+  } catch (error) {
+    console.warn('Error consultando /point_geojson directo desde API SEDC, activando fallback local:', error.message);
+  }
+
+  // Fallback con estaciones filtradas y procesadas
   const liveEstaciones = await fetchEstaciones();
   
   return {
@@ -84,6 +101,14 @@ export function normalizeEstaciones(list) {
         lng = temp;
       }
 
+      // Normalización del Eje de Trabajo (ID o Nombre)
+      let ejeNombre = item.eje_trabajo || item.eje_trabajo_nombre || 'General';
+      if (typeof item.eje_trabajo === 'object' && item.eje_trabajo !== null) {
+        ejeNombre = item.eje_trabajo.nombre || item.eje_trabajo.eje_trab || 'General';
+      } else if (item.eje_trabajo === 4 || item.eje_trabajo === '4') {
+        ejeNombre = 'Noroccidente';
+      }
+
       return {
         id: item.est_id,
         codigo: item.est_codigo || 'S/N',
@@ -92,7 +117,7 @@ export function normalizeEstaciones(list) {
         provincia: item.provincia || 'Pichincha',
         cuenca: item.sistemacuenca?.cuenca || item.micro_cuenca || 'Cuenca Interandina',
         sistema: item.sistemacuenca?.sistema || 'General',
-        eje_trabajo: item.eje_trabajo || 'General',
+        eje_trabajo: ejeNombre,
         latitud: isNaN(lat) ? -0.22985 : lat,
         longitud: isNaN(lng) ? -78.52495 : lng,
         altura: item.est_altura ? `${parseFloat(item.est_altura).toFixed(0)} m` : 'N/D',
