@@ -8,6 +8,51 @@ let activeRequestsCount = 0;
 let loaderContainer = null;
 let progressBarEl = null;
 
+const DEFAULT_TITLE = 'Consultando servidor...';
+const DEFAULT_SUBTITLE = 'Cargando información hidroclimática';
+
+/**
+ * Markup único de la tarjeta de carga, compartido por el loader flotante y el inline.
+ * @param {string} [title]
+ * @param {string} [subtitle]
+ * @returns {string}
+ */
+function loaderCardHtml(title = DEFAULT_TITLE, subtitle = DEFAULT_SUBTITLE) {
+  return `
+    <div class="fonag-loader-card">
+      <div class="fonag-loader-spinner-wrapper">
+        <div class="fonag-loader-ring"></div>
+        <div class="fonag-loader-inner-dot"></div>
+      </div>
+      <div class="fonag-loader-text-group">
+        <span class="fonag-loader-title">${title}</span>
+        <span class="fonag-loader-subtitle">${subtitle}</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Muestra la misma tarjeta de carga centrada dentro de un contenedor (p. ej. el área de un gráfico).
+ * No interfiere con el loader flotante global, que sigue controlado por el interceptor de fetch.
+ * @param {HTMLElement} container Contenedor donde se centra el loader
+ * @param {{ title?: string, subtitle?: string }} [options]
+ * @returns {() => void} Función que retira el loader
+ */
+export function showInlineLoader(container, { title, subtitle } = {}) {
+  if (!container) return () => {};
+  if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+
+  const el = document.createElement('div');
+  el.className = 'fonag-inline-loader';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
+  el.innerHTML = loaderCardHtml(title, subtitle);
+  container.appendChild(el);
+
+  return () => el.remove();
+}
+
 /**
  * Crea o retorna el contenedor DOM del loader global animado.
  */
@@ -26,18 +71,7 @@ function ensureLoaderElement() {
   loaderContainer.className = 'fonag-global-loader';
   loaderContainer.setAttribute('role', 'status');
   loaderContainer.setAttribute('aria-live', 'polite');
-  loaderContainer.innerHTML = `
-    <div class="fonag-loader-card">
-      <div class="fonag-loader-spinner-wrapper">
-        <div class="fonag-loader-ring"></div>
-        <div class="fonag-loader-inner-dot"></div>
-      </div>
-      <div class="fonag-loader-text-group">
-        <span class="fonag-loader-title">Consultando servidor...</span>
-        <span class="fonag-loader-subtitle">Cargando información hidroclimática</span>
-      </div>
-    </div>
-  `;
+  loaderContainer.innerHTML = loaderCardHtml();
   document.body.appendChild(loaderContainer);
   return loaderContainer;
 }
@@ -45,7 +79,7 @@ function ensureLoaderElement() {
 /**
  * Muestra el loader animado
  */
-export function showGlobalLoader(customTitle = 'Consultando servidor...') {
+export function showGlobalLoader(customTitle = DEFAULT_TITLE) {
   ensureLoaderElement();
   activeRequestsCount++;
 

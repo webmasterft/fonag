@@ -12,6 +12,7 @@ import {
   fetchSeriesDeTiempo,
   exportarSerieCsv
 } from '../services/periodo-service.js';
+import { showApiError, API_ERROR_MESSAGE } from '../atoms/api-error.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
@@ -87,8 +88,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 1. Cargar Estaciones del Servicio
-  allEstaciones = await fetchEstaciones();
+  // 1. Cargar Estaciones del Servicio (sin respaldo local: si falla se muestra el error)
+  try {
+    allEstaciones = await fetchEstaciones();
+  } catch (err) {
+    console.error('[Periodo] Error cargando estaciones:', err);
+    showApiError(cardsContainer);
+    if (counterEl) counterEl.textContent = '';
+    return;
+  }
 
   // Poblar select de Eje de trabajo dinámicamente (igual que estaciones page)
   if (selectEje) {
@@ -214,9 +222,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     showPeriodoChartLoader(chartCanvas);
     if (tablePreviewContainer) tablePreviewContainer.innerHTML = '';
 
-    const series = await fetchSeriesDeTiempo(estacion, varCode, sDate, eDate, freq);
+    let series;
+    try {
+      series = await fetchSeriesDeTiempo(estacion, varCode, sDate, eDate, freq);
+    } catch (err) {
+      console.error('[Periodo] Error consultando la serie:', err);
+      destroyPeriodoChart();
+      showApiError(tablePreviewContainer);
+      return;
+    }
 
     renderModalHeader(estacion, varCfg, sDate, eDate, freq, series);
+    if (!series.figure && series.length === 0) {
+      // SEDC respondió sin registros para esa estación/variable/rango (no es un error de la API)
+      destroyPeriodoChart();
+      if (tablePreviewContainer) {
+        tablePreviewContainer.innerHTML = '<div class="fonag-api-error" style="color:#64748b;">No existe información para el periodo y estación seleccionada.</div>';
+      }
+      return;
+    }
     renderPeriodoChart(chartCanvas, series, varCfg);
     renderTablePreview(series, varCfg);
   }
@@ -291,15 +315,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Fecha</th>
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Valor (${varCfg.unit})</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Estado</th>
             </tr>
           </thead>
           <tbody>
             ${preview.map((p) => `
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${p.fecha}</td>
-                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor}</td>
-                <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">Validado</td>
+                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor ?? '-'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -459,7 +481,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           btn.innerHTML = 'Descargando...';
           try {
             const series = await fetchSeriesDeTiempo(est, varCode, sDate, eDate, freq);
-            exportarSerieCsv(est, varCode, series, freq);
+            if (series.length === 0) {
+              alert('No existe información para el periodo y estación seleccionada.');
+            } else {
+              exportarSerieCsv(est, varCode, series, freq);
+            }
+          } catch (err) {
+            console.error('[Periodo] Error descargando la serie:', err);
+            alert(API_ERROR_MESSAGE);
           } finally {
             btn.disabled = false;
             btn.innerHTML = origText;

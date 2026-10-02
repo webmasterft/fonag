@@ -188,11 +188,16 @@
 
         <!-- Table Dedicated Animated Loading Overlay -->
         <div id="estaciones-table-loader" class="estaciones-table-loader" aria-live="polite" aria-busy="true">
-          <div class="table-spinner-ring"></div>
-          <div class="table-loading-info">
-            <span class="table-loading-title">Cargando estaciones de monitoreo...</span>
-            <span class="table-loading-subtitle">Consultando red hidroclimática del FONAG</span>
-          </div>
+          <div class="fonag-loader-card">
+              <div class="fonag-loader-spinner-wrapper">
+                <div class="fonag-loader-ring"></div>
+                <div class="fonag-loader-inner-dot"></div>
+              </div>
+              <div class="fonag-loader-text-group">
+                <span class="fonag-loader-title">Consultando servidor...</span>
+                <span class="fonag-loader-subtitle">Cargando estaciones de monitoreo</span>
+              </div>
+            </div>
         </div>
 
         <table class="estaciones-table" role="table">

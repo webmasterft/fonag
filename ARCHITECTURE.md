@@ -12,7 +12,7 @@ La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Depen
 1. **Concepts > Code**: Separación estricta de responsabilidades (SoC), modularidad limpia y diseño arquitectónico robusto antes que el uso irreflexivo de frameworks.
 2. **Cero Runtimes Pesados (Vanilla JS)**: Erradicación total de jQuery, Bootstrap y virtual DOMs (React, Vue, Angular). El navegador ejecuta manipular directamente el DOM de manera determinista e inmutable.
 3. **Arquitectura Multi-Page (MPA)**: Mapeo nativo de URLs del navegador con los puntos de entrada del servidor (`/`, `/estaciones/`, `/consultas/periodo/`, `/consultas/anuario/`, `/tiempo-real/`, `/contacto/`).
-4. **Resiliencia API-First con Fallback Transparente**: La aplicación prioriza el consumo en vivo de la API autenticada del SEDC. En entornos offline o restricciones de credenciales, el cliente conmuta suavemente a datasets locales estáticos y sincronizados sin romper la experiencia de usuario.
+4. **Datos 100% SEDC, sin respaldos**: Todo dato mostrado o descargado proviene en vivo de la API autenticada del SEDC. No existen datasets locales de respaldo ni datos simulados: si la API falla, el cliente muestra un mensaje de error explícito ("Error en el API, intenta más tarde.").
 ### 1.2. Tech Stack (Pila Tecnológica Detallada)
 
 | Capa / Categoría | Tecnología / Librería | Versión | Propósito Arquitectónico |
@@ -80,9 +80,8 @@ El proyecto sigue una estructura limpia de **Multi-Page Application (MPA)** gest
 │   │   │   └── footer.css               # Pie de página corporativo
 │   │   └── templates/
 │   │       └── layout.css               # Estructura del grid principal y contenedores (1366px)
-│   ├── data/                            # Datasets Locales Sincronizados (Fallbacks)
-│   │   ├── estaciones.json              # 61 estaciones hidroclimáticas activas oficiales
-│   │   └── ejes_2026.json               # GeoJSON de Polígonos de los 8 Ejes de Trabajo FONAG
+│   ├── data/                            # Geografía estática (no es respaldo de la API)
+│   │   └── ejes_2026.json               # GeoJSON de Polígonos de los Ejes de Trabajo FONAG
 │   └── js/
 │       ├── main.js                      # Controller: Landing Page
 │       ├── atoms/
@@ -104,7 +103,7 @@ El proyecto sigue una estructura limpia de **Multi-Page Application (MPA)** gest
 │       │   ├── theme-toggle.js          # Gestor de tema claro/oscuro
 │       │   └── constituents-carousel.js # Controlador de Embla Carousel
 │       ├── services/                    # CAPA DE SERVICIOS Y API INTEGRACIÓN
-│       │   ├── estaciones-service.js    # Consumo de red de estaciones (Live API + Fallback)
+│       │   ├── estaciones-service.js    # Consumo de red de estaciones (API SEDC, sin respaldo)
 │       │   ├── periodo-service.js       # Consumo de series históricas por periodo
 │       │   ├── anuario-service.js       # Consumo de resúmenes estadísticos anuales
 │       │   └── telemetria-service.js    # Consumo de lecturas telemétricas en tiempo real
@@ -267,16 +266,18 @@ sequenceDiagram
 
 ---
 
-## 7. Estrategia de Fallbacks Resilientes (Offline-First)
+## 7. Manejo de Errores de la API (sin respaldos)
 
-Para asegurar la disponibilidad operativa continua cuando el backend del SEDC no está accesible, requiere autenticación manual o en entornos de demostración sin conexión:
+Todo dato proviene del SEDC. Cuando el backend no responde o la sesión no está autenticada, la aplicación **no** sustituye los datos: informa el error.
 
-1. **`src/data/estaciones.json`**: Dataset estático que contiene las **61 estaciones hidroclimáticas activas oficiales** (17 Meteorológicas, 24 Pluviométricas y 20 Hidrológicas).
-2. **`src/data/ejes_2026.json`**: Polígonos GeoJSON de los **8 Ejes de Trabajo** de FONAG (*Antisana, Pita, Pichincha Atacazo, Nororiente DMQ, Papallacta - Oyacachi, San Pedro, Alto Pita, Noroccidente*).
-3. **Mecanismo Graceful Degradation en Servicios**:
-   - `fetchEstaciones()` intenta consultar el proxy en vivo. Si responde `403` o falla la red, importa dinámicamente `estaciones.json`.
-   - `fetchAnuarioEstadistico()` conmuta al generador de promedios deterministas `getAnuarioEstadistico()`.
-   - `fetchTelemetriaReal()` conmuta al motor determinista telemétrico `mockSeries`.
+1. **Estado de error compartido** (`src/js/atoms/api-error.js`): mensaje único "Error en el API, intenta más tarde." usado por todas las páginas.
+2. **Comportamiento de los servicios**:
+   - `fetchEstaciones()` lanza un error si la API falla o si SEDC devuelve el listado sin sesión autenticada (sin `eje_trabajo` / `est_id`).
+   - `fetchSeriesDeTiempo()` lanza un error ante fallos de red/HTTP; devuelve `[]` cuando SEDC responde sin registros ("No existe información para el periodo y estación seleccionada.").
+   - `fetchAnuarioSedc()` / `downloadAnuarioExcel()` consultan `POST /hydro_annual` (tablas, figuras y Excel oficial del anuario).
+   - `fetchTelemetriaReal()` devuelve `hasData: false` con el mensaje de error.
+3. **Datos faltantes**: se muestran como `-` (o celda vacía en CSV); nunca se rellenan con valores por defecto.
+4. **Único dato local**: `src/data/ejes_2026.json`, polígonos GeoJSON de los Ejes de Trabajo (geografía estática, no respaldo).
 
 ---
 

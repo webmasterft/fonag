@@ -8,6 +8,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import ejesGeojsonData from '../../data/ejes_2026.json';
+import { showInlineLoader } from '../atoms/global-loader.js';
+import { showApiError } from '../atoms/api-error.js';
 
 // Paleta de colores para los tipos de estación (Figma Match)
 const TYPE_COLORS = {
@@ -17,84 +19,84 @@ const TYPE_COLORS = {
   'default': '#64748b'
 };
 
-// Configuración y estadísticas por Eje de Trabajo (Valores canónicos oficiales de referencia)
+// Configuración visual por Eje de Trabajo; los conteos se calculan con las estaciones de la API
 const EJES_CONFIG = {
   'PITA': {
     name: 'Pita',
     color: '#f9b872',
     fillOpacity: 0.55,
     border: '#e0984c',
-    total: 12,
-    meteo: 3,
-    pluvio: 4,
-    hidro: 5,
-    pct: 20
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'PICHINCHA ATACAZO': {
     name: 'Pichincha Atacazo',
     color: '#a3c97e',
     fillOpacity: 0.55,
     border: '#83a85e',
-    total: 11,
-    meteo: 2,
-    pluvio: 5,
-    hidro: 4,
-    pct: 18
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'NORORIENTE DMQ': {
     name: 'Nororiente DMQ',
     color: '#c98a75',
     fillOpacity: 0.55,
     border: '#ad725e',
-    total: 8,
-    meteo: 2,
-    pluvio: 4,
-    hidro: 2,
-    pct: 13
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'ANTISANA': {
     name: 'Antisana',
     color: '#5c7cfa',
     fillOpacity: 0.55,
     border: '#4263eb',
-    total: 16,
-    meteo: 3,
-    pluvio: 6,
-    hidro: 7,
-    pct: 26
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'PAPALLACTA - OYACACHI': {
     name: 'Papallacta - Oyacachi',
     color: '#f1dfbb',
     fillOpacity: 0.65,
     border: '#d6c096',
-    total: 5,
-    meteo: 3,
-    pluvio: 1,
-    hidro: 1,
-    pct: 8
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   },
   'SAN PEDRO': {
     name: 'San Pedro',
     color: '#63b39d',
     fillOpacity: 0.55,
     border: '#4a9984',
-    total: 2,
-    meteo: 2,
+    total: 0,
+    meteo: 0,
     pluvio: 0,
     hidro: 0,
-    pct: 3
+    pct: 0
   },
   'ALTO PITA': {
     name: 'Alto Pita',
     color: '#93c5fd',
     fillOpacity: 0.55,
     border: '#60a5fa',
-    total: 2,
-    meteo: 1,
-    pluvio: 1,
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
     hidro: 0,
-    pct: 3
+    pct: 0
   },
   'NOROCCIDENTE': {
     name: 'Noroccidente',
@@ -102,11 +104,11 @@ const EJES_CONFIG = {
     color: '#b4a2b8',
     fillOpacity: 0.55,
     border: '#9a859f',
-    total: 5,
-    meteo: 1,
-    pluvio: 3,
-    hidro: 1,
-    pct: 8
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
   }
 };
 
@@ -147,10 +149,13 @@ export async function initHomeStationsMap() {
   let activeTipo = 'ALL';
   const polygonLayersMap = new Map();
 
+  // Same app loader card, centered over the map (the floating one is driven by fetch)
+  let removeMapLoader = null;
   function showLoading(show) {
-    if (loader) {
-      loader.style.display = show ? 'flex' : 'none';
-    }
+    removeMapLoader?.();
+    removeMapLoader = show && loader
+      ? showInlineLoader(loader.parentElement, { subtitle: 'Actualizando mapa de estaciones' })
+      : null;
   }
 
   // 1. Renderizar Polígonos de Ejes de Trabajo
@@ -256,9 +261,9 @@ export async function initHomeStationsMap() {
       if (countPluvioEl) countPluvioEl.textContent = cfg ? cfg.pluvio : pluvioCount;
       if (countHidroEl) countHidroEl.textContent = cfg ? cfg.hidro : hidroCount;
     } else {
-      if (countMeteoEl) countMeteoEl.textContent = meteoCount || 17;
-      if (countPluvioEl) countPluvioEl.textContent = pluvioCount || 24;
-      if (countHidroEl) countHidroEl.textContent = hidroCount || 20;
+      if (countMeteoEl) countMeteoEl.textContent = meteoCount;
+      if (countPluvioEl) countPluvioEl.textContent = pluvioCount;
+      if (countHidroEl) countHidroEl.textContent = hidroCount;
     }
 
     // Filtrar qué estaciones dibujar en el mapa
@@ -271,7 +276,7 @@ export async function initHomeStationsMap() {
     filtered.forEach(est => {
       const lat = est.latitud;
       const lng = est.longitud;
-      if (isNaN(lat) || isNaN(lng)) return;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
       const tipo = est.tipo || 'default';
       const color = TYPE_COLORS[tipo] || TYPE_COLORS.default;
@@ -459,13 +464,13 @@ export async function initHomeStationsMap() {
     });
   });
 
-  // Inicialización API-First con Fallback Local
+  // Inicialización: datos 100% de la API; si falla se muestra el error (sin respaldo local)
   showLoading(true);
   try {
     renderEjesPolygons();
     currentEstaciones = await fetchEstaciones();
 
-    // Recalcular conteos totales dinámicamente según la fuente canónica de FONAG
+    // Conteos por eje calculados con las estaciones de la API
     const liveCounts = {};
     currentEstaciones.forEach(est => {
       const key = (est.eje_trabajo || '').toUpperCase();
@@ -478,15 +483,15 @@ export async function initHomeStationsMap() {
       else if (est.tipo === 'Hidrológica') liveCounts[key].hidro++;
     });
 
-    // Actualizar EJES_CONFIG dinámicamente según la respuesta canónica de FONAG
-    const totalGlobal = currentEstaciones.length || 61;
+    // Actualizar EJES_CONFIG con los conteos de la API
+    const totalGlobal = currentEstaciones.length;
     Object.keys(EJES_CONFIG).forEach(k => {
       if (liveCounts[k]) {
         EJES_CONFIG[k].total = liveCounts[k].total;
         EJES_CONFIG[k].meteo = liveCounts[k].meteo;
         EJES_CONFIG[k].pluvio = liveCounts[k].pluvio;
         EJES_CONFIG[k].hidro = liveCounts[k].hidro;
-        EJES_CONFIG[k].pct = Math.round((liveCounts[k].total / totalGlobal) * 100);
+        EJES_CONFIG[k].pct = totalGlobal ? Math.round((liveCounts[k].total / totalGlobal) * 100) : 0;
       }
     });
 
@@ -494,8 +499,8 @@ export async function initHomeStationsMap() {
     renderMarkers();
   } catch (err) {
     console.error('Error cargando datos para el mapa de inicio:', err);
-    renderSidebar();
-    renderMarkers();
+    showApiError(cardAside);
+    [countMeteoEl, countPluvioEl, countHidroEl].forEach((el) => { if (el) el.textContent = '-'; });
   } finally {
     showLoading(false);
     setTimeout(() => map.invalidateSize(), 200);

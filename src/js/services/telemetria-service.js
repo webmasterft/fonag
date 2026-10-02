@@ -1,7 +1,7 @@
 /**
  * Service: Telemetría en Tiempo Real (SEDC Live API)
  * Conecta al endpoint /api/sedc/telemetria/consulta autenticado con SEDC FONAG.
- * Fallback de datos simulados suspendido temporalmente a solicitud del usuario.
+ * Sin datos simulados: si la API falla se devuelve un error para mostrarlo en la página.
  */
 
 /**
@@ -12,7 +12,7 @@
  * @param {Object} estacion Objeto estación (incluye id, codigo, nombre, tipo)
  * @param {string} fechaInicio 'YYYY-MM-DD'
  * @param {string} fechaFin 'YYYY-MM-DD'
- * @returns {Promise<Object>} { variables: Array, seriesByVar: Object, fromLiveApi: boolean, hasData: boolean, error?: string }
+ * @returns {Promise<Object>} { variables: Array, seriesByVar: Object, hasData: boolean, error?: string }
  */
 export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', fechaFin = '2026-09-03') {
   try {
@@ -43,7 +43,11 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
 
           const varNombre = item.var_nombre || 'Variable';
           const varUnidad = item.var_unidad || '';
-          const valores = (item.datos && Array.isArray(item.datos.valor)) ? item.datos.valor : [];
+          // Wind (velocidad/direccion) has no "valor": its speed feeds the table and CSV
+          const isWind = item.datos && Array.isArray(item.datos.velocidad);
+          const valores = isWind
+            ? item.datos.velocidad
+            : (item.datos && Array.isArray(item.datos.valor)) ? item.datos.valor : [];
           const fechas = (item.datos && Array.isArray(item.datos.fecha)) ? item.datos.fecha : [];
 
           // Construir array normalizado de puntos
@@ -52,11 +56,12 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
             if (valores[i] !== null && valores[i] !== undefined) {
               points.push({
                 fecha: fechas[i] || '',
-                valor: parseFloat(valores[i]),
-                validado: false // Datos crudos telemétricos
+                valor: parseFloat(valores[i])
               });
             }
           }
+          // Full SEDC item (umbral_superior/inferior, wind direction) to build the Django-style chart
+          points.raw = item;
 
           totalMeasurements += points.length;
 
@@ -74,7 +79,6 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
 
         if (variables.length > 0 && totalMeasurements > 0) {
           return {
-            fromLiveApi: true,
             hasData: true,
             variables,
             seriesByVar,
@@ -84,16 +88,13 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
 
       // La API respondió pero no hay datos de sensores para el rango solicitado
       return {
-        fromLiveApi: true,
         hasData: false,
         variables: [],
         seriesByVar: {},
         error: 'No hay mediciones telemétricas registradas para esta estación en las fechas seleccionadas.'
       };
     } else {
-      const errData = await res.text();
       return {
-        fromLiveApi: false,
         hasData: false,
         variables: [],
         seriesByVar: {},
@@ -104,35 +105,12 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
     console.warn('[SEDC Live Telemetry] Error de conexión:', err);
   }
 
-  // Fallback seguro de telemetría para prueba/demostración si la API responde 400/403 u offline
-  const mockSeries = [];
-  const now = new Date();
-  for (let i = 24; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 3600 * 1000);
-    const dateStr = d.toISOString().replace('T', ' ').substring(0, 16);
-    const seed = (estacion.id || 1) * 17 + i * 3;
-    const baseVal = estacion.tipo?.includes('Hidro') ? 1.45 : (estacion.tipo?.includes('Pluvio') ? 8.2 : 14.5);
-    const val = Math.round((baseVal + Math.sin(seed) * 3.5) * 10) / 10;
-    mockSeries.push({ fecha: dateStr, valor: Math.max(0, val), validado: false });
-  }
-
-  const varName = estacion.tipo?.includes('Hidro') ? 'Caudal' : (estacion.tipo?.includes('Pluvio') ? 'Precipitación' : 'Temperatura del Aire');
-  const varUnit = estacion.tipo?.includes('Hidro') ? 'm³/s' : (estacion.tipo?.includes('Pluvio') ? 'mm' : '°C');
-
+  // Sin datos simulados: si la API no responde se informa el error
   return {
-    fromLiveApi: false,
-    hasData: true,
-    variables: [{
-      id: '1',
-      name: varName,
-      unit: varUnit,
-      code: getCodeForVarName(varName),
-      color: getColorForVarName(varName),
-      count: mockSeries.length
-    }],
-    seriesByVar: {
-      '1': mockSeries
-    }
+    hasData: false,
+    variables: [],
+    seriesByVar: {},
+    error: 'Error en el API, intenta más tarde.'
   };
 }
 

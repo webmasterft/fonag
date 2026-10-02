@@ -141,23 +141,6 @@
   font-size: 11.5px;
 }
 
-/* Loading Overlay */
-.home-map-loader {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(2px);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #242857;
-  font-weight: 600;
-  font-size: 14px;
-}
-
 /* Right Column: Ejes de Trabajo Card */
 .home-ejes-card {
   background: #ffffff;

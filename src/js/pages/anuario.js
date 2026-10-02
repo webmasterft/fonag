@@ -4,16 +4,14 @@
  */
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import {
-  fetchAnuarioEstadistico,
-  getAnuarioEstadistico,
-  getSeriesEstadisticas,
-  exportAnuarioCsv
+  fetchAnuarioSedc,
+  downloadAnuarioExcel
 } from '../services/anuario-service.js';
-import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
-import { renderAnuarioTable } from '../molecules/data-table/anuario-table.js';
-import { renderEstadisticasCharts, destroyCharts } from '../molecules/charts/anuario-charts.js';
+import { showApiError } from '../atoms/api-error.js';
+import { initLeafletMap } from '../molecules/map/leaflet-map.js';
+import { renderAnuarioSedc, destroyAnuarioSedc } from '../molecules/charts/anuario-sedc.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
-import { initGlobalHttpLoader } from '../atoms/global-loader.js';
+import { initGlobalHttpLoader, showInlineLoader } from '../atoms/global-loader.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalHttpLoader();
@@ -67,11 +65,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     inputCodigo.value = paramCodigo;
   }
 
-  // 1. Cargar datos de estaciones
-  const rawEstaciones = await fetchEstaciones();
+  // 1. Cargar datos de estaciones (sin respaldo local: si falla se muestra el error)
+  let rawEstaciones;
+  try {
+    rawEstaciones = await fetchEstaciones();
+  } catch (err) {
+    console.error('[Anuario] Error cargando estaciones:', err);
+    showApiError(cardsContainer);
+    if (counterEl) counterEl.textContent = '';
+    return;
+  }
   allEstaciones = rawEstaciones.map((est) => ({
     ...est,
-    ejeCalculado: getEjeForCoords(est.longitud, est.latitud) || est.cuenca || 'Pita'
+    ejeCalculado: est.eje_trabajo
   }));
 
   // 2. Renderizar inicial
@@ -162,15 +168,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modalBody) {
           modalBody.innerHTML = `
             <div class="modal-loading-state">
-              <div class="spinner-ring" aria-hidden="true"></div>
-              <span class="loading-text">Cargando estadísticas del año ${currentYear}...</span>
+              <div class="fonag-loader-card">
+              <div class="fonag-loader-spinner-wrapper">
+                <div class="fonag-loader-ring"></div>
+                <div class="fonag-loader-inner-dot"></div>
+              </div>
+              <div class="fonag-loader-text-group">
+                <span class="fonag-loader-title">Consultando servidor...</span>
+                <span class="fonag-loader-subtitle">Cargando estadísticas del año ${currentYear}...</span>
+              </div>
+            </div>
             </div>
           `;
         }
       }
-
-      // 2. Simulación asíncrona de obtención/compilación de datos
-      await new Promise((resolve) => setTimeout(resolve, 400));
 
       // 3. Actualizar componentes con el nuevo año
       if (btnCompilado) {
@@ -206,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnCompilado) {
     btnCompilado.addEventListener('click', () => {
-      exportarCompilado(allEstaciones, currentYear);
+      runDownload(btnCompilado, () => exportarCompilado(allEstaciones, currentYear));
     });
   }
 
@@ -236,7 +247,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!modal) return;
     modal.classList.remove('is-open');
     document.body.style.overflow = '';
-    destroyCharts();
+    modalRenderToken++; // descarta respuestas pendientes
+    destroyAnuarioSedc();
   }
 
   function renderModalHeader(estacion) {
@@ -299,23 +311,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Listeners del header
     const btnExcel = modalHeader.querySelector('#btn-modal-download-excel');
     if (btnExcel) {
-      btnExcel.addEventListener('click', async () => {
-        btnExcel.disabled = true;
-        btnExcel.innerText = 'Descargando...';
-        try {
-          const rows = await fetchAnuarioEstadistico(estacion, currentYear);
-          exportAnuarioCsv(estacion, rows, currentYear);
-        } finally {
-          btnExcel.disabled = false;
-          btnExcel.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Descargar Excel
-          `;
-        }
+      btnExcel.addEventListener('click', () => {
+        runDownload(btnExcel, () => downloadAnuarioExcel([estacion], currentYear));
       });
     }
 
@@ -348,23 +345,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Respuesta de /hydro_annual por estación+año: cambiar de pestaña no vuelve a consultar
+  const anuarioCache = new Map();
+  let modalRenderToken = 0;
+
   async function renderModalContent(estacion) {
     if (!modalBody) return;
-    modalBody.innerHTML = `
-      <div style="padding: 3rem 1rem; text-align: center; color: #64748b;">
-        <div class="stat-spinner" style="display:inline-block; width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#0284c7; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:12px;"></div>
-        <div style="font-weight: 600;">Consultando series mensuales en la API SEDC...</div>
-      </div>
-    `;
+    const token = ++modalRenderToken;
+    const year = currentYear;
+    const cacheKey = `${estacion.id}|${year}`;
 
-    const rows = await fetchAnuarioEstadistico(estacion, currentYear);
+    // Loader de la app centrado en el modal hasta que se dibuje el contenido
+    destroyAnuarioSedc();
+    modalBody.innerHTML = '';
+    modalBody.style.minHeight = '260px';
+    const removeLoader = showInlineLoader(modalBody, { subtitle: 'Cargando series del anuario' });
+    try {
+      if (!anuarioCache.has(cacheKey)) {
+        anuarioCache.set(cacheKey, await fetchAnuarioSedc(estacion, year));
+      }
+      if (token !== modalRenderToken) return; // otra estación/año/pestaña se pidió mientras cargaba
 
-    if (currentModalTab === 'charts') {
-      const series = getSeriesEstadisticas(estacion, currentYear, rows);
-      renderEstadisticasCharts(modalBody, series);
-    } else {
-      destroyCharts();
-      renderAnuarioTable(modalBody, estacion, rows, currentYear);
+      // "Gráficas estadísticas": solo las figuras de SEDC; "Tabla de datos": solo las tablas
+      await renderAnuarioSedc(modalBody, anuarioCache.get(cacheKey), {
+        view: currentModalTab === 'table' ? 'table' : 'charts'
+      });
+    } catch (err) {
+      console.error('[Anuario] Error consultando hydro_annual:', err);
+      anuarioCache.delete(cacheKey);
+      if (token === modalRenderToken) {
+        modalBody.innerHTML = '<div class="anuario-sedc-empty">No se pudo consultar el anuario en SEDC. Intenta más tarde.</div>';
+      }
+    } finally {
+      removeLoader();
+      if (token === modalRenderToken) modalBody.style.minHeight = '';
     }
   }
 
@@ -517,8 +531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const btnDesc = card.querySelector('.btn-card-descargar');
       if (btnDesc) {
         btnDesc.addEventListener('click', () => {
-          const rows = getAnuarioEstadistico(estacion, currentYear);
-          exportAnuarioCsv(estacion, rows, currentYear);
+          runDownload(btnDesc, () => downloadAnuarioExcel([estacion], currentYear));
         });
       }
     });
@@ -534,29 +547,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Compilado oficial de SEDC: un solo Excel con el anuario de todas las estaciones
   function exportarCompilado(stations, year) {
-    const headers = ['Codigo', 'Nombre', 'Tipo', 'Provincia', 'Cuenca', 'Latitud', 'Longitud', 'Altura', 'Administrador'];
-    const rows = stations.map((s) => [
-      `"${s.codigo}"`,
-      `"${s.nombre}"`,
-      `"${s.tipo}"`,
-      `"${s.provincia}"`,
-      `"${s.cuenca}"`,
-      s.latitud,
-      s.longitud,
-      `"${s.altura}"`,
-      `"${s.administrador}"`
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Compilado_Estaciones_${year}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    return downloadAnuarioExcel(stations, year);
   }
+
+  /**
+   * Deshabilita el botón mientras se descarga el Excel de SEDC y avisa si falla.
+   */
+  async function runDownload(button, task) {
+    if (button.disabled) return;
+    button.disabled = true;
+    const original = button.innerHTML;
+    button.innerHTML = 'Descargando...';
+    try {
+      await task();
+    } catch (err) {
+      console.error('[Anuario] Error descargando Excel:', err);
+      alert('No se pudo descargar el anuario desde SEDC. Intenta más tarde.');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = original;
+    }
+  }
+
 });

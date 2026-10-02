@@ -7,8 +7,10 @@
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import { fetchTelemetriaReal } from '../services/telemetria-service.js';
 import { exportarSerieCsv } from '../services/periodo-service.js';
-import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
-import { renderPeriodoChart, destroyPeriodoChart } from '../molecules/charts/periodo-charts.js';
+import { showApiError } from '../atoms/api-error.js';
+import { initLeafletMap } from '../molecules/map/leaflet-map.js';
+import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
+import { buildTelemetriaFigure } from '../molecules/charts/telemetria-figure.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
@@ -51,12 +53,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 1. Cargar Estaciones del Servicio (API en vivo con fallback)
-  const rawEstaciones = await fetchEstaciones();
+  // 1. Cargar Estaciones del Servicio (sin respaldo local: si falla se muestra el error)
+  let rawEstaciones;
+  try {
+    rawEstaciones = await fetchEstaciones();
+  } catch (err) {
+    console.error('[TiempoReal] Error cargando estaciones:', err);
+    showApiError(cardsContainer);
+    if (counterEl) counterEl.textContent = '';
+    return;
+  }
   telemetriaEstaciones = rawEstaciones
     .filter((est) => Boolean(est.transmision))
     .map((est) => {
-      const ejeCalc = getEjeForCoords(est.longitud, est.latitud) || est.cuenca || 'Pita';
+      const ejeCalc = est.eje_trabajo;
       
       let varCount = 1;
       if (est.tipo?.includes('Meteorológica')) varCount = 6;
@@ -127,13 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       `;
     }
-    if (tablePreviewContainer) {
-      tablePreviewContainer.innerHTML = `
-        <div style="padding: 2rem; text-align: center; color: #64748b;">
-          Conectando con la API del SEDC FONAG...
-        </div>
-      `;
-    }
+    if (tablePreviewContainer) tablePreviewContainer.innerHTML = '';
+    if (chartCanvas?.parentElement) chartCanvas.parentElement.style.display = 'block';
+    // Loader de la app en el área del gráfico hasta que termine de dibujarse
+    showPeriodoChartLoader(chartCanvas);
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
@@ -214,9 +221,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       color: currentVar.color
     };
 
+    // Same Plotly figure as SEDC (data, U S / U i thresholds, Máx, mín, ACU, last reading)
+    series.figure = buildTelemetriaFigure(currentVar.id, series.raw);
+
     renderModalHeader(currentModalEstacion, varConfig, sDate, eDate, series, currentTelemetryResult);
     renderPeriodoChart(chartCanvas, series, varConfig);
-    renderTablePreview(series, varConfig, currentTelemetryResult.fromLiveApi);
+    renderTablePreview(series, varConfig);
   }
 
   function closeModal() {
@@ -231,13 +241,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderModalHeader(estacion, varCfg, sDate, eDate, series, telResult) {
     if (!modalHeader) return;
 
-    const sourceBadge = telResult.fromLiveApi
-      ? `<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 9999px;">
+    // Only real SEDC data reaches this point (no simulated mode)
+    const sourceBadge = `<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 9999px;">
            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
            API SEDC EN VIVO
-         </span>`
-      : `<span style="font-size: 11px; font-weight: 700; color: #f59e0b; background: #fffbeb; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 9999px;">
-           MODO SIMULADO
          </span>`;
 
     // Botones selectores de variables disponibles recibidas del backend
@@ -349,7 +356,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  function renderTablePreview(series, varCfg, isLive) {
+  function renderTablePreview(series, varCfg) {
     if (!tablePreviewContainer) return;
     const preview = series.slice(0, 15);
 
@@ -377,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${p.fecha}</td>
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor}</td>
                 <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">
-                  ${isLive ? 'Dato Crudo (Telemetría SEDC)' : 'Simulado (Offline)'}
+                  Dato Crudo (Telemetría SEDC)
                 </td>
               </tr>
             `).join('')}

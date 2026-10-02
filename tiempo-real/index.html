@@ -85,16 +85,16 @@
       <div class="tiempo-real-filter-card">
         <!-- Top Row: Fechas y Botón Limpiar -->
         <div class="tr-filter-row-top">
-          <!-- Fecha y hora de inicio -->
+          <!-- Fecha inicio -->
           <div class="tiempo-real-filter-field">
-            <label for="input-tr-fecha-inicio" class="tiempo-real-filter-label">Fecha y hora de inicio:</label>
-            <input type="datetime-local" id="input-tr-fecha-inicio" class="tiempo-real-filter-date" value="2026-09-01T00:00">
+            <label for="input-tr-fecha-inicio" class="tiempo-real-filter-label">Fecha inicio:</label>
+            <input type="date" id="input-tr-fecha-inicio" class="tiempo-real-filter-date" value="2026-09-01">
           </div>
 
-          <!-- Fecha y hora fin -->
+          <!-- Fecha fin -->
           <div class="tiempo-real-filter-field">
-            <label for="input-tr-fecha-fin" class="tiempo-real-filter-label">Fecha y hora fin:</label>
-            <input type="datetime-local" id="input-tr-fecha-fin" class="tiempo-real-filter-date" value="2026-09-03T23:59">
+            <label for="input-tr-fecha-fin" class="tiempo-real-filter-label">Fecha fin:</label>
+            <input type="date" id="input-tr-fecha-fin" class="tiempo-real-filter-date" value="2026-09-03">
           </div>
 
           <!-- Botón Limpiar -->
@@ -173,7 +173,7 @@
           <!-- Inyectado dinámicamente -->
         </header>
         <div class="tiempo-real-modal-body" id="tr-modal-body">
-          <div style="height: 340px; position: relative; width: 100%; margin-bottom: 1.5rem;">
+          <div style="height: 480px; position: relative; width: 100%; margin-bottom: 1.5rem;">
             <canvas id="tr-chart-canvas"></canvas>
           </div>
           <div id="tr-table-preview-container">

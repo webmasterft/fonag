@@ -47,7 +47,9 @@ SEDC_PASSWORD=tu_contrasena
 ```
 
 > [!NOTE]
-> Si no configuras las credenciales del SEDC o trabajas offline, la aplicación activará automáticamente el **mecanismo de resiliencia con datasets locales estáticos** de las 61 estaciones oficiales, garantizando que el mapa, las consultas y la telemetría funcionen al 100%.
+> Las credenciales son obligatorias. Todos los datos provienen de la API del SEDC y **no existen datasets locales de respaldo**: si las credenciales son incorrectas o la API no responde, la aplicación muestra el mensaje "Error en el API, intenta más tarde.".
+>
+> Si la contraseña contiene `#`, escríbela entre comillas en `.env` (`SEDC_PASSWORD="..."`); de lo contrario dotenv la corta y el inicio de sesión falla.
 
 ### 4. Iniciar el Servidor de Desarrollo
 
@@ -154,46 +156,38 @@ El desarrollo local utiliza las credenciales de `.env` (`SEDC_USERNAME`, `SEDC_P
 
 ---
 
-#### Ejemplos de Implementación y Fallbacks
+#### Ejemplos de Implementación y Manejo de Errores
 
 1. **Creación de Servicios de Red**:
    ```javascript
-   import { fetchWithAuth } from './api.js';
-
-   export async function fetchConsultasPeriodo(params) {
-     return fetchWithAuth('/reportes/consultas_periodo', {
+   export async function fetchSeriesDeTiempo(estacion, variable, fechaInicio, fechaFin, frecuencia) {
+     const res = await fetch('/api/sedc/reportes/consultas_periodo', {
        method: 'POST',
-       headers: {
-         'X-Requested-With': 'XMLHttpRequest',
-         'Content-Type': 'application/x-www-form-urlencoded'
-       },
-       body: new URLSearchParams(params)
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ estacion, variable, frecuencia, fecha_inicio: fechaInicio, fecha_fin: fechaFin })
      });
+     if (!res.ok) throw new Error(`Consulta no disponible (${res.status})`);
+     return res.json();
    }
    ```
 
-2. **Implementación de Fallbacks Resilientes**:
-   Ante fallos de red (`302`, `401`, `403` o sin conexión), la aplicación conmuta automáticamente al dataset local:
+2. **Sin datos de respaldo**:
+   Todos los datos provienen del SEDC. Ante fallos de red o de autenticación no se usan datasets locales ni datos simulados: la página muestra el estado de error compartido (`src/js/atoms/api-error.js`):
    ```javascript
+   import { showApiError } from '../atoms/api-error.js';
+
    try {
-     const data = await fetchConsultasPeriodo({ estacion: 12, variable: 1, frecuencia: 3 });
-     renderGraph(data);
+     const series = await fetchSeriesDeTiempo(estacion, 1, '2026-01-01', '2026-10-01', 'diario');
+     renderChart(series);
    } catch (error) {
-     console.warn('API SEDC inalcanzable. Activando dataset estático de fallback.');
-     renderGraph(MOCK_PERIOD_DATASET);
+     showApiError(container); // "Error en el API, intenta más tarde."
    }
    ```
+   Los valores faltantes se muestran como `-`; nunca se reemplazan por valores por defecto.
 
-3. **Procedimiento para Actualizar los Datasets de Fallback**:
-   Los datos estáticos garantizan la operatividad Offline-First y se encuentran ubicados en el directorio `./src/data/`:
-   - **Catálogo de Estaciones (`./src/data/estaciones.json`)**:
-     - Contiene el array de objetos de las 61 estaciones hidroclimáticas.
-     - *Cómo actualizarlo*: Exporta el JSON desde el endpoint oficial SEDC `/estacion/list/` o edita el archivo respetando la estructura del objeto (`est_id`, `est_codigo`, `est_nombre`, `est_altura`, `est_latitud`, `est_longitud`, `tipo`, `administrador`, `sistemacuenca`, `eje_trabajo`, `transmision`).
-   - **Polígonos de Ejes de Trabajo (`./src/data/ejes_2026.json`)**:
-     - Formato estándar **GeoJSON** (`FeatureCollection`) que contiene la geometría de los 8 Ejes de Trabajo de FONAG.
-     - *Cómo actualizarlo*: Reemplaza las coordenadas dentro de la propiedad `geometry.coordinates` o actualiza los nombres de las zonas en `properties.NOMBRE`.
-   - **Generadores Simulados / Mocks (`./src/js/services/sedc-api.js`)**:
-     - `mockSeries()`: Motor determinista que genera curvas telemétricas teóricas. Para ajustar rangos de simulación, modifica los factores de min/máx en la función `mockSeries` de `sedc-api.js`.
+3. **Datos geográficos locales**:
+   - **Polígonos de Ejes de Trabajo (`./src/data/ejes_2026.json`)**: único archivo de datos local. Es geografía estática (GeoJSON `FeatureCollection` con los Ejes de Trabajo de FONAG), no un respaldo de la API.
+     - *Cómo actualizarlo*: Reemplaza las coordenadas dentro de `geometry.coordinates` o los nombres en `properties.eje_trab`.
 
 ---
 
@@ -226,7 +220,7 @@ Para mostrar tablas de datos paginadas, filtrables y ordenables sin frameworks:
 
 ### 6. Mapas Geoespaciales e Interacción GIS (Leaflet)
 1. **Contenedores de Mapa**: Define un elemento `<div id="map"></div>` con dimensiones explícitas en CSS.
-2. **Carga de GeoJSON**: Para dibujar los 8 Ejes de Trabajo de FONAG o puntos de estaciones, importa `./src/data/ejes_2026.json` o `./src/data/estaciones.json` y cargalos en la capa Leaflet (`L.geoJSON` / `L.markerClusterGroup`).
+2. **Carga de GeoJSON**: Para dibujar los 8 Ejes de Trabajo de FONAG o puntos de estaciones, importa `./src/data/ejes_2026.json` (polígonos) y dibuja las estaciones con los datos de `fetchEstaciones()` / `fetchPointGeojson()` en la capa Leaflet (`L.geoJSON` / `L.markerClusterGroup`).
 3. **Controladores de Capas y Popups**: Diseña los popups usando templates HTML semánticos y vincúlalos a los eventos `click` de los marcadores.
 
 ---
@@ -276,6 +270,6 @@ Para mostrar tablas de datos paginadas, filtrables y ordenables sin frameworks:
 - **Arquitectura**: Multi-Page Application (MPA) basada en **Vite 6** y **Vanilla JS**.
 - **Cero Frameworks Virtual DOM**: Manipulación directa y determinista del DOM sin jQuery ni React.
 - **Diseño**: CSS Tokens canónicos + Atomic Design (`tokens/`, `atoms/`, `molecules/`, `organisms/`).
-- **Resiliencia**: Consumo API-First autenticado con fallback transparente a datasets de 61 estaciones oficiales.
+- **Datos 100% SEDC**: Consumo autenticado de la API sin datasets de respaldo; ante fallos se muestra un mensaje de error.
 
 Para consultar la documentación técnica minuciosa dirigida a desarrolladores, lee el archivo [ARCHITECTURE.md](./ARCHITECTURE.md).

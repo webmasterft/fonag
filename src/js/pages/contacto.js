@@ -93,9 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Contact Form Submit Error:', err);
-      // Fallback demo success response if endpoint endpoint key is unconfigured
-      showFeedback('¡Gracias por contáctarnos! Su mensaje ha sido procesado exitosamente.', 'success');
-      form.reset();
+      // No fake success: keep the form filled so the user can retry
+      showFeedback('No se pudo enviar su mensaje. Intente nuevamente más tarde.', 'error');
     } finally {
       setSubmittingState(false);
     }

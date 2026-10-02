@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Molecule: FONAG Modern Data Table & Anuario Grid
+   Molecule: FONAG Modern Data Table
    ========================================================================== */
 
 .table-responsive-container {
@@ -85,72 +85,6 @@
 
 .fonag-data-table .text-primary {
   color: #0284c7;
-}
-
-/* Toolbar de la tabla */
-.anuario-table-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background-color: var(--color-palette-white, #ffffff);
-  border: 1px solid #e2e8f0;
-  border-bottom: none;
-  border-top-left-radius: var(--radius-md, 8px);
-  border-top-right-radius: var(--radius-md, 8px);
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.anuario-table-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.station-tag {
-  background-color: var(--color-palette-navy, #242857);
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: 700;
-  font-size: 12px;
-}
-
-.anuario-table-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-palette-navy, #242857);
-}
-
-.station-type-badge {
-  background-color: #e0f2fe;
-  color: #0369a1;
-  padding: 3px 8px;
-  border-radius: var(--radius-full, 9999px);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.btn-navy-export {
-  background-color: var(--color-palette-navy, #242857);
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: background-color var(--transition-fast, 0.15s ease);
-}
-
-.btn-navy-export:hover {
-  background-color: #1a1d3f;
 }
 
 /* ==========================================================================

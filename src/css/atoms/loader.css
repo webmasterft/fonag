@@ -120,6 +120,18 @@
   line-height: 1.2;
 }
 
+/* Inline variant: same card, centered over a container (e.g. a chart area) */
+.fonag-inline-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  pointer-events: none;
+}
+
 /* Keyframes */
 @keyframes fonag-spin {
   0% {
@@ -154,4 +166,41 @@
 
 [data-theme="dark"] .fonag-loader-subtitle {
   color: #94a3b8;
+}
+
+/* API error state: shown instead of any fallback data when SEDC fails */
+.fonag-api-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 2rem 1rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b91c1c;
+  text-align: center;
+}
+
+.fonag-api-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+[data-theme="dark"] .fonag-api-error {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .fonag-api-error-icon {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }

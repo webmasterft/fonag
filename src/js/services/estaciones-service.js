@@ -1,37 +1,23 @@
 /**
  * Service: Estaciones Hidroclimáticas
- *
- * Estrategia de datos:
- * 1. Primero intenta el endpoint local autenticado (/api/sedc/estacion/list)
- *    que inyecta sesión SEDC y devuelve eje_trabajo completo.
- * 2. Si falla (sesión expirada, sin red), usa el JSON canónico generado
- *    desde el API con credenciales (src/data/estaciones.json).
- *
- * El JSON estático es la fuente de verdad — fue generado autenticado.
- * Se actualiza ejecutando: node scripts/update-estaciones.js
+ * Todas las estaciones vienen del endpoint autenticado /api/sedc/estacion/list (sesión SEDC).
+ * Sin datos locales de respaldo: si la API falla se lanza un error para que la página lo muestre.
  */
-import canonicalData from '../../data/estaciones.json';
 
 /**
  * Obtiene la lista completa de estaciones.
  * @returns {Promise<Array<Object>>}
+ * @throws {Error} Si la API no responde o la sesión no trae datos completos (sin eje_trabajo)
  */
 export async function fetchEstaciones() {
-  try {
-    const res = await fetch('/api/sedc/estacion/list/?administrador=1&limit=300');
-    if (res.ok) {
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.results || []);
-      if (Array.isArray(list) && list.length > 0 && list[0].eje_trabajo !== undefined) {
-        return normalizeEstaciones(list);
-      }
-    }
-  } catch (_) {
-    // Silent — fallback to canonical JSON below
+  const res = await fetch('/api/sedc/estacion/list/?administrador=1&limit=300');
+  if (!res.ok) throw new Error(`Listado de estaciones no disponible (${res.status})`);
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : (data.results || []);
+  // Without an authenticated session SEDC returns a reduced row without eje_trabajo / est_id
+  if (list.length > 0 && list[0].eje_trabajo === undefined) {
+    throw new Error('SEDC devolvió el listado sin sesión autenticada');
   }
-
-  // Fallback: canonical JSON generated from authenticated API
-  const list = Array.isArray(canonicalData) ? canonicalData : (canonicalData.results || []);
   return normalizeEstaciones(list);
 }
 
@@ -85,23 +71,27 @@ export function normalizeEstaciones(list) {
       // eje_trabajo viene directo del API — no se calcula, no se sobreescribe
       const ejeNombre = (typeof item.eje_trabajo === 'string' && item.eje_trabajo.trim())
         ? item.eje_trabajo.trim()
-        : 'General';
+        : '';
 
+      // Sin valores inventados: un dato que la API no trae queda vacío (la UI muestra '-')
       return {
         id: item.est_id,
-        codigo: item.est_codigo || 'S/N',
-        nombre: item.est_nombre || 'Sin nombre',
-        tipo: item.tipo || 'Meteorológica',
-        provincia: item.provincia || 'Pichincha',
-        cuenca: item.sistemacuenca?.cuenca || item.micro_cuenca || 'Cuenca Interandina',
-        sistema: item.sistemacuenca?.sistema || 'General',
+        codigo: item.est_codigo || '',
+        nombre: item.est_nombre || '',
+        tipo: item.tipo || '',
+        provincia: item.provincia || '',
+        cuenca: item.sistemacuenca?.cuenca || item.micro_cuenca || '',
+        sistema: item.sistemacuenca?.sistema || '',
         eje_trabajo: ejeNombre,
-        latitud: isNaN(lat) ? -0.22985 : lat,
-        longitud: isNaN(lng) ? -78.52495 : lng,
+        // null coordinates: the station is listed but not drawn on the map
+        latitud: Number.isFinite(lat) ? lat : null,
+        longitud: Number.isFinite(lng) ? lng : null,
         altura: item.est_altura ? `${parseFloat(item.est_altura).toFixed(0)} m` : 'N/D',
-        administrador: item.administrador || 'FONAG',
+        administrador: item.administrador || '',
         transmision: Boolean(item.transmision),
         fechaInicio: item.est_fecha_inicio || 'N/D',
+        // Fila original de /estacion/list/: algunos reportes SEDC (hydro_annual) la requieren completa
+        raw: item,
       };
     });
 }

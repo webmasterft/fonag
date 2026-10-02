@@ -22,15 +22,18 @@ function requestHttps(url, options = {}, postData = null) {
       opts.headers['Content-Length'] = Buffer.byteLength(postData);
     }
     const req = https.request(opts, (res) => {
-      let body = '';
-      res.on('data', (c) => (body += c));
-      res.on('end', () =>
+      // Keep raw bytes too: binary responses (Excel exports) break if decoded as text
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const buffer = Buffer.concat(chunks);
         resolve({
           status: res.statusCode,
           headers: res.headers,
-          body,
-        })
-      );
+          body: buffer.toString('utf8'),
+          buffer,
+        });
+      });
     });
     req.on('error', (err) => reject(err));
     if (postData) req.write(postData);
@@ -281,6 +284,78 @@ export default defineConfig(({ mode }) => {
                 res.end(sedcResponse.body);
               } catch (error) {
                 console.error('[SEDC Periodo Middleware Error]:', error);
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: error.message }));
+              }
+            });
+          });
+
+          /**
+           * /api/sedc/hydro_annual → POST autenticado (anuario hidroclimático)
+           * Body JSON: { stations: [ {fila de estación de /estacion/list/} ], year }
+           * Responde { tables: { PRE|TAI|CAU|...: { title, subtitle, table, graph } } }
+           */
+          server.middlewares.use('/api/sedc/hydro_annual', async (req, res) => {
+            if (req.method !== 'POST') {
+              res.statusCode = 405;
+              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+              return;
+            }
+
+            let rawBody = '';
+            req.on('data', (chunk) => (rawBody += chunk));
+            req.on('end', async () => {
+              try {
+                const parsed = JSON.parse(rawBody || '{}');
+                const session = await getSedcSession(baseUrl, username, password);
+                if (!session) {
+                  res.statusCode = 502;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
+                  return;
+                }
+
+                // Same form fields the Django page sends (empty filters + selected stations + year)
+                const postPayload = new URLSearchParams({
+                  csrfmiddlewaretoken: session.csrf,
+                  code_station: '',
+                  name_station: '',
+                  type_station: '',
+                  admin_station: '',
+                  stations: JSON.stringify(parsed.stations || []),
+                  year: String(parsed.year || ''),
+                }).toString();
+
+                const sedcResponse = await requestHttps(
+                  `${baseUrl}/hydro_annual`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                      Cookie: session.cookie,
+                      'X-CSRFToken': session.csrf,
+                      Referer: `${baseUrl}/hydro_annual`,
+                      // With this header Django answers JSON; without it, the Excel file (export)
+                      ...(parsed.export ? {} : { 'X-Requested-With': 'XMLHttpRequest' }),
+                    },
+                  },
+                  postPayload
+                );
+
+                res.statusCode = sedcResponse.status;
+                if (parsed.export) {
+                  // Pass the file through untouched (type and filename as sent by Django)
+                  ['content-type', 'content-disposition'].forEach((h) => {
+                    if (sedcResponse.headers[h]) res.setHeader(h, sedcResponse.headers[h]);
+                  });
+                  res.end(sedcResponse.buffer);
+                  return;
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.end(sedcResponse.body);
+              } catch (error) {
+                console.error('[SEDC Hydro Annual Middleware Error]:', error);
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ error: error.message }));

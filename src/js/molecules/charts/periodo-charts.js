@@ -15,6 +15,8 @@ import {
   Filler,
   SubTitle
 } from 'chart.js';
+import { showInlineLoader } from '../../atoms/global-loader.js';
+import { loadPlotly } from '../../atoms/plotly-loader.js';
 
 Chart.register(
   BarController,
@@ -32,47 +34,24 @@ Chart.register(
 
 let activeChart = null;
 let activePlotlyEl = null;
-let plotlyPromise = null;
 
-// Plotly (~3 MB) is only needed for the wind rose, so it is loaded on demand
-function loadPlotly() {
-  plotlyPromise ??= import('plotly.js-dist-min').then((m) => m.default || m);
-  return plotlyPromise;
-}
-
-let activeLoaderEl = null;
+let removeChartLoader = null;
 
 /**
- * Shows the app's branded loader card (same markup as the global loader) over the chart area.
- * It stays until the chart finishes rendering or the chart is destroyed.
+ * Shows the app loader card centered in the chart area until the chart finishes rendering.
+ * The floating global loader keeps working independently (driven by the fetch interceptor).
  * @param {HTMLCanvasElement} canvasEl
  */
 export function showPeriodoChartLoader(canvasEl) {
-  if (!canvasEl?.parentElement) return;
   destroyPeriodoChart();
+  if (!canvasEl?.parentElement) return;
   canvasEl.style.display = 'none';
-  const el = document.createElement('div');
-  el.setAttribute('aria-live', 'polite');
-  el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
-  el.innerHTML = `
-    <div class="fonag-loader-card">
-      <div class="fonag-loader-spinner-wrapper">
-        <div class="fonag-loader-ring"></div>
-        <div class="fonag-loader-inner-dot"></div>
-      </div>
-      <div class="fonag-loader-text-group">
-        <span class="fonag-loader-title">Consultando servidor...</span>
-        <span class="fonag-loader-subtitle">Cargando gráfico del periodo</span>
-      </div>
-    </div>
-  `;
-  canvasEl.parentElement.appendChild(el);
-  activeLoaderEl = el;
+  removeChartLoader = showInlineLoader(canvasEl.parentElement, { subtitle: 'Cargando gráfico del periodo' });
 }
 
 function hideChartLoader() {
-  activeLoaderEl?.remove();
-  activeLoaderEl = null;
+  removeChartLoader?.();
+  removeChartLoader = null;
 }
 
 export function destroyPeriodoChart({ keepLoader = false } = {}) {
@@ -103,7 +82,14 @@ async function renderPlotlyFigure(canvasEl, figure) {
   canvasEl.parentElement.appendChild(el);
   activePlotlyEl = el;
 
-  const Plotly = await loadPlotly();
+  let Plotly;
+  try {
+    Plotly = await loadPlotly();
+  } catch (err) {
+    console.error('[PeriodoCharts] Plotly could not be loaded:', err);
+    hideChartLoader();
+    return;
+  }
   if (activePlotlyEl !== el) return; // modal closed or re-rendered while loading
 
   // Django's layout sets a fixed height; let the modal container size the figure instead
@@ -119,8 +105,11 @@ async function renderPlotlyFigure(canvasEl, figure) {
       a.xref === 'paper' && a.x >= 0.9 ? { ...a, x: side } : a
     );
   }
-  await Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
-  if (activePlotlyEl === el) hideChartLoader();
+  try {
+    await Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
+  } finally {
+    if (activePlotlyEl === el) hideChartLoader();
+  }
 }
 
 /**
