@@ -157,6 +157,13 @@ export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startD
     if (res.ok) {
       const data = await res.json();
       if (data && data.response && data.grafico && Array.isArray(data.grafico.data) && data.grafico.data.length > 0) {
+        // Wind speed comes as a wind rose (barpolar traces) with no time series
+        if (data.grafico.data.some((t) => t.type === 'barpolar')) {
+          const rose = [];
+          rose.figure = data.grafico;
+          return rose;
+        }
+
         const trace = data.grafico.data[0];
         const xs = trace.x || [];
         const ys = trace.y || [];
@@ -170,6 +177,9 @@ export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startD
             validado: true
           });
         }
+        // Keep Django's Plotly figure (all traces + Acumulado/Promedio/Máx/Mín annotations)
+        // so the chart matches SEDC; the points above feed the table preview and CSV export
+        points.figure = data.grafico;
         return points;
       }
     }

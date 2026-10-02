@@ -12,7 +12,8 @@ import {
   LinearScale,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  SubTitle
 } from 'chart.js';
 
 Chart.register(
@@ -25,16 +26,64 @@ Chart.register(
   LinearScale,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  SubTitle
 );
 
 let activeChart = null;
+let activePlotlyEl = null;
+let plotlyPromise = null;
+
+// Plotly (~3 MB) is only needed for the wind rose, so it is loaded on demand
+function loadPlotly() {
+  plotlyPromise ??= import('plotly.js-dist-min').then((m) => m.default || m);
+  return plotlyPromise;
+}
 
 export function destroyPeriodoChart() {
   if (activeChart && typeof activeChart.destroy === 'function') {
     activeChart.destroy();
   }
   activeChart = null;
+
+  if (activePlotlyEl) {
+    const el = activePlotlyEl;
+    loadPlotly().then((Plotly) => Plotly.purge(el));
+    el.remove();
+    activePlotlyEl = null;
+  }
+}
+
+/**
+ * Renders the Plotly figure returned by SEDC (wind rose) in place of the canvas.
+ * @param {HTMLCanvasElement} canvasEl
+ * @param {{ data: Array, layout: Object }} figure
+ */
+async function renderPlotlyFigure(canvasEl, figure) {
+  canvasEl.style.display = 'none';
+  const el = document.createElement('div');
+  el.style.width = '100%';
+  el.style.height = '100%';
+  canvasEl.parentElement.appendChild(el);
+  activePlotlyEl = el;
+
+  const Plotly = await loadPlotly();
+  if (activePlotlyEl !== el) return; // modal closed or re-rendered while loading
+
+  // Django's layout sets a fixed height; let the modal container size the figure instead
+  const layout = { ...figure.layout, height: undefined, autosize: true, margin: { t: 50, r: 30, b: 50, l: 70 } };
+
+  // Django reserves only 10% on the right for legend + stats, too narrow for the modal width:
+  // widen that column and move legend/annotations into it (wind rose has no x axis, skip it)
+  if (layout.xaxis?.domain) {
+    const side = 0.8;
+    layout.xaxis = { ...layout.xaxis, domain: [0, side - 0.03] };
+    layout.legend = { ...layout.legend, x: side, xanchor: 'left', y: 1, yanchor: 'top' };
+    layout.annotations = (layout.annotations || []).map((a) =>
+      a.xref === 'paper' && a.x >= 0.9 ? { ...a, x: side } : a
+    );
+  }
+  await Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
 }
 
 /**
@@ -47,10 +96,21 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
   if (!canvasEl) return;
   destroyPeriodoChart();
 
+  if (series.figure) {
+    renderPlotlyFigure(canvasEl, series.figure);
+    return;
+  }
+  canvasEl.style.display = '';
+
   const labels = series.map((s) => s.fecha);
   const values = series.map((s) => s.valor);
 
   const isBar = variableConfig.chartType === 'bar';
+
+  // Accumulated variables (precipitation): prefer the API total, otherwise sum the series
+  const acumulado = isBar
+    ? (series.acumulado ?? values.reduce((acc, v) => acc + (Number(v) || 0), 0))
+    : null;
 
   activeChart = new Chart(canvasEl, {
     type: isBar ? 'bar' : 'line',
@@ -82,6 +142,14 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
         intersect: false,
       },
       plugins: {
+        subtitle: {
+          display: acumulado !== null,
+          text: acumulado !== null ? `Acumulado: ${acumulado.toFixed(2)} ${variableConfig.unit}` : '',
+          align: 'end',
+          color: '#334155',
+          font: { family: "'Inter', sans-serif", size: 13, weight: 700 },
+          padding: { bottom: 8 }
+        },
         legend: {
           display: true,
           position: 'top',
@@ -108,6 +176,10 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
           grid: { color: '#f8fafc' },
           ticks: {
             maxTicksLimit: 14,
+            // Axis shows only the date; the tooltip keeps the full timestamp
+            callback: function (value) {
+              return String(this.getLabelForValue(value)).split(/[ T]/)[0];
+            },
             font: { family: "'Inter', sans-serif", size: 11 },
             color: '#64748b'
           }

@@ -22,6 +22,7 @@
   "dependencies": {
     "chart.js": "^4.5.1",
     "embla-carousel": "^8.6.0",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "plotly.js-dist-min": "^4.1.1"
   }
 }

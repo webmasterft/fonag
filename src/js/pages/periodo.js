@@ -17,9 +17,30 @@ import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
 
+/**
+ * Rango de fechas por defecto: 1 de enero del año actual → hoy, en hora local.
+ * @returns {{ start: string, end: string }} Fechas en formato YYYY-MM-DD
+ */
+function defaultRange() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return { start: `${yyyy}-01-01`, end: `${yyyy}-${mm}-${dd}` };
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalHttpLoader();
   initThemeToggle();
+
+  // Las fechas se asignan antes de iniciar el datepicker, que lee el valor inicial
+  const { start, end } = defaultRange();
+  ['input-fecha-inicio', 'input-fecha-fin'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = i === 0 ? start : end;
+    el.max = end;
+  });
   initCustomDatePickers();
 
   let activeEje = 'ALL';
@@ -119,8 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Botón Limpiar
   if (btnLimpiar) {
     btnLimpiar.addEventListener('click', () => {
-      if (inputFechaInicio) inputFechaInicio.value = '2026-01-01';
-      if (inputFechaFin) inputFechaFin.value = '2026-09-03';
+      if (inputFechaInicio) inputFechaInicio.value = defaultRange().start;
+      if (inputFechaFin) inputFechaFin.value = defaultRange().end;
       if (selectVariable) selectVariable.value = 'PRE';
       if (selectFrecuencia) selectFrecuencia.value = 'diario';
       if (inputCodigo) inputCodigo.value = '';
@@ -151,8 +172,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const varCode = selectVariable?.value || 'PRE';
     const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
-    const sDate = inputFechaInicio?.value || '2023-01-01';
-    const eDate = inputFechaFin?.value || '2023-12-31';
+    const sDate = inputFechaInicio?.value || defaultRange().start;
+    const eDate = inputFechaFin?.value || defaultRange().end;
     const freq = selectFrecuencia?.value || 'diario';
 
     // Mostrar modal con estado de carga mientras consulta la API real
@@ -231,6 +252,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderTablePreview(series, varCfg) {
     if (!tablePreviewContainer) return;
+    if (series.figure && series.length === 0) {
+      // Wind rose: SEDC returns frequency percentages per direction, not time-series records
+      tablePreviewContainer.innerHTML = '';
+      return;
+    }
     const preview = series.slice(0, 10);
 
     tablePreviewContainer.innerHTML = `
@@ -270,8 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qTipo = selectTipo ? selectTipo.value : '';
     const qEje = selectEje ? selectEje.value : '';
 
-    const sDate = inputFechaInicio?.value || '2026-01-01';
-    const eDate = inputFechaFin?.value || '2026-09-03';
+    const sDate = inputFechaInicio?.value || defaultRange().start;
+    const eDate = inputFechaFin?.value || defaultRange().end;
 
     // Conteos para leyenda flotante
     let countMeteo = 0;
@@ -401,8 +427,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const codigo = btn.getAttribute('data-codigo');
         const est = allEstaciones.find((e) => e.codigo === codigo);
         if (est) {
-          const sDate = inputFechaInicio?.value || '2023-01-01';
-          const eDate = inputFechaFin?.value || '2023-12-31';
+          const sDate = inputFechaInicio?.value || defaultRange().start;
+          const eDate = inputFechaFin?.value || defaultRange().end;
           const freq = selectFrecuencia?.value || 'diario';
           btn.disabled = true;
           const origText = btn.innerHTML;
