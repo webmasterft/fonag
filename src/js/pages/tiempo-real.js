@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <div class="tiempo-real-station-actions">
             <button class="btn-card-ver-datos-tr" data-codigo="${est.codigo}">
-              <span class="icon-sprite icon-sprite-01 icon-white" aria-hidden="true"></span>
+              <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
               Ver datos
             </button>
           </div>

@@ -6,7 +6,7 @@
   display: inline-block;
   background-image: url('/src/images/icons-sprite.webp');
   background-repeat: no-repeat;
-  background-size: 310px 31px;
+  background-size: 341px 31px;
   width: 31px;
   height: 31px;
   vertical-align: middle;
@@ -16,13 +16,14 @@
   filter: brightness(0) invert(1);
 }
 
+.btn-card-ver-datos .icon-sprite,
 .btn-card-ver-estadisticas .icon-sprite,
 .btn-card-ver-datos-periodo .icon-sprite,
 .btn-card-ver-datos-tr .icon-sprite {
-  width: 16px;
+  width: 18px;
   height: 18px;
-  background-size: 180px 18px;
-  background-position: 0px 0px;
+  background-size: 198px 18px;
+  background-position: -180px 0px;
   filter: brightness(0) invert(1);
   flex-shrink: 0;
 }
@@ -86,4 +87,11 @@
   width: 31px;
   height: 31px;
   background-position: -279px 0px;
+}
+
+.icon-sprite-stats,
+.icon-sprite-11 {
+  width: 31px;
+  height: 31px;
+  background-position: -310px 0px;
 }

@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <div class="periodo-station-actions">
             <button class="btn-card-ver-datos-periodo" data-codigo="${est.codigo}">
-              <span class="icon-sprite icon-sprite-01 icon-white" aria-hidden="true"></span>
+              <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
               Ver datos
             </button>
             <button class="btn-card-descargar-periodo" data-codigo="${est.codigo}">

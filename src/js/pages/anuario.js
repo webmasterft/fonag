@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="station-card-pill ${pillClass}">• ${est.tipo}</div>
         <div class="station-card-actions">
           <button class="btn-card-ver-estadisticas" data-codigo="${est.codigo}">
-            <span class="icon-sprite icon-sprite-01 icon-white" aria-hidden="true"></span>
+            <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
             Ver estadísticas
           </button>
           <button class="btn-card-descargar" data-codigo="${est.codigo}">
