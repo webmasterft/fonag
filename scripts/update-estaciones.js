@@ -4,7 +4,7 @@
  * Regenera src/data/estaciones.json desde el API SEDC autenticado.
  * Usar cuando haya cambios en la base de datos de estaciones.
  *
- * Uso: node scripts/update-estaciones.js
+ * Uso: node --env-file=.env scripts/update-estaciones.js
  */
 const https = require('https');
 const fs = require('fs');
@@ -35,9 +35,14 @@ function requestHttps(url, options = {}, postData = null) {
 }
 
 async function main() {
-  const baseUrl = 'https://sedc.fonag.org.ec';
-  const username = process.env.SEDC_USERNAME || '***REMOVED***';
-  const password = process.env.SEDC_PASSWORD || '***REMOVED***';
+  const baseUrl = process.env.SEDC_API_BASE_URL || 'https://sedc.fonag.org.ec';
+  // Credentials come only from .env (run: node --env-file=.env scripts/update-estaciones.js)
+  const username = process.env.SEDC_USERNAME;
+  const password = process.env.SEDC_PASSWORD;
+  if (!username || !password) {
+    console.error('SEDC_USERNAME / SEDC_PASSWORD no están definidos. Ejecuta: node --env-file=.env scripts/update-estaciones.js');
+    process.exit(1);
+  }
 
   console.log('🔐 Authenticating with SEDC...');
   const loginPage = await requestHttps(`${baseUrl}/login/`);

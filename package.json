@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint:css": "stylelint \"src/css/**/*.css\"",
     "lint:js": "eslint \"src/js/**/*.js\"",
-    "lint": "npm run lint:css && npm run lint:js"
+    "lint": "npm run lint:css && npm run lint:js",
+    "prepare": "git config core.hooksPath .githooks",
+    "check:secrets": "node scripts/check-secrets.js --all"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.9",

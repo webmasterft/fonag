@@ -100,8 +100,12 @@ async function getSedcSession(baseUrl, username, password) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const baseUrl = env.SEDC_API_BASE_URL || 'https://sedc.fonag.org.ec';
-  const username = env.SEDC_USERNAME || '***REMOVED***';
-  const password = env.SEDC_PASSWORD || '***REMOVED***';
+  // Credentials come only from .env (SEDC_USERNAME / SEDC_PASSWORD); never hardcode them here
+  const username = env.SEDC_USERNAME || '';
+  const password = env.SEDC_PASSWORD || '';
+  if (!username || !password) {
+    console.warn('[SEDC Proxy] SEDC_USERNAME / SEDC_PASSWORD no están definidos en .env: los endpoints autenticados fallarán.');
+  }
 
   return {
     plugins: [

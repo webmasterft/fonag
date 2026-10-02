@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks commits with hardcoded credentials (see scripts/check-secrets.js)
+node scripts/check-secrets.js || exit 1

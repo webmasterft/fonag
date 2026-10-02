@@ -3,6 +3,22 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/sedc/estacion/list",
+      "destination": "/api/estaciones"
+    },
+    {
+      "source": "/api/sedc/estacion/list/",
+      "destination": "/api/estaciones"
+    },
+    {
+      "source": "/api/sedc/variable/:seccion/list",
+      "destination": "/api/variables?seccion=:seccion"
+    },
+    {
+      "source": "/api/sedc/hydro_annual",
+      "destination": "/api/hydro-annual"
+    },
+    {
       "source": "/api/sedc/telemetria/consulta",
       "destination": "/api/telemetria"
     },
@@ -11,8 +27,8 @@
       "destination": "/api/periodo"
     },
     {
-      "source": "/api/sedc/:path*",
-      "destination": "https://sedc.fonag.org.ec/:path*"
+      "source": "/api/sedc/point_geojson",
+      "destination": "https://sedc.fonag.org.ec/point_geojson"
     }
   ]
 }
