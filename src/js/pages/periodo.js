@@ -11,7 +11,7 @@ import {
   getSeriesDeTiempo,
   exportarSerieCsv
 } from '../services/periodo-service.js';
-import { initLeafletMap, getEjeForCoords } from '../molecules/map/leaflet-map.js';
+import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderPeriodoChart, destroyPeriodoChart } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const inputCodigo = document.getElementById('input-periodo-codigo');
   const inputNombre = document.getElementById('input-periodo-nombre');
   const selectTipo = document.getElementById('select-periodo-tipo');
+  const selectEje = document.getElementById('select-periodo-eje');
   const counterEl = document.getElementById('periodo-stations-counter');
 
   const cardsContainer = document.getElementById('periodo-cards-list');
@@ -63,11 +64,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 1. Cargar Estaciones del Servicio
-  const rawEstaciones = await fetchEstaciones();
-  allEstaciones = rawEstaciones.map((est) => ({
-    ...est,
-    ejeCalculado: getEjeForCoords(est.longitud, est.latitud) || est.cuenca || 'Pita'
-  }));
+  allEstaciones = await fetchEstaciones();
+
+  // Poblar select de Eje de trabajo dinámicamente (igual que estaciones page)
+  if (selectEje) {
+    const ejesUnicos = Array.from(new Set(allEstaciones.map(e => e.eje_trabajo).filter(Boolean))).sort();
+    selectEje.innerHTML = '<option value="">Todos los ejes</option>' +
+      ejesUnicos.map(eje => `<option value="${eje}">${eje}</option>`).join('');
+  }
 
   // 2. Renderizar inicial
   applyFilters();
@@ -93,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     legendItems.forEach(i => i.style.opacity = '1');
     applyFilters();
   });
+  if (selectEje) selectEje.addEventListener('change', applyFilters);
 
   // Listeners de Leyenda Flotante
   legendItems.forEach((item) => {
@@ -121,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
       if (selectTipo) selectTipo.value = '';
+      if (selectEje) selectEje.value = '';
       activeEje = 'ALL';
       activeFloatingTipo = 'ALL';
       legendItems.forEach((i) => i.style.opacity = '1');
@@ -185,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
     const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
-    const ejeName = estacion.cuenca || estacion.eje || 'Pita';
+    const ejeName = estacion.eje_trabajo || estacion.cuenca || 'General';
     const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
     const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
 
@@ -262,22 +268,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();
     const qTipo = selectTipo ? selectTipo.value : '';
+    const qEje = selectEje ? selectEje.value : '';
 
     const sDate = inputFechaInicio?.value || '2026-01-01';
     const eDate = inputFechaFin?.value || '2026-09-03';
 
-    // Conteos para leyenda flotante (estaciones con la variable seleccionada, eje activo y activas en el periodo)
+    // Conteos para leyenda flotante
     let countMeteo = 0;
     let countPluvio = 0;
     let countHidro = 0;
 
     allEstaciones.forEach((est) => {
-      // Una estación estuvo activa si su fecha de instalación no es posterior al fin del periodo seleccionado
       const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
-      const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
+      // Eje activo viene del mapa (click en polígono) O del select
+      const matchMapEje = (activeEje === 'ALL') || (est.eje_trabajo && est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
+      const matchSelectEje = !qEje || est.eje_trabajo === qEje;
 
-      if (matchVar && matchEje && matchPeriod) {
+      if (matchVar && matchMapEje && matchSelectEje && matchPeriod) {
         if (est.tipo?.includes('Hidro')) countHidro++;
         else if (est.tipo?.includes('Pluvio')) countPluvio++;
         else countMeteo++;
@@ -292,13 +300,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filtered = allEstaciones.filter((est) => {
       const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
-      const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
+      const matchMapEje = (activeEje === 'ALL') || (est.eje_trabajo && est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
+      const matchSelectEje = !qEje || est.eje_trabajo === qEje;
       const matchFloatingTipo = (activeFloatingTipo === 'ALL') || (est.tipo === activeFloatingTipo);
       const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
       const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
       const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
 
-      return matchVar && matchEje && matchFloatingTipo && matchTipo && matchCodigo && matchNombre && matchPeriod;
+      return matchVar && matchMapEje && matchSelectEje && matchFloatingTipo && matchTipo && matchCodigo && matchNombre && matchPeriod;
     });
 
     // Actualizar texto contador

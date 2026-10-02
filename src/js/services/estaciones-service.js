@@ -67,7 +67,7 @@ export function normalizeEstaciones(list) {
   return list
     .filter((item) => {
       const admin = (item.administrador || '').toUpperCase();
-      // est_estado: false = estación inactiva/de prueba (igual que filtra la web Django)
+      // est_estado: false = inactive station; excluded on purpose (Django admin lists them)
       const active = item.est_estado !== false;
       return admin.includes('FONAG') && active;
     })

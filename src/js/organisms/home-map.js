@@ -6,7 +6,7 @@
  */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { fetchPointGeojson } from '../services/estaciones-service.js';
+import { fetchEstaciones } from '../services/estaciones-service.js';
 import ejesGeojsonData from '../../data/ejes_2026.json';
 
 // Paleta de colores para los tipos de estación (Figma Match)
@@ -16,68 +16,6 @@ const TYPE_COLORS = {
   'Hidrológica': '#38bdf8',   // Celeste
   'default': '#64748b'
 };
-
-// Helper geométrico para asociar estaciones al Eje de Trabajo exacto
-function pointInPoly(x, y, poly) {
-  let inside = false;
-  let p1x = poly[0][0];
-  let p1y = poly[0][1];
-  const n = poly.length;
-  for (let i = 0; i < n; i++) {
-    const p2x = poly[(i + 1) % n][0];
-    const p2y = poly[(i + 1) % n][1];
-    if (y > Math.min(p1y, p2y)) {
-      if (y <= Math.max(p1y, p2y)) {
-        if (x <= Math.max(p1x, p2x)) {
-          let xinters = 0;
-          if (p1y !== p2y) {
-            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
-          }
-          if (p1x === p2x || x <= xinters) {
-            inside = !inside;
-          }
-        }
-      }
-    }
-    p1x = p2x;
-    p1y = p2y;
-  }
-  return inside;
-}
-
-function getEjeForCoords(lng, lat) {
-  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
-
-  for (const f of ejesGeojsonData.features) {
-    const geom = f.geometry;
-    if (!geom) continue;
-    const name = f.properties?.eje_trab || '';
-
-    if (geom.type === 'Polygon') {
-      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
-    } else if (geom.type === 'MultiPolygon') {
-      for (const poly of geom.coordinates) {
-        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
-      }
-    }
-  }
-  return null;
-}
-
-function formatEjeName(name) {
-  if (!name) return 'Pita';
-  const u = name.toUpperCase();
-  if (u.includes('PITA')) return 'Pita';
-  if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
-  if (u.includes('NORORIENTE')) return 'Nororiente DMQ';
-  if (u.includes('ANTISANA')) return 'Antisana';
-  if (u.includes('PAPALLACTA')) return 'Papallacta - Oyacachi';
-  if (u.includes('SAN PEDRO')) return 'San Pedro';
-  if (u.includes('PISQUE')) return 'Pisque';
-  if (u.includes('NOROCCIDENTE')) return 'Noroccidente';
-  if (u.includes('NORCENTRAL')) return 'Norcentral';
-  return name;
-}
 
 // Configuración y estadísticas por Eje de Trabajo (Valores canónicos oficiales de referencia)
 const EJES_CONFIG = {
@@ -204,7 +142,7 @@ export async function initHomeStationsMap() {
   const markersLayer = L.layerGroup().addTo(map);
   const labelsLayer = L.layerGroup().addTo(map);
 
-  let currentFeatures = [];
+  let currentEstaciones = [];
   let activeEje = 'ALL';
   let activeTipo = 'ALL';
   const polygonLayersMap = new Map();
@@ -301,19 +239,12 @@ export async function initHomeStationsMap() {
     let hidroCount = 0;
 
     // Primero: computar los conteos del Eje seleccionado (o de toda la red si es ALL)
-    currentFeatures.forEach(feature => {
-      const props = feature.properties || {};
-      const tipo = (props.tipo || '').trim();
-      const coords = feature.geometry?.coordinates;
-      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
-      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
-      const matchAdmin = admin.includes('FONAG');
-      const matchEjeForCounts = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
-
-      if (matchAdmin && matchEjeForCounts) {
-        if (tipo === 'Meteorológica') meteoCount++;
-        else if (tipo === 'Pluviométrica') pluvioCount++;
-        else if (tipo === 'Hidrológica') hidroCount++;
+    currentEstaciones.forEach(est => {
+      const matchEjeForCounts = (activeEje === 'ALL') || (est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
+      if (matchEjeForCounts) {
+        if (est.tipo === 'Meteorológica') meteoCount++;
+        else if (est.tipo === 'Pluviométrica') pluvioCount++;
+        else if (est.tipo === 'Hidrológica') hidroCount++;
       }
     });
 
@@ -331,34 +262,18 @@ export async function initHomeStationsMap() {
     }
 
     // Filtrar qué estaciones dibujar en el mapa
-    const filtered = currentFeatures.filter(feature => {
-      const props = feature.properties || {};
-      const tipo = (props.tipo || '').trim();
-      const coords = feature.geometry?.coordinates;
-      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
-
-      // Filtro administrador (exclusivo FONAG)
-      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
-      const matchAdmin = admin.includes('FONAG');
-
-      // Filtro tipo
-      const matchTipo = (activeTipo === 'ALL') || (tipo === activeTipo);
-
-      // Filtro eje
-      const matchEje = (activeEje === 'ALL') || (eje.toUpperCase() === activeEje.toUpperCase());
-
-      return matchAdmin && matchTipo && matchEje;
+    const filtered = currentEstaciones.filter(est => {
+      const matchTipo = (activeTipo === 'ALL') || (est.tipo === activeTipo);
+      const matchEje = (activeEje === 'ALL') || (est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
+      return matchTipo && matchEje;
     });
 
-    filtered.forEach(feature => {
-      const coords = feature.geometry?.coordinates;
-      if (!coords || coords.length < 2) return;
-
-      const lng = coords[0];
-      const lat = coords[1];
+    filtered.forEach(est => {
+      const lat = est.latitud;
+      const lng = est.longitud;
       if (isNaN(lat) || isNaN(lng)) return;
 
-      const tipo = feature.properties?.tipo || 'default';
+      const tipo = est.tipo || 'default';
       const color = TYPE_COLORS[tipo] || TYPE_COLORS.default;
 
       const customIcon = L.divIcon({
@@ -383,14 +298,14 @@ export async function initHomeStationsMap() {
         <div style="font-family: 'Inter', sans-serif; font-size: 13px; min-width: 180px;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
-            <strong style="color: #242857; font-size: 14px;">${feature.properties?.est_codigo || ''}</strong>
+            <strong style="color: #242857; font-size: 14px;">${est.codigo}</strong>
           </div>
-          <p style="margin: 0 0 4px; color: #475569; font-weight: 500;">${feature.properties?.est_nombre || ''}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-weight: 500;">${est.nombre}</p>
           <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">
             Tipo: <strong>${tipo}</strong>
           </div>
           <div style="margin-top: 6px;">
-            <a href="/consultas/anuario/?codigo=${feature.properties?.est_codigo || ''}" 
+            <a href="/consultas/anuario/?codigo=${encodeURIComponent(est.codigo)}" 
                style="font-size: 11.5px; color: #f19001; font-weight: 700; text-decoration: none;">
               Ver en Anuario &rarr;
             </a>
@@ -446,9 +361,14 @@ export async function initHomeStationsMap() {
 
           <!-- Top Selected Eje Pill Box -->
           <div class="eje-detail-header-card">
-            <span class="eje-indicator" style="background-color: ${cfg.color};"></span>
-            <span class="eje-detail-header-title">${cfg.name}</span>
-            <span class="eje-detail-header-count">${cfg.total} estaciones activas</span>
+            <div class="eje-detail-header-title-row">
+              <span class="eje-indicator" style="background-color: ${cfg.color};"></span>
+              <span class="eje-detail-header-title">${cfg.name}</span>
+            </div>
+            <div class="eje-detail-header-count-row">
+              <span class="eje-detail-header-count">${cfg.total}</span>
+              <span class="eje-detail-header-label">estaciones activas</span>
+            </div>
           </div>
 
           <!-- Breakdown by Tipo -->
@@ -456,18 +376,24 @@ export async function initHomeStationsMap() {
             <h3 class="eje-detail-type-title">Tipo</h3>
             <div class="eje-detail-type-list">
               <div class="eje-detail-type-item">
-                <span class="tipo-legend-dot meteo"></span>
-                <span>Meteorológica</span>
+                <div class="eje-detail-type-label">
+                  <span class="tipo-legend-dot meteo"></span>
+                  <span>Meteorológica</span>
+                </div>
                 <span class="type-count meteo">${cfg.meteo}</span>
               </div>
               <div class="eje-detail-type-item">
-                <span class="tipo-legend-dot pluvio"></span>
-                <span>Pluviométrica</span>
+                <div class="eje-detail-type-label">
+                  <span class="tipo-legend-dot pluvio"></span>
+                  <span>Pluviométrica</span>
+                </div>
                 <span class="type-count pluvio">${cfg.pluvio}</span>
               </div>
               <div class="eje-detail-type-item">
-                <span class="tipo-legend-dot hidro"></span>
-                <span>Hidrológica</span>
+                <div class="eje-detail-type-label">
+                  <span class="tipo-legend-dot hidro"></span>
+                  <span>Hidrológica</span>
+                </div>
                 <span class="type-count hidro">${cfg.hidro}</span>
               </div>
             </div>
@@ -537,32 +463,23 @@ export async function initHomeStationsMap() {
   showLoading(true);
   try {
     renderEjesPolygons();
-    const geojson = await fetchPointGeojson('hydroclimate');
-    currentFeatures = geojson?.features || [];
+    currentEstaciones = await fetchEstaciones();
 
-    // Recalcular conteos totales dinámicamente según la API en vivo
+    // Recalcular conteos totales dinámicamente según la fuente canónica de FONAG
     const liveCounts = {};
-    currentFeatures.forEach(feature => {
-      const coords = feature.geometry?.coordinates;
-      const props = feature.properties || {};
-      const tipo = (props.tipo || '').trim();
-
-      const admin = (props.administrador || props.est_administrador || 'FONAG').toUpperCase();
-      if (!admin.includes('FONAG')) return;
-
-      let eje = formatEjeName(props.eje_trabajo || props.eje || props.cuenca || 'General');
-      const key = eje.toUpperCase();
+    currentEstaciones.forEach(est => {
+      const key = (est.eje_trabajo || '').toUpperCase();
       if (!liveCounts[key]) {
         liveCounts[key] = { total: 0, meteo: 0, pluvio: 0, hidro: 0 };
       }
       liveCounts[key].total++;
-      if (tipo === 'Meteorológica') liveCounts[key].meteo++;
-      else if (tipo === 'Pluviométrica') liveCounts[key].pluvio++;
-      else if (tipo === 'Hidrológica') liveCounts[key].hidro++;
+      if (est.tipo === 'Meteorológica') liveCounts[key].meteo++;
+      else if (est.tipo === 'Pluviométrica') liveCounts[key].pluvio++;
+      else if (est.tipo === 'Hidrológica') liveCounts[key].hidro++;
     });
 
-    // Actualizar EJES_CONFIG 100% dinámicamente según la respuesta de la API en vivo de FONAG
-    const totalGlobal = Object.values(liveCounts).reduce((acc, curr) => acc + curr.total, 0) || 61;
+    // Actualizar EJES_CONFIG dinámicamente según la respuesta canónica de FONAG
+    const totalGlobal = currentEstaciones.length || 61;
     Object.keys(EJES_CONFIG).forEach(k => {
       if (liveCounts[k]) {
         EJES_CONFIG[k].total = liveCounts[k].total;

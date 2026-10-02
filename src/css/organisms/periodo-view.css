@@ -168,23 +168,31 @@
 }
 
 .periodo-filter-select {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 10px 36px 10px 16px;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 12px;
+  font-family: var(--font-family-sans);
+  font-size: 13.5px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-palette-navy, #242857);
   outline: none;
   cursor: pointer;
-  min-width: 150px;
   box-shadow: 0px 3px 6px #00000029;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23242857' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .periodo-filter-select:focus,
 .periodo-filter-date:focus {
   border-color: #41a6e5;
-  box-shadow: 0 0 0 3px rgba(65, 166, 229, 0.15);
+  box-shadow: 0px 3px 6px #00000029, 0 0 0 3px rgba(65, 166, 229, 0.15);
 }
 
 .btn-periodo-limpiar {
