@@ -289,6 +289,39 @@ export default defineConfig(({ mode }) => {
           });
 
           /**
+           * /api/sedc/variable/* → GET autenticado con sesión SEDC
+           * Catálogo de variables (/variable/hidro/list) requiere sesión iniciada.
+           */
+          server.middlewares.use('/api/sedc/variable', async (req, res) => {
+            try {
+              const session = await getSedcSession(baseUrl, username, password);
+              if (!session) {
+                res.statusCode = 502;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
+                return;
+              }
+              const urlObj = new URL(req.url, 'http://localhost');
+              const targetUrl = `${baseUrl}/variable${urlObj.pathname}${urlObj.search}`;
+              const sedcResponse = await requestHttps(targetUrl, {
+                headers: {
+                  Cookie: session.cookie,
+                  Referer: baseUrl,
+                  'X-Requested-With': 'XMLHttpRequest',
+                },
+              });
+              res.statusCode = sedcResponse.status;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(sedcResponse.body);
+            } catch (error) {
+              console.error('[SEDC Variable List Error]:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: error.message }));
+            }
+          });
+
+          /**
            * /api/sedc/* → proxy genérico sin autenticación de sesión
            * (point_geojson y otros endpoints públicos)
            */

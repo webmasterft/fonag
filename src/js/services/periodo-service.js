@@ -4,119 +4,85 @@
  * generación determinista de series de tiempo (horario, diario, mensual) y exportación a CSV.
  */
 
-export const VARIABLES_CONFIG = {
-  'PRE': {
-    code: 'PRE',
-    name: 'Precipitación',
-    unit: 'mm',
-    label: 'Precipitación (mm)',
-    tiposCompatibles: ['Meteorológica', 'Pluviométrica'],
-    chartType: 'bar',
-    color: '#3b82f6',
-    defaultMin: 0,
-    defaultMax: 45
-  },
-  'TEM': {
-    code: 'TEM',
-    name: 'Temperatura del Aire',
-    unit: '°C',
-    label: 'Temperatura (°C)',
-    tiposCompatibles: ['Meteorológica'],
-    chartType: 'line',
-    color: '#f59e0b',
-    defaultMin: 2,
-    defaultMax: 22
-  },
-  'CAU': {
-    code: 'CAU',
-    name: 'Caudal',
-    unit: 'm³/s',
-    label: 'Caudal (m³/s)',
-    tiposCompatibles: ['Hidrológica'],
-    chartType: 'line',
-    color: '#0284c7',
-    defaultMin: 0.1,
-    defaultMax: 8.5
-  },
-  'HUM': {
-    code: 'HUM',
-    name: 'Humedad Relativa',
-    unit: '%',
-    label: 'Humedad Relativa (%)',
-    tiposCompatibles: ['Meteorológica'],
-    chartType: 'line',
-    color: '#10b981',
-    defaultMin: 40,
-    defaultMax: 98
-  },
-  'NIV': {
-    code: 'NIV',
-    name: 'Nivel de Agua',
-    unit: 'm',
-    label: 'Nivel de Agua (m)',
-    tiposCompatibles: ['Hidrológica'],
-    chartType: 'line',
-    color: '#6366f1',
-    defaultMin: 0.2,
-    defaultMax: 3.5
-  },
-  'PRE_ATM': {
-    code: 'PRE_ATM',
-    name: 'Presión Atmosférica',
-    unit: 'hPa',
-    label: 'Presión Atmosférica (hPa)',
-    tiposCompatibles: ['Meteorológica'],
-    chartType: 'line',
-    color: '#8b5cf6',
-    defaultMin: 600,
-    defaultMax: 780
-  },
-  'RAD': {
-    code: 'RAD',
-    name: 'Radiación Solar',
-    unit: 'W/m²',
-    label: 'Radiación Solar (W/m²)',
-    tiposCompatibles: ['Meteorológica'],
-    chartType: 'line',
-    color: '#ec4899',
-    defaultMin: 0,
-    defaultMax: 1200
-  },
-  'VIE': {
-    code: 'VIE',
-    name: 'Velocidad del Viento',
-    unit: 'm/s',
-    label: 'Velocidad del Viento (m/s)',
-    tiposCompatibles: ['Meteorológica'],
-    chartType: 'line',
-    color: '#14b8a6',
-    defaultMin: 0,
-    defaultMax: 16
-  }
-};
+/**
+ * Catálogo de variables cargado desde la API SEDC (GET /variable/hidro/list).
+ * Se llena con loadVariables(); las claves son var_codigo (PRE, TAI, VVI...).
+ */
+export const VARIABLES_CONFIG = {};
+
+// SEDC `tipo` values: 3 = wind speed (rendered as wind rose), 4 = wind direction.
+// Django shows both as a single "Viento" option backed by the speed variable.
+const TIPO_VELOCIDAD_VIENTO = 3;
+const TIPO_DIRECCION_VIENTO = 4;
+
+const CHART_COLORS = { bar: '#3b82f6', line: '#F19001' };
 
 /**
- * Comprueba si una estación tiene sensores para la variable seleccionada.
+ * Carga el catálogo de variables activas desde la API y llena VARIABLES_CONFIG.
+ * @returns {Promise<Array<Object>>} Variables en el orden de la API (var_id)
+ */
+export async function loadVariables() {
+  const res = await fetch('/api/sedc/variable/hidro/list');
+  if (!res.ok) throw new Error(`Catálogo de variables no disponible (${res.status})`);
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : (data.results || []);
+
+  const variables = list
+    .filter((v) => v.var_estado && v.tipo !== TIPO_DIRECCION_VIENTO)
+    .sort((a, b) => a.var_id - b.var_id)
+    .map((v) => {
+      // var_nombre viene como "Precipitación(mm)"
+      const match = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(v.var_nombre || '');
+      const name = match ? match[1].trim() : (v.var_nombre || v.var_codigo);
+      const unit = match ? match[2].trim() : '';
+      const isWind = v.tipo === TIPO_VELOCIDAD_VIENTO;
+      const chartType = v.es_acumulada ? 'bar' : 'line';
+      return {
+        id: v.var_id,
+        code: v.var_codigo,
+        name: isWind ? 'Viento' : name,
+        unit,
+        label: isWind ? 'Viento (dirección y velocidad)' : `${name} (${unit})`,
+        accumulated: !!v.es_acumulada,
+        chartType,
+        color: CHART_COLORS[chartType]
+      };
+    });
+
+  Object.keys(VARIABLES_CONFIG).forEach((k) => delete VARIABLES_CONFIG[k]);
+  variables.forEach((v) => { VARIABLES_CONFIG[v.code] = v; });
+  return variables;
+}
+
+// Cache: var_codigo → Set de est_codigo que miden esa variable
+const estacionesPorVariable = new Map();
+
+/**
+ * Carga desde point_geojson los códigos de estación que miden la variable.
+ * @param {string} variableCode var_codigo (ej. PRE)
+ * @returns {Promise<Set<string>>}
+ */
+export async function loadEstacionesPorVariable(variableCode) {
+  if (estacionesPorVariable.has(variableCode)) return estacionesPorVariable.get(variableCode);
+  const res = await fetch(`/api/sedc/point_geojson?section=hydroclimate&variable=${encodeURIComponent(variableCode)}`);
+  if (!res.ok) throw new Error(`Estaciones por variable no disponibles (${res.status})`);
+  const geojson = await res.json();
+  const codigos = new Set((geojson.features || []).map((f) => f.properties?.est_codigo).filter(Boolean));
+  estacionesPorVariable.set(variableCode, codigos);
+  return codigos;
+}
+
+/**
+ * Comprueba si una estación mide la variable, según point_geojson de la API.
+ * Requiere haber llamado antes a loadEstacionesPorVariable(variableCode).
  * @param {Object} estacion
  * @param {string} variableCode
  * @returns {boolean}
  */
 export function estacionTieneVariable(estacion, variableCode = 'PRE') {
-  const config = VARIABLES_CONFIG[variableCode] || VARIABLES_CONFIG['PRE'];
-  const tipo = estacion.tipo || 'Meteorológica';
-  return config.tiposCompatibles.includes(tipo);
+  const codigos = estacionesPorVariable.get(variableCode);
+  return !!codigos && codigos.has(estacion.codigo);
 }
-
-export const VARIABLE_SEDC_IDS = {
-  'PRE': 1,      // Precipitación
-  'TEM': 2,      // Temperatura del aire (TAI)
-  'HUM': 3,      // Humedad del aire (HAI)
-  'VIE': 4,      // Velocidad del viento (VVI)
-  'RAD': 7,      // Radiación solar (RAD)
-  'PRE_ATM': 8,  // Presión atmosférica (PAT)
-  'CAU': 10,     // Caudal (CAU)
-  'NIV': 11      // Nivel de agua (NAG)
-};
 
 export const FRECUENCIA_SEDC_IDS = {
   'horario': 3,
@@ -136,7 +102,8 @@ export const FRECUENCIA_SEDC_IDS = {
  */
 export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startDate = '2023-01-01', endDate = '2023-12-31', frecuencia = 'diario') {
   const estId = estacion.id || estacion.est_id || 50;
-  const varId = VARIABLE_SEDC_IDS[variableCode] || 1;
+  const varId = VARIABLES_CONFIG[variableCode]?.id;
+  if (!varId) return [];
   const frecId = FRECUENCIA_SEDC_IDS[frecuencia] || 4;
 
   try {
@@ -201,7 +168,9 @@ export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startD
  * @returns {Array<{ fecha: string, valor: number, validado: boolean }>}
  */
 export function getSeriesDeTiempo(estacion, variableCode = 'PRE', startDate = '2026-01-01', endDate = '2026-09-03', frecuencia = 'diario') {
-  const config = VARIABLES_CONFIG[variableCode] || VARIABLES_CONFIG['PRE'];
+  const config = VARIABLES_CONFIG[variableCode];
+  // The API catalog has no value ranges to simulate from, so no synthetic data is generated
+  if (!config || config.defaultMin === undefined) return [];
   const seed = (typeof estacion.id === 'number' ? estacion.id : 42) + (variableCode.charCodeAt(0) || 10);
 
   const start = new Date(startDate);
@@ -270,7 +239,7 @@ export function getSeriesDeTiempo(estacion, variableCode = 'PRE', startDate = '2
  * @param {string} frecuencia
  */
 export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'diario') {
-  const config = VARIABLES_CONFIG[variableCode] || VARIABLES_CONFIG['PRE'];
+  const config = VARIABLES_CONFIG[variableCode] || { code: variableCode, name: variableCode, unit: '' };
   const isSubhorario = frecuencia.toLowerCase().includes('subhorario') || frecuencia.toLowerCase().includes('horario');
   const ext = isSubhorario ? 'csv' : 'xlsx';
 

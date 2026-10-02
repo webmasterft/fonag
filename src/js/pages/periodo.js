@@ -6,13 +6,14 @@
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import {
   VARIABLES_CONFIG,
+  loadVariables,
+  loadEstacionesPorVariable,
   estacionTieneVariable,
   fetchSeriesDeTiempo,
-  getSeriesDeTiempo,
   exportarSerieCsv
 } from '../services/periodo-service.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
-import { renderPeriodoChart, destroyPeriodoChart } from '../molecules/charts/periodo-charts.js';
+import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
@@ -21,6 +22,8 @@ import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker
  * Rango de fechas por defecto: 1 de enero del año actual → hoy, en hora local.
  * @returns {{ start: string, end: string }} Fechas en formato YYYY-MM-DD
  */
+const DEFAULT_VARIABLE = 'PRE';
+
 function defaultRange() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -94,6 +97,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       ejesUnicos.map(eje => `<option value="${eje}">${eje}</option>`).join('');
   }
 
+  // Catálogo de variables desde la API SEDC (por defecto PRE si existe)
+  try {
+    const variables = await loadVariables();
+    if (selectVariable) {
+      selectVariable.innerHTML = variables
+        .map((v) => `<option value="${v.code}">${v.label}</option>`)
+        .join('');
+      selectVariable.value = VARIABLES_CONFIG[DEFAULT_VARIABLE] ? DEFAULT_VARIABLE : (variables[0]?.code || '');
+    }
+    await loadEstacionesPorVariable(selectVariable?.value);
+  } catch (err) {
+    console.error('[Periodo] Error cargando variables:', err);
+    if (selectVariable) selectVariable.innerHTML = '<option value="">Variables no disponibles</option>';
+  }
+
   // 2. Renderizar inicial
   applyFilters();
   if (mapController) {
@@ -109,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     inputFechaFin.addEventListener('change', applyFilters);
     inputFechaFin.addEventListener('input', applyFilters);
   }
-  if (selectVariable) selectVariable.addEventListener('change', applyFilters);
+  if (selectVariable) selectVariable.addEventListener('change', onVariableChange);
   if (selectFrecuencia) selectFrecuencia.addEventListener('change', applyFilters);
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
@@ -137,12 +155,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // Las estaciones por variable vienen de point_geojson: cargarlas antes de filtrar
+  async function onVariableChange() {
+    const code = selectVariable?.value;
+    try {
+      await loadEstacionesPorVariable(code);
+    } catch (err) {
+      console.error('[Periodo] Error cargando estaciones de la variable:', err);
+    }
+    if (selectVariable?.value === code) applyFilters();
+  }
+
   // Botón Limpiar
   if (btnLimpiar) {
     btnLimpiar.addEventListener('click', () => {
       if (inputFechaInicio) inputFechaInicio.value = defaultRange().start;
       if (inputFechaFin) inputFechaFin.value = defaultRange().end;
-      if (selectVariable) selectVariable.value = 'PRE';
+      if (selectVariable && VARIABLES_CONFIG[DEFAULT_VARIABLE]) selectVariable.value = DEFAULT_VARIABLE;
       if (selectFrecuencia) selectFrecuencia.value = 'diario';
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
@@ -171,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentModalEstacion = estacion;
 
     const varCode = selectVariable?.value || 'PRE';
-    const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
+    const varCfg = VARIABLES_CONFIG[varCode] || { code: varCode, name: varCode, unit: '', chartType: 'line' };
     const sDate = inputFechaInicio?.value || defaultRange().start;
     const eDate = inputFechaFin?.value || defaultRange().end;
     const freq = selectFrecuencia?.value || 'diario';
@@ -181,14 +210,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.style.overflow = 'hidden';
 
     renderModalHeader(estacion, varCfg, sDate, eDate, freq, []);
-    if (tablePreviewContainer) {
-      tablePreviewContainer.innerHTML = `
-        <div style="padding: 2rem; text-align: center; color: #64748b;">
-          <div class="stat-spinner" style="display:inline-block; width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#0284c7; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px;"></div>
-          <div>Consultando datos en vivo de la API SEDC...</div>
-        </div>
-      `;
-    }
+    // Loader de la app en el área del gráfico hasta que termine de dibujarse
+    showPeriodoChartLoader(chartCanvas);
+    if (tablePreviewContainer) tablePreviewContainer.innerHTML = '';
 
     const series = await fetchSeriesDeTiempo(estacion, varCode, sDate, eDate, freq);
 
@@ -289,7 +313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    */
   function applyFilters() {
     const varCode = selectVariable?.value || 'PRE';
-    const varCfg = VARIABLES_CONFIG[varCode] || VARIABLES_CONFIG['PRE'];
+    const varCfg = VARIABLES_CONFIG[varCode] || { code: varCode, name: varCode, unit: '', chartType: 'line' };
 
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();

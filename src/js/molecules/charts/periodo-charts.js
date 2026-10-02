@@ -40,7 +40,43 @@ function loadPlotly() {
   return plotlyPromise;
 }
 
-export function destroyPeriodoChart() {
+let activeLoaderEl = null;
+
+/**
+ * Shows the app's branded loader card (same markup as the global loader) over the chart area.
+ * It stays until the chart finishes rendering or the chart is destroyed.
+ * @param {HTMLCanvasElement} canvasEl
+ */
+export function showPeriodoChartLoader(canvasEl) {
+  if (!canvasEl?.parentElement) return;
+  destroyPeriodoChart();
+  canvasEl.style.display = 'none';
+  const el = document.createElement('div');
+  el.setAttribute('aria-live', 'polite');
+  el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
+  el.innerHTML = `
+    <div class="fonag-loader-card">
+      <div class="fonag-loader-spinner-wrapper">
+        <div class="fonag-loader-ring"></div>
+        <div class="fonag-loader-inner-dot"></div>
+      </div>
+      <div class="fonag-loader-text-group">
+        <span class="fonag-loader-title">Consultando servidor...</span>
+        <span class="fonag-loader-subtitle">Cargando gráfico del periodo</span>
+      </div>
+    </div>
+  `;
+  canvasEl.parentElement.appendChild(el);
+  activeLoaderEl = el;
+}
+
+function hideChartLoader() {
+  activeLoaderEl?.remove();
+  activeLoaderEl = null;
+}
+
+export function destroyPeriodoChart({ keepLoader = false } = {}) {
+  if (!keepLoader) hideChartLoader();
   if (activeChart && typeof activeChart.destroy === 'function') {
     activeChart.destroy();
   }
@@ -84,6 +120,7 @@ async function renderPlotlyFigure(canvasEl, figure) {
     );
   }
   await Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
+  if (activePlotlyEl === el) hideChartLoader();
 }
 
 /**
@@ -94,7 +131,8 @@ async function renderPlotlyFigure(canvasEl, figure) {
  */
 export function renderPeriodoChart(canvasEl, series, variableConfig) {
   if (!canvasEl) return;
-  destroyPeriodoChart();
+  // Plotly is loaded lazily: keep the loader visible until the figure is drawn
+  destroyPeriodoChart({ keepLoader: !!series.figure });
 
   if (series.figure) {
     renderPlotlyFigure(canvasEl, series.figure);
