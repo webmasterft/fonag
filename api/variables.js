@@ -6,7 +6,10 @@ import { sedcGet, sendJson, methodGuard } from './_lib/sedc.js';
  */
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'GET')) return;
-  const seccion = new URL(req.url, 'http://localhost').searchParams.get('seccion') || 'hidro';
+  const urlParams = new URL(req.url, 'http://localhost').searchParams;
+  const rawSeccion = req.query?.seccion || urlParams.get('seccion') || 'hidro';
+  const seccion = String(rawSeccion).trim().toLowerCase();
+
   // Only a plain section name is forwarded (no path traversal into other SEDC routes)
   if (!/^[a-z_]+$/i.test(seccion)) {
     res.status(400).json({ error: 'Sección inválida' });

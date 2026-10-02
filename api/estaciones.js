@@ -5,17 +5,25 @@ import { sedcGet, sendJson, methodGuard } from './_lib/sedc.js';
  * Route: /api/sedc/estacion/list → /api/estaciones
  * Without a session SEDC returns a reduced row (no est_id / eje_trabajo), so it must be authenticated.
  */
-// Only the filters SEDC documents for /estacion/list/ are forwarded with the authenticated session
 const ALLOWED_PARAMS = ['nombre', 'codigo', 'administrador', 'est_estado', 'order', 'limit', 'offset', 'year'];
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, 'GET')) return;
   try {
-    const incoming = new URL(req.url, 'http://localhost').searchParams;
+    const urlParams = new URL(req.url, 'http://localhost').searchParams;
     const query = new URLSearchParams();
+
     ALLOWED_PARAMS.forEach((key) => {
-      if (incoming.has(key)) query.set(key, incoming.get(key));
+      const val = req.query?.[key] ?? urlParams.get(key);
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        query.set(key, String(val).trim());
+      }
     });
+
+    // Defaults canónicos para asegurar la lista completa de estaciones administradas
+    if (!query.has('administrador')) query.set('administrador', '1');
+    if (!query.has('limit')) query.set('limit', '300');
+
     const qs = query.toString();
     sendJson(res, await sedcGet(`/estacion/list/${qs ? `?${qs}` : ''}`));
   } catch (error) {
