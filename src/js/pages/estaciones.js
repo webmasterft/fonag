@@ -7,8 +7,10 @@ import { fetchEstaciones } from '../services/estaciones-service.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initColumnFilter } from '../molecules/data-table/column-filter.js';
+import { initPortalHeader } from '../organisms/portal-header.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initPortalHeader();
   initGlobalHttpLoader();
   initThemeToggle();
 

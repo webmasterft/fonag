@@ -23,7 +23,7 @@
         </a>
 
         <!-- Center Navigation Menu -->
-        <nav aria-label="Navegación principal">
+        <nav aria-label="Navegación principal" class="portal-nav" id="portal-nav">
           <ul class="nav-menu">
             <li class="nav-item"><a href="/" class="nav-link">Inicio</a></li>
             <li class="nav-item"><a href="/estaciones/" class="nav-link">Estaciones</a></li>
@@ -42,12 +42,22 @@
               </div>
             </li>
             <li class="nav-item"><a href="/tiempo-real/" class="nav-link">Tiempo Real</a></li>
+            <li class="nav-item nav-item-login">
+              <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login" rel="noopener noreferrer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" x2="3" y1="12" y2="12"/>
+                </svg>
+                <span>Ingresar</span>
+              </a>
+            </li>
           </ul>
         </nav>
 
         <!-- Right Header Actions -->
         <div class="portal-header-actions">
-          <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login" id="btn-login" rel="noopener noreferrer">
+          <a href="https://sedc.fonag.org.ec/login/?next=/" class="btn-nav-login btn-nav-login-desktop" id="btn-login" rel="noopener noreferrer">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
               <polyline points="10 17 15 12 10 7"/>
@@ -55,8 +65,20 @@
             </svg>
             <span>Ingresar</span>
           </a>
+          <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="portal-nav">
+            <svg class="hamburger-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <svg class="close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
       </div>
+      <div class="portal-nav-backdrop" id="portal-nav-backdrop" aria-hidden="true"></div>
     </header>
 
     <!-- Main View -->

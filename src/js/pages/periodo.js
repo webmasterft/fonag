@@ -18,6 +18,7 @@ import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from 
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
+import { initPortalHeader } from '../organisms/portal-header.js';
 
 /**
  * Rango de fechas por defecto: 1 de enero del año actual → hoy, en hora local.
@@ -34,6 +35,7 @@ function defaultRange() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initPortalHeader();
   initGlobalHttpLoader();
   initThemeToggle();
 

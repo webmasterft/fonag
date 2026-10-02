@@ -2,7 +2,10 @@
  * Contacto Page Controller - Client-Side Anti-Spam & Serverless Processing
  */
 
+import { initPortalHeader } from '../organisms/portal-header.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+  initPortalHeader();
   const form = document.getElementById('contacto-form');
   const submitBtn = document.getElementById('btn-submit-contacto');
   const feedbackEl = document.getElementById('contacto-form-feedback');

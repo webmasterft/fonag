@@ -8,9 +8,11 @@ import { initThemeToggle } from './organisms/theme-toggle.js';
 import { initConstituentsCarousel } from './organisms/constituents-carousel.js';
 import { initHomeStationsMap } from './organisms/home-map.js';
 import { initGlobalHttpLoader } from './atoms/global-loader.js';
+import { initPortalHeader } from './organisms/portal-header.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize atomic interaction modules
+  initPortalHeader();
   initGlobalHttpLoader();
   initButtons();
   initSearch('#component-search', '.card');

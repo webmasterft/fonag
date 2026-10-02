@@ -14,8 +14,10 @@ import { buildTelemetriaFigure } from '../molecules/charts/telemetria-figure.js'
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
+import { initPortalHeader } from '../organisms/portal-header.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initPortalHeader();
   initGlobalHttpLoader();
   initThemeToggle();
   initCustomDatePickers();

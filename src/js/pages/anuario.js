@@ -12,8 +12,10 @@ import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderAnuarioSedc, destroyAnuarioSedc } from '../molecules/charts/anuario-sedc.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader, showInlineLoader } from '../atoms/global-loader.js';
+import { initPortalHeader } from '../organisms/portal-header.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initPortalHeader();
   initGlobalHttpLoader();
   initThemeToggle();
 
