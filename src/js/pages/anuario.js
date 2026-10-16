@@ -544,7 +544,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const target = document.getElementById(`card-${codigo}`);
     if (target) {
       target.classList.add('station-card-item-active');
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (window.innerWidth > 1024) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
       activeCardEl = target;
     }
   }

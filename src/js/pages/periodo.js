@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }, {
         subtitle: `${varCfg.code} (${varCfg.unit})`,
-        buttonText: `Ver serie ${varCfg.code}`
+        buttonText: 'Ver serie'
       });
     }
 
@@ -595,7 +595,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const target = document.getElementById(`card-${codigo}`);
     if (target) {
       target.classList.add('is-active');
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // En móviles y tablets (pantallas <= 1024px donde las tarjetas se apilan abajo),
+      // no hacer scroll hacia abajo para mantenerse en el mapa y ver el popup cómodamente.
+      // En escritorio (> 1024px), las tarjetas están al lado y se hace scroll dentro del contenedor.
+      if (window.innerWidth > 1024) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   }
 });

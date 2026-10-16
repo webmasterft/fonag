@@ -315,8 +315,12 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
 
       const marker = L.marker([estacion.latitud, estacion.longitud], { icon: customIcon });
 
-      const subtitleText = typeof year === 'object' ? (year.subtitle || '') : year;
       const btnLabelText = typeof year === 'object' ? (year.buttonText || 'Ver datos') : `Ver estadísticas ${year}`;
+
+      const formatCoord = (val) => {
+        if (val == null || val === '' || isNaN(Number(val))) return 'N/D';
+        return Number(val).toFixed(4);
+      };
 
       const popupContent = `
         <div class="map-station-popup" style="font-family: 'Inter', sans-serif; font-size: 13px; min-width: 190px;">
@@ -325,12 +329,15 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
               <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
               <strong style="color: #242857; font-size: 14px;">${estacion.codigo}</strong>
             </div>
-            ${subtitleText ? `<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">${subtitleText}</span>` : ''}
           </div>
           <p style="margin: 0 0 6px; color: #475569; font-weight: 500;">${estacion.nombre}</p>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px;">
             <span>Tipo: <strong>${estacion.tipo}</strong></span>
             <span>Alt: <strong>${estacion.altura}</strong></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 8px;">
+            <span>Latitud: <strong style="color: #242857;">${formatCoord(estacion.latitud)}</strong></span>
+            <span>Longitud: <strong style="color: #242857;">${formatCoord(estacion.longitud)}</strong></span>
           </div>
           <button
             class="btn-popup-ver-datos"
