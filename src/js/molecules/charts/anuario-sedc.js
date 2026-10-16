@@ -159,9 +159,34 @@ export async function renderAnuarioSedc(container, data, { view = 'charts' } = {
     const el = container.querySelector(`#${CSS.escape(id)}`);
     if (!el) return null;
     renderedPlots.push(el);
-    // Django layouts carry a fixed height; let the block size the figure
-    const layout = { ...figure.layout, height: undefined, autosize: true };
-    return Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
+
+    // Remove any Acumulado legend entry / annotations and move legend to bottom
+    const cleanAnnotations = (figure.layout?.annotations || []).filter(
+      (a) => !/acumulado/i.test(a.text || '')
+    );
+    const cleanData = (figure.data || []).map((t) => {
+      if (/acumulado/i.test(t.name || '')) {
+        return { ...t, showlegend: false };
+      }
+      return t;
+    });
+
+    const layout = {
+      ...figure.layout,
+      height: undefined,
+      autosize: true,
+      margin: { ...figure.layout?.margin, b: 60 },
+      legend: {
+        orientation: 'h',
+        x: 0.5,
+        xanchor: 'center',
+        y: -0.2,
+        yanchor: 'top'
+      },
+      annotations: cleanAnnotations
+    };
+
+    return Plotly.newPlot(el, cleanData, layout, { responsive: true, displaylogo: false });
   }));
 }
 

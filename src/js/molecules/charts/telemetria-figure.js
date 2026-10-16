@@ -58,10 +58,6 @@ function buildSeriesFigure(item, isPrecipitation) {
   }
 
   if (numbers.length) {
-    if (isPrecipitation) {
-      const acumulado = numbers.reduce((acc, v) => acc + v, 0).toFixed(2);
-      data.push(legendEntry(`ACU: ${acumulado} ${unit}`, x0));
-    }
     data.push(legendEntry(`Máx: ${Math.max(...numbers)} ${unit}`, x0));
     data.push(legendEntry(`mín: ${Math.min(...numbers)} ${unit}`, x0));
   }
@@ -75,8 +71,14 @@ function buildSeriesFigure(item, isPrecipitation) {
     data,
     layout: {
       title: { text: `${item.estacion}: ${item.var_nombre} (${unit})` },
-      margin: { r: 10, t: 60, b: 45, l: 50 },
-      legend: { orientation: 'v' }
+      margin: { r: 10, t: 50, b: 60, l: 50 },
+      legend: {
+        orientation: 'h',
+        x: 0.5,
+        xanchor: 'center',
+        y: -0.2,
+        yanchor: 'top'
+      }
     }
   };
 }

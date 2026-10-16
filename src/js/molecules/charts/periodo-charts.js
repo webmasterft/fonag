@@ -93,20 +93,46 @@ async function renderPlotlyFigure(canvasEl, figure) {
   if (activePlotlyEl !== el) return; // modal closed or re-rendered while loading
 
   // Django's layout sets a fixed height; let the modal container size the figure instead
-  const layout = { ...figure.layout, height: undefined, autosize: true, margin: { t: 50, r: 30, b: 50, l: 70 } };
+  // Remove Acumulado text annotations and move legend to bottom
+  const cleanAnnotations = (figure.layout?.annotations || []).filter(
+    (a) => !/acumulado/i.test(a.text || '')
+  );
 
-  // Django reserves only 10% on the right for legend + stats, too narrow for the modal width:
-  // widen that column and move legend/annotations into it (wind rose has no x axis, skip it)
+  const cleanData = (figure.data || []).map((t) => {
+    // If a trace itself is named Acumulado or shows Acumulado legend
+    if (/acumulado/i.test(t.name || '')) {
+      return { ...t, showlegend: false };
+    }
+    return t;
+  });
+
+  const layout = {
+    ...figure.layout,
+    height: undefined,
+    autosize: true,
+    margin: { t: 40, r: 30, b: 70, l: 70 },
+    legend: {
+      orientation: 'h',
+      x: 0.5,
+      xanchor: 'center',
+      y: -0.2,
+      yanchor: 'top'
+    },
+    annotations: cleanAnnotations.map((a) => {
+      // If annotation was positioned on the side column, place it above or below cleanly
+      if (a.xref === 'paper' && a.x >= 0.8) {
+        return { ...a, x: 0.5, xanchor: 'center', y: -0.32 };
+      }
+      return a;
+    })
+  };
+
   if (layout.xaxis?.domain) {
-    const side = 0.8;
-    layout.xaxis = { ...layout.xaxis, domain: [0, side - 0.03] };
-    layout.legend = { ...layout.legend, x: side, xanchor: 'left', y: 1, yanchor: 'top' };
-    layout.annotations = (layout.annotations || []).map((a) =>
-      a.xref === 'paper' && a.x >= 0.9 ? { ...a, x: side } : a
-    );
+    layout.xaxis = { ...layout.xaxis, domain: [0, 1] };
   }
+
   try {
-    await Plotly.newPlot(el, figure.data, layout, { responsive: true, displaylogo: false });
+    await Plotly.newPlot(el, cleanData, layout, { responsive: true, displaylogo: false });
   } finally {
     if (activePlotlyEl === el) hideChartLoader();
   }
@@ -133,11 +159,6 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
   const values = series.map((s) => s.valor);
 
   const isBar = variableConfig.chartType === 'bar';
-
-  // Accumulated variables (precipitation): prefer the API total, otherwise sum the series
-  const acumulado = isBar
-    ? (series.acumulado ?? values.reduce((acc, v) => acc + (Number(v) || 0), 0))
-    : null;
 
   activeChart = new Chart(canvasEl, {
     type: isBar ? 'bar' : 'line',
@@ -170,20 +191,16 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
       },
       plugins: {
         subtitle: {
-          display: acumulado !== null,
-          text: acumulado !== null ? `Acumulado: ${acumulado.toFixed(2)} ${variableConfig.unit}` : '',
-          align: 'end',
-          color: '#334155',
-          font: { family: "'Inter', sans-serif", size: 13, weight: 700 },
-          padding: { bottom: 8 }
+          display: false
         },
         legend: {
-          display: true,
-          position: 'top',
+          display: !isBar, // Si es barra de precipitación / acumulado se oculta la leyenda; en otros gráficos se ubica abajo
+          position: 'bottom',
           labels: {
             boxWidth: 12,
             font: { family: "'Inter', sans-serif", size: 12, weight: 600 },
-            color: '#334155'
+            color: '#334155',
+            padding: 16
           }
         },
         tooltip: {
