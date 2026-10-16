@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">${estacion.codigo} - ${stationName}</h3>
+            <h3 class="modal-station-title">Estación ${estacion.codigo} - ${stationName}</h3>
           </div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>

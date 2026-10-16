@@ -70,11 +70,12 @@ export function destroyPeriodoChart({ keepLoader = false } = {}) {
 }
 
 /**
- * Renders the Plotly figure returned by SEDC (wind rose) in place of the canvas.
+ * Renders the Plotly figure returned by SEDC (wind rose, time series) in place of the canvas.
  * @param {HTMLCanvasElement} canvasEl
  * @param {{ data: Array, layout: Object }} figure
+ * @param {string} freqDisplay
  */
-async function renderPlotlyFigure(canvasEl, figure) {
+async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
   canvasEl.style.display = 'none';
   const el = document.createElement('div');
   el.style.width = '100%';
@@ -127,6 +128,26 @@ async function renderPlotlyFigure(canvasEl, figure) {
     })
   };
 
+  // En frecuencias mensuales y anuales, el eje de porcentaje (yaxis2 o yaxis) debe decir "Porcentaje de Datos (%)"
+  if (layout.yaxis2?.title?.text && /porcentaje/i.test(layout.yaxis2.title.text)) {
+    layout.yaxis2.title.text = 'Porcentaje de Datos (%)';
+    layout.margin.r = 65;
+  }
+  if (layout.yaxis?.title?.text && /porcentaje/i.test(layout.yaxis.title.text)) {
+    layout.yaxis.title.text = 'Porcentaje de Datos (%)';
+  } else if (layout.yaxis?.title && freqDisplay) {
+    // Mostrar la frecuencia en el eje Y principal del gráfico: ej. "Precipitación (mm) - Diaria"
+    const currentYText = typeof layout.yaxis.title === 'string' ? layout.yaxis.title : (layout.yaxis.title.text || '');
+    if (currentYText && !currentYText.includes(' - ')) {
+      const updatedYText = `${currentYText} - ${freqDisplay}`;
+      if (typeof layout.yaxis.title === 'string') {
+        layout.yaxis.title = updatedYText;
+      } else {
+        layout.yaxis.title.text = updatedYText;
+      }
+    }
+  }
+
   if (layout.xaxis?.domain) {
     layout.xaxis = { ...layout.xaxis, domain: [0, 1] };
   }
@@ -138,19 +159,31 @@ async function renderPlotlyFigure(canvasEl, figure) {
   }
 }
 
+const FRECUENCIAS_FEMENINAS = {
+  subhorario_validado: 'Subhoraria validada',
+  subhorario: 'Subhoraria',
+  horario: 'Horaria',
+  diario: 'Diaria',
+  mensual: 'Mensual',
+  anual: 'Anual'
+};
+
 /**
  * Renderiza la gráfica de la serie de tiempo para la variable seleccionada.
  * @param {HTMLCanvasElement} canvasEl
  * @param {Array<{ fecha: string, valor: number }>} series
  * @param {Object} variableConfig
+ * @param {string} frecuencia
  */
-export function renderPeriodoChart(canvasEl, series, variableConfig) {
+export function renderPeriodoChart(canvasEl, series, variableConfig, frecuencia = 'diario') {
   if (!canvasEl) return;
   // Plotly is loaded lazily: keep the loader visible until the figure is drawn
   destroyPeriodoChart({ keepLoader: !!series.figure });
 
+  const freqDisplay = FRECUENCIAS_FEMENINAS[frecuencia] || (frecuencia ? frecuencia.charAt(0).toUpperCase() + frecuencia.slice(1) : 'Diaria');
+
   if (series.figure) {
-    renderPlotlyFigure(canvasEl, series.figure);
+    renderPlotlyFigure(canvasEl, series.figure, freqDisplay);
     return;
   }
   canvasEl.style.display = '';
@@ -166,7 +199,7 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
       labels,
       datasets: [
         {
-          label: `${variableConfig.name} (${variableConfig.unit})`,
+          label: `${variableConfig.name} (${variableConfig.unit}) - ${freqDisplay}`,
           data: values,
           backgroundColor: isBar ? 'rgba(59, 130, 246, 0.75)' : 'rgba(241, 144, 1, 0.15)',
           borderColor: isBar ? '#2563eb' : (variableConfig.color || '#F19001'),
@@ -194,7 +227,7 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
           display: false
         },
         legend: {
-          display: !isBar, // Si es barra de precipitación / acumulado se oculta la leyenda; en otros gráficos se ubica abajo
+          display: !isBar, // Si es barra de precipitación se oculta; en otros gráficos se ubica abajo
           position: 'bottom',
           labels: {
             boxWidth: 12,
@@ -231,6 +264,12 @@ export function renderPeriodoChart(canvasEl, series, variableConfig) {
         y: {
           beginAtZero: true,
           grid: { color: '#f1f5f9' },
+          title: {
+            display: true,
+            text: `${variableConfig.name} (${variableConfig.unit}) - ${freqDisplay}`,
+            font: { family: "'Inter', sans-serif", size: 12, weight: 600 },
+            color: '#475569'
+          },
           ticks: {
             font: { family: "'Inter', sans-serif", size: 11 },
             color: '#64748b',
