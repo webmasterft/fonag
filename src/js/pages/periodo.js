@@ -10,6 +10,7 @@ import {
   loadEstacionesPorVariable,
   estacionTieneVariable,
   fetchSeriesDeTiempo,
+  downloadPeriodoExport,
   exportarSerieCsv
 } from '../services/periodo-service.js';
 import { showApiError, API_ERROR_MESSAGE } from '../atoms/api-error.js';
@@ -67,6 +68,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const cardsContainer = document.getElementById('periodo-cards-list');
 
+  const warningSubhorarioEl = document.getElementById('periodo-subhorario-warning');
+
   // Floating Legend Elements
   const countMeteoEl = document.getElementById('periodo-count-meteo');
   const countPluvioEl = document.getElementById('periodo-count-pluvio');
@@ -81,6 +84,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let allEstaciones = [];
   let currentModalEstacion = null;
+
+  function updateSubhorarioWarning() {
+    if (!warningSubhorarioEl) return;
+    const freq = selectFrecuencia?.value || 'diario';
+    const isSubhorario = freq === 'subhorario_validado';
+    if (!isSubhorario) {
+      warningSubhorarioEl.style.display = 'none';
+      return;
+    }
+    const sDate = inputFechaInicio?.value;
+    const eDate = inputFechaFin?.value;
+    if (sDate && eDate) {
+      const dStart = new Date(sDate);
+      const dEnd = new Date(eDate);
+      const diffYears = (dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      if (diffYears > 5) {
+        warningSubhorarioEl.style.display = 'flex';
+        return;
+      }
+    }
+    warningSubhorarioEl.style.display = 'none';
+  }
 
   // Inicializar Leaflet Map
   const mapController = initLeafletMap('periodo-stations-map', {
@@ -130,15 +155,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 3. Listeners de Filtros
   if (inputFechaInicio) {
-    inputFechaInicio.addEventListener('change', applyFilters);
-    inputFechaInicio.addEventListener('input', applyFilters);
+    inputFechaInicio.addEventListener('change', () => { updateSubhorarioWarning(); applyFilters(); });
+    inputFechaInicio.addEventListener('input', () => { updateSubhorarioWarning(); applyFilters(); });
   }
   if (inputFechaFin) {
-    inputFechaFin.addEventListener('change', applyFilters);
-    inputFechaFin.addEventListener('input', applyFilters);
+    inputFechaFin.addEventListener('change', () => { updateSubhorarioWarning(); applyFilters(); });
+    inputFechaFin.addEventListener('input', () => { updateSubhorarioWarning(); applyFilters(); });
   }
   if (selectVariable) selectVariable.addEventListener('change', onVariableChange);
-  if (selectFrecuencia) selectFrecuencia.addEventListener('change', applyFilters);
+  if (selectFrecuencia) selectFrecuencia.addEventListener('change', () => { updateSubhorarioWarning(); applyFilters(); });
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
   if (selectTipo) selectTipo.addEventListener('change', () => {
@@ -295,8 +320,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
 
     modalHeader.querySelector('#btn-periodo-close-modal')?.addEventListener('click', closeModal);
-    modalHeader.querySelector('#btn-modal-periodo-csv')?.addEventListener('click', () => {
-      exportarSerieCsv(estacion, varCfg.code, series, freq);
+    const btnModalDownload = modalHeader.querySelector('#btn-modal-periodo-csv');
+    btnModalDownload?.addEventListener('click', async () => {
+      const origText = btnModalDownload.innerHTML;
+      btnModalDownload.disabled = true;
+      btnModalDownload.innerHTML = 'Descargando...';
+
+      // Alerta informativa si es subhorario validado con más de 5 años
+      const isSubhorario = freq === 'subhorario_validado';
+      const dStart = new Date(sDate);
+      const dEnd = new Date(eDate);
+      const diffYears = (dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      if (isSubhorario && diffYears > 5) {
+        alert('Aviso: Al consultar datos subhorarios validados con un rango mayor a 5 años, el proceso de descarga puede demorarse varios minutos debido al gran volumen de datos.');
+      }
+
+      try {
+        await downloadPeriodoExport(estacion, varCfg.code, sDate, eDate, freq);
+      } catch (err) {
+        console.warn('[Periodo] Descarga oficial falló, intentando fallback CSV:', err);
+        if (series && series.length > 0) {
+          exportarSerieCsv(estacion, varCfg.code, series, freq);
+        } else {
+          alert('No se pudo descargar los datos para el periodo seleccionado.');
+        }
+      } finally {
+        btnModalDownload.disabled = false;
+        btnModalDownload.innerHTML = origText;
+      }
     });
   }
 
@@ -481,16 +532,31 @@ document.addEventListener('DOMContentLoaded', async () => {
           btn.disabled = true;
           const origText = btn.innerHTML;
           btn.innerHTML = 'Descargando...';
+
+          // Alerta informativa si es subhorario validado con más de 5 años
+          const isSubhorario = freq === 'subhorario_validado';
+          const dStart = new Date(sDate);
+          const dEnd = new Date(eDate);
+          const diffYears = (dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+          if (isSubhorario && diffYears > 5) {
+            alert('Aviso: Al consultar datos subhorarios validados con un rango mayor a 5 años, el proceso de descarga puede demorarse varios minutos debido al gran volumen de datos.');
+          }
+
           try {
-            const series = await fetchSeriesDeTiempo(est, varCode, sDate, eDate, freq);
-            if (series.length === 0) {
-              alert('No existe información para el periodo y estación seleccionada.');
-            } else {
-              exportarSerieCsv(est, varCode, series, freq);
-            }
+            await downloadPeriodoExport(est, varCode, sDate, eDate, freq);
           } catch (err) {
-            console.error('[Periodo] Error descargando la serie:', err);
-            alert(API_ERROR_MESSAGE);
+            console.warn('[Periodo] Descarga directa oficial falló, intentando fallback:', err);
+            try {
+              const series = await fetchSeriesDeTiempo(est, varCode, sDate, eDate, freq);
+              if (series.length === 0) {
+                alert('No existe información para el periodo y estación seleccionada.');
+              } else {
+                exportarSerieCsv(est, varCode, series, freq);
+              }
+            } catch (fallbackErr) {
+              console.error('[Periodo] Error descargando la serie:', fallbackErr);
+              alert(API_ERROR_MESSAGE);
+            }
           } finally {
             btn.disabled = false;
             btn.innerHTML = origText;

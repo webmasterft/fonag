@@ -268,6 +268,7 @@ export default defineConfig(({ mode }) => {
                   '&fecha_fin=' + encodeURIComponent(fechaFin) +
                   '&csrfmiddlewaretoken=' + encodeURIComponent(session.csrf);
 
+                const isExport = !!parsed.export;
                 const sedcResponse = await requestHttps(
                   `${baseUrl}/reportes/consultas_periodo`,
                   {
@@ -277,13 +278,20 @@ export default defineConfig(({ mode }) => {
                       Cookie: session.cookie,
                       'X-CSRFToken': session.csrf,
                       Referer: `${baseUrl}/reportes/consultas_periodo`,
-                      'X-Requested-With': 'XMLHttpRequest',
+                      ...(isExport ? {} : { 'X-Requested-With': 'XMLHttpRequest' }),
                     },
                   },
                   postPayload
                 );
 
                 res.statusCode = sedcResponse.status;
+                if (isExport) {
+                  ['content-type', 'content-disposition'].forEach((h) => {
+                    if (sedcResponse.headers[h]) res.setHeader(h, sedcResponse.headers[h]);
+                  });
+                  res.end(sedcResponse.buffer);
+                  return;
+                }
                 res.setHeader('Content-Type', 'application/json');
                 res.end(sedcResponse.body);
               } catch (error) {

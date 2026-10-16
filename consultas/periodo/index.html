@@ -194,6 +194,16 @@
         <p class="periodo-instruction-subtitle">Los marcadores muestran estaciones con la variable seleccionada.</p>
       </div>
 
+      <!-- Aviso Subhorarios Validados > 5 años -->
+      <div id="periodo-subhorario-warning" class="periodo-subhorario-warning" style="display: none;" role="note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="warning-icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span><strong>Nota importante:</strong> En el caso de datos subhorarios validados con un rango mayor a 5 años, el procesamiento y descarga puede demorarse unos minutos debido al volumen de datos.</span>
+      </div>
+
       <!-- Split Main Layout: Map + Cards List -->
       <div class="periodo-split-layout">
         <!-- Left Column: Interactive Map -->

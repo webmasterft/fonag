@@ -246,6 +246,28 @@
   opacity: 0.9;
 }
 
+/* Subhorarios > 5 años Warning Banner */
+.periodo-subhorario-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.periodo-subhorario-warning .warning-icon {
+  flex-shrink: 0;
+  color: #d97706;
+}
+
 /* Split Main Layout */
 .periodo-split-layout {
   display: grid;

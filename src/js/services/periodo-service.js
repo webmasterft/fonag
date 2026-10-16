@@ -157,7 +157,59 @@ export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startD
 }
 
 /**
- * Exporta la serie de tiempo a un archivo CSV estándar descargable.
+ * Descarga el archivo oficial de exportación de SEDC por periodo:
+ * - Subhorarios: descarga el CSV nativo generado por SEDC.
+ * - Procesados (horario, diario, mensual, anual): descarga el Excel (.xlsx) con la gráfica generada por SEDC.
+ * @param {Object} estacion
+ * @param {string} variableCode
+ * @param {string} startDate
+ * @param {string} endDate
+ * @param {string} frecuencia
+ * @returns {Promise<void>}
+ */
+export async function downloadPeriodoExport(estacion, variableCode, startDate, endDate, frecuencia = 'diario') {
+  const estId = estacion.id || estacion.est_id;
+  const varId = VARIABLES_CONFIG[variableCode]?.id;
+  const frecId = FRECUENCIA_SEDC_IDS[frecuencia] || 4;
+  if (!estId || !varId || !frecId) throw new Error('Parámetros de consulta incompletos');
+
+  const res = await fetch('/api/sedc/reportes/consultas_periodo', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      estacion: estId,
+      variable: varId,
+      frecuencia: frecId,
+      fecha_inicio: startDate,
+      fecha_fin: endDate,
+      export: true
+    })
+  });
+
+  if (!res.ok) throw new Error(`Exportación no disponible (${res.status})`);
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') || '';
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  
+  const isSubhorario = frecuencia === 'subhorario_validado' || frecId === 1 || frecId === 2;
+  const defaultExt = isSubhorario ? 'csv' : 'xlsx';
+  const filename = match ? decodeURIComponent(match[1]) : `${estacion.codigo}_${variableCode}_${frecuencia}.${defaultExt}`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Exporta la serie de tiempo a un archivo CSV estándar descargable en el cliente (fallback o directo).
  * @param {Object} estacion
  * @param {string} variableCode
  * @param {Array<Object>} series
@@ -182,7 +234,7 @@ export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'd
   });
 
   // Plain CSV (BOM so Excel reads UTF-8 accents correctly)
-  const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
