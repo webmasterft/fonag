@@ -85,9 +85,11 @@ export function estacionTieneVariable(estacion, variableCode = 'PRE') {
 }
 
 export const FRECUENCIA_SEDC_IDS = {
+  'subhorario_validado': 2,
   'horario': 3,
   'diario': 4,
-  'mensual': 5
+  'mensual': 5,
+  'anual': 6
 };
 
 /**

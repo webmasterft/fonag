@@ -126,12 +126,14 @@
           </div>
 
           <!-- Frecuencia -->
-          <div class="periodo-filter-field" style="min-width: 140px;">
+          <div class="periodo-filter-field" style="min-width: 170px;">
             <label for="select-frecuencia" class="periodo-filter-label">Frecuencia:</label>
             <select id="select-frecuencia" class="periodo-filter-select">
-              <option value="diario" selected>Diario</option>
+              <option value="subhorario_validado">Subhorario validados</option>
               <option value="horario">Horario</option>
+              <option value="diario" selected>Diario</option>
               <option value="mensual">Mensual</option>
+              <option value="anual">Anual</option>
             </select>
           </div>
 
@@ -183,11 +185,6 @@
               <option value="">Todos los ejes</option>
             </select>
           </div>
-
-          <!-- Dynamic Counter -->
-          <div class="periodo-counter-wrap">
-            <span id="periodo-stations-counter" class="periodo-counter-text">39 estaciones con precipitación</span>
-          </div>
         </div>
       </div>
 
@@ -228,6 +225,9 @@
 
         <!-- Right Column: Stations Cards List -->
         <div class="periodo-cards-wrapper">
+          <div class="periodo-counter-wrap">
+            <span id="periodo-stations-counter" class="periodo-counter-text">39 estaciones con precipitación</span>
+          </div>
           <div class="periodo-cards-column" id="periodo-cards-list" role="feed" aria-label="Lista de estaciones">
             <!-- Inyectado dinámicamente -->
           </div>

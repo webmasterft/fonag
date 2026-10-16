@@ -213,9 +213,11 @@
 }
 
 .periodo-counter-wrap {
-  margin-left: auto;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+  padding: 0 4px;
 }
 
 .periodo-counter-text {
