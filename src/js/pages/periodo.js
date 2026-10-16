@@ -491,6 +491,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         dotColor = '#8b5cf6';
       }
 
+      const fechaInicioStr = (est.fechaInicio && est.fechaInicio !== 'N/D') ? est.fechaInicio : 'N/D';
+
       return `
         <article class="periodo-station-card" id="card-${est.codigo}" data-codigo="${est.codigo}">
           <div class="periodo-station-card-header">
@@ -498,6 +500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="periodo-station-info">
               <span class="periodo-station-code">${est.codigo}</span>
               <span class="periodo-station-name">${est.nombre}</span>
+              <span class="periodo-station-inicio">Inicio de operaciones: ${fechaInicioStr}</span>
             </div>
           </div>
           <div class="periodo-station-pill ${pillClass}">
