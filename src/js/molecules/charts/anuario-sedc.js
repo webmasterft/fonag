@@ -171,16 +171,31 @@ export async function renderAnuarioSedc(container, data, { view = 'charts' } = {
       return t;
     });
 
+    const visibleTraces = cleanData.filter((t) => t.showlegend !== false);
+    const totalNamesLength = visibleTraces.reduce((acc, t) => acc + (t.name ? t.name.length : 0), 0);
+    let dynamicMarginBottom = 50;
+    let dynamicLegendY = -0.16;
+
+    if (visibleTraces.length > 0) {
+      if (visibleTraces.length > 3 || totalNamesLength > 45) {
+        dynamicMarginBottom = 120;
+        dynamicLegendY = -0.19;
+      } else {
+        dynamicMarginBottom = 90;
+        dynamicLegendY = -0.15;
+      }
+    }
+
     const layout = {
       ...figure.layout,
       height: undefined,
       autosize: true,
-      margin: { ...figure.layout?.margin, b: 60 },
+      margin: { ...figure.layout?.margin, b: dynamicMarginBottom },
       legend: {
         orientation: 'h',
         x: 0.5,
         xanchor: 'center',
-        y: -0.2,
+        y: dynamicLegendY,
         yanchor: 'top'
       },
       annotations: cleanAnnotations

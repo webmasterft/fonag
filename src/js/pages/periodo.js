@@ -32,7 +32,8 @@ function defaultRange() {
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  return { start: `${yyyy}-01-01`, end: `${yyyy}-${mm}-${dd}` };
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  return { start: todayStr, end: todayStr };
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -107,34 +107,108 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
     return t;
   });
 
+  // Calcular dinámicamente el margen inferior según el número de series visibles
+  const visibleTraces = cleanData.filter((t) => t.showlegend !== false);
+  const totalNamesLength = visibleTraces.reduce((acc, t) => acc + (t.name ? t.name.length : 0), 0);
+
+  let dynamicMarginBottom = 50;
+  let dynamicLegendY = -0.16;
+
+  if (visibleTraces.length > 0) {
+    if (visibleTraces.length > 3 || totalNamesLength > 45) {
+      dynamicMarginBottom = 120;
+      dynamicLegendY = -0.19;
+    } else {
+      dynamicMarginBottom = 90;
+      dynamicLegendY = -0.15;
+    }
+  }
+
+  // Separar anotaciones estadísticas (Mínimo, Máximo, Promedio) de otras anotaciones
+  const statsAnnotations = [];
+  const otherAnnotations = [];
+
+  cleanAnnotations.forEach((a) => {
+    const text = a.text || '';
+    if (/m[ií]nimo|m[aá]ximo|promedio/i.test(text)) {
+      statsAnnotations.push(a);
+    } else {
+      otherAnnotations.push(a);
+    }
+  });
+
+  const hasStats = statsAnnotations.length > 0;
+  // Si hay estadísticas abajo de la leyenda, reservamos espacio inferior extra
+  if (hasStats) {
+    dynamicMarginBottom += 45;
+  }
+
+  // Agrupar o alinear las estadísticas debajo de la leyenda horizontalmente
+  // Si hay 3 estadísticas (ej. Mín, Máx, Promedio), distribuirlas horizontalmente debajo de la leyenda
+  const positionedStats = statsAnnotations.map((a, idx) => {
+    const total = statsAnnotations.length;
+    // Distribuir en el eje horizontal centrado debajo de la leyenda
+    let xPos = 0.5;
+    if (total === 3) {
+      xPos = idx === 0 ? 0.25 : (idx === 1 ? 0.5 : 0.75);
+    } else if (total === 2) {
+      xPos = idx === 0 ? 0.35 : 0.65;
+    }
+    return {
+      ...a,
+      xref: 'paper',
+      yref: 'paper',
+      x: xPos,
+      xanchor: 'center',
+      y: dynamicLegendY - 0.12,
+      yanchor: 'top',
+      font: {
+        family: "'Inter', sans-serif",
+        size: 12,
+        weight: 600,
+        color: '#334155',
+        ...(a.font || {})
+      }
+    };
+  });
+
   const layout = {
     ...figure.layout,
     height: undefined,
     autosize: true,
-    margin: { t: 40, r: 30, b: 70, l: 70 },
+    margin: { t: 40, r: 40, b: dynamicMarginBottom, l: 70 },
     legend: {
       orientation: 'h',
       x: 0.5,
       xanchor: 'center',
-      y: -0.2,
+      y: dynamicLegendY,
       yanchor: 'top'
     },
-    annotations: cleanAnnotations.map((a) => {
-      // If annotation was positioned on the side column, place it above or below cleanly
-      if (a.xref === 'paper' && a.x >= 0.8) {
-        return { ...a, x: 0.5, xanchor: 'center', y: -0.32 };
-      }
-      return a;
-    })
+    annotations: [...otherAnnotations, ...positionedStats]
   };
 
-  // En frecuencias mensuales y anuales, el eje de porcentaje (yaxis2 o yaxis) debe decir "Porcentaje de Datos (%)"
-  if (layout.yaxis2?.title?.text && /porcentaje/i.test(layout.yaxis2.title.text)) {
-    layout.yaxis2.title.text = 'Porcentaje de Datos (%)';
+  // En frecuencias mensuales y anuales, el eje de porcentaje (yaxis2 o yaxis) debe decir "Porcentaje de Datos (%)" y tener rango [0, 100]
+  const yaxis2Title = typeof layout.yaxis2?.title === 'string' ? layout.yaxis2.title : (layout.yaxis2?.title?.text || '');
+  if (layout.yaxis2 && (/porcentaje/i.test(yaxis2Title) || /porcentaje/i.test(layout.yaxis2.title?.text || ''))) {
+    if (typeof layout.yaxis2.title === 'string') {
+      layout.yaxis2.title = 'Porcentaje de Datos (%)';
+    } else {
+      layout.yaxis2.title = { ...(layout.yaxis2.title || {}), text: 'Porcentaje de Datos (%)' };
+    }
+    layout.yaxis2.range = [0, 100];
+    layout.yaxis2.autorange = false;
     layout.margin.r = 65;
   }
-  if (layout.yaxis?.title?.text && /porcentaje/i.test(layout.yaxis.title.text)) {
-    layout.yaxis.title.text = 'Porcentaje de Datos (%)';
+
+  const yaxisTitle = typeof layout.yaxis?.title === 'string' ? layout.yaxis.title : (layout.yaxis?.title?.text || '');
+  if (/porcentaje/i.test(yaxisTitle)) {
+    if (typeof layout.yaxis.title === 'string') {
+      layout.yaxis.title = 'Porcentaje de Datos (%)';
+    } else {
+      layout.yaxis.title = { ...(layout.yaxis.title || {}), text: 'Porcentaje de Datos (%)' };
+    }
+    layout.yaxis.range = [0, 100];
+    layout.yaxis.autorange = false;
   } else if (layout.yaxis?.title && freqDisplay) {
     // Mostrar la frecuencia en el eje Y principal del gráfico: ej. "Precipitación (mm) - Diaria"
     const currentYText = typeof layout.yaxis.title === 'string' ? layout.yaxis.title : (layout.yaxis.title.text || '');
