@@ -789,3 +789,31 @@
   font-size: 14px;
 }
 
+/* Tablet & Mobile (<= 768px): Modal and graphs fit nicely in viewport */
+@media (max-width: 768px) {
+  .anuario-modal {
+    padding: 0.5rem;
+  }
+
+  .anuario-modal-dialog {
+    max-height: 96vh;
+    border-radius: 12px;
+  }
+
+  .anuario-modal-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .anuario-modal-body {
+    padding: 0.85rem 1rem;
+  }
+
+  .anuario-sedc-graph {
+    min-height: 280px;
+  }
+
+  .chart-canvas-wrapper {
+    height: 220px;
+  }
+}
+

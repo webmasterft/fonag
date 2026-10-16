@@ -454,6 +454,13 @@
   background-color: #f8fafc;
 }
 
+.tr-chart-container {
+  height: 480px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
 @media (max-width: 1024px) {
   .tiempo-real-split-layout {
     grid-template-columns: 1fr;
@@ -465,5 +472,32 @@
 
   .tiempo-real-cards-column {
     max-height: none;
+  }
+}
+
+/* Tablet & Mobile (<= 768px): Modal and charts fit in a single viewport screen */
+@media (max-width: 768px) {
+  .tiempo-real-modal {
+    padding: 0.5rem;
+  }
+
+  .tiempo-real-modal-dialog {
+    max-height: 96vh;
+    border-radius: 12px;
+  }
+
+  .tiempo-real-modal-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .tiempo-real-modal-body {
+    padding: 0.85rem 1rem;
+  }
+
+  .tr-chart-container {
+    height: 52vh;
+    min-height: 280px;
+    max-height: 380px;
+    margin-bottom: 1rem;
   }
 }

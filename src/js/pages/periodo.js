@@ -291,6 +291,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
     const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
 
+    const FRECUENCIAS_FEMENINAS = {
+      subhorario_validado: 'Subhoraria validada',
+      subhorario: 'Subhoraria',
+      horario: 'Horaria',
+      diario: 'Diaria',
+      mensual: 'Mensual',
+      anual: 'Anual'
+    };
+    const freqDisplay = FRECUENCIAS_FEMENINAS[freq] || (freq.charAt(0).toUpperCase() + freq.slice(1));
+
     modalHeader.innerHTML = `
       <div class="modal-header-top">
         <div class="modal-header-left">
@@ -307,7 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${sDate} - ${eDate} &bull; Frecuencia: ${freq}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${sDate} - ${eDate} &bull; Frecuencia: ${freqDisplay}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-periodo-csv">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

@@ -499,7 +499,7 @@
 }
 
 .periodo-modal-header {
-  padding: 1.25rem 1.75rem;
+  padding: 10px 1.75rem;
   border-bottom: 1px solid #e2e8f0;
   background-color: #ffffff;
 }
@@ -508,6 +508,13 @@
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
   background-color: #f8fafc;
+}
+
+.periodo-chart-container {
+  height: 520px;
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 @media (max-width: 1024px) {
@@ -521,5 +528,32 @@
 
   .periodo-cards-column {
     max-height: none;
+  }
+}
+
+/* Tablet & Mobile (<= 768px): Modal and charts fit in a single viewport screen */
+@media (max-width: 768px) {
+  .periodo-modal {
+    padding: 0.5rem;
+  }
+
+  .periodo-modal-dialog {
+    max-height: 96vh;
+    border-radius: 12px;
+  }
+
+  .periodo-modal-header {
+    padding: 10px 1rem;
+  }
+
+  .periodo-modal-body {
+    padding: 0.85rem 1rem;
+  }
+
+  .periodo-chart-container {
+    height: 52vh;
+    min-height: 280px;
+    max-height: 380px;
+    margin-bottom: 1rem;
   }
 }
