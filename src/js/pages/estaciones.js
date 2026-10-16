@@ -8,6 +8,7 @@ import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initColumnFilter } from '../molecules/data-table/column-filter.js';
 import { initPortalHeader } from '../organisms/portal-header.js';
+import { getEjeConfig } from '../molecules/map/leaflet-map.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initPortalHeader();
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnPrevPage = document.getElementById('btn-prev-page');
   const btnNextPage = document.getElementById('btn-next-page');
   const btnDescargar = document.getElementById('btn-descargar-estaciones');
+  const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   const statPills = document.querySelectorAll('.estaciones-stat-pill');
 
   let allEstaciones = [];
@@ -50,6 +52,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       { key: 'tipo', label: 'Tipo', defaultVisible: true },
       { key: 'provincia', label: 'Provincia', defaultVisible: true },
       { key: 'ejeDeTrabajo', label: 'Eje de trabajo', defaultVisible: true },
+      { key: 'latitud', label: 'Latitud', defaultVisible: true },
+      { key: 'longitud', label: 'Longitud', defaultVisible: true },
+      { key: 'altura', label: 'Altura', defaultVisible: true },
+      { key: 'fechaInicio', label: 'Inicio del Periodo', defaultVisible: true },
       { key: 'transmision', label: 'Transmisión', defaultVisible: true }
     ]);
   }
@@ -166,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (pageItems.length === 0) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align: center; padding: 2.5rem; color: #64748b;">
+            <td colspan="11" style="text-align: center; padding: 2.5rem; color: #64748b;">
               No se encontraron estaciones que coincidan con los criterios de búsqueda.
             </td>
           </tr>
@@ -180,6 +186,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           const transClass = item.transmision ? 'activo' : 'inactivo';
           const transLabel = item.transmision ? 'Activo' : 'Inactivo';
           const rowNumber = startIdx + idx + 1;
+
+          const latStr = (item.latitud !== null && item.latitud !== undefined) ? item.latitud.toFixed(4) : '-';
+          const lngStr = (item.longitud !== null && item.longitud !== undefined) ? item.longitud.toFixed(4) : '-';
+          const altStr = item.altura || '-';
+          const fechaStr = (item.fechaInicio && item.fechaInicio !== 'N/D') ? item.fechaInicio : '-';
+
+          const ejeConfig = getEjeConfig(item.ejeDeTrabajo);
 
           return `
             <tr>
@@ -199,10 +212,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               <td data-col="provincia">${item.provincia}</td>
               <td data-col="ejeDeTrabajo">
                 <span class="cell-eje">
-                  <span class="eje-mini-dot"></span>
+                  <span class="eje-mini-dot" style="background-color: ${ejeConfig.color}; border-color: ${ejeConfig.border || '#94a3b8'};"></span>
                   ${item.ejeDeTrabajo}
                 </span>
               </td>
+              <td data-col="latitud" class="cell-num">${latStr}</td>
+              <td data-col="longitud" class="cell-num">${lngStr}</td>
+              <td data-col="altura" class="cell-num">${altStr}</td>
+              <td data-col="fechaInicio" class="cell-num">${fechaStr}</td>
               <td data-col="transmision">
                 <span class="status-pill-transmision ${transClass}">
                   <span class="status-dot"></span>
@@ -253,6 +270,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (selectTipo) selectTipo.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
   if (selectProvincia) selectProvincia.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
   if (selectEje) selectEje.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+
+  // Botón Limpiar Filtros
+  if (btnLimpiar) {
+    btnLimpiar.addEventListener('click', () => {
+      if (inputCodigo) inputCodigo.value = '';
+      if (inputNombre) inputNombre.value = '';
+      if (selectTipo) selectTipo.value = '';
+      if (selectProvincia) selectProvincia.value = '';
+      if (selectEje) selectEje.value = '';
+
+      activePillTipo = 'ALL';
+      statPills.forEach(p => p.classList.remove('active'));
+
+      // Limpiar parámetros de la URL sin recargar la página
+      const url = new URL(window.location.href);
+      url.search = '';
+      window.history.replaceState({}, '', url.pathname);
+
+      currentPage = 1;
+      applyFiltersAndRender();
+    });
+  }
 
   if (selectPageSize) {
     selectPageSize.addEventListener('change', () => {
@@ -313,7 +352,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnDescargar) {
     btnDescargar.addEventListener('click', () => {
       const rows = [
-        ['No', 'Codigo', 'Nombre', 'Tipo', 'Provincia', 'Eje de trabajo', 'Transmision', 'Altitud', 'Latitud', 'Longitud']
+        ['No', 'Codigo', 'Nombre', 'Tipo', 'Provincia', 'Eje de trabajo', 'Latitud', 'Longitud', 'Altura', 'Inicio del Periodo', 'Transmision']
       ];
       allEstaciones.forEach((item, idx) => {
         rows.push([
@@ -323,10 +362,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           `"${item.tipo}"`,
           `"${item.provincia}"`,
           `"${item.ejeDeTrabajo}"`,
-          item.transmision ? 'Activo' : 'Inactivo',
-          item.altura,
-          item.latitud,
-          item.longitud
+          item.latitud ?? '',
+          item.longitud ?? '',
+          `"${item.altura || ''}"`,
+          `"${item.fechaInicio || ''}"`,
+          item.transmision ? 'Activo' : 'Inactivo'
         ]);
       });
 

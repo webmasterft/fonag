@@ -168,7 +168,6 @@
           <select id="filter-eje" class="estaciones-select">
             <option value="">Todos los ejes</option>
             <option value="Pita">Pita</option>
-            <option value="Alto Pita">Alto Pita</option>
             <option value="Pichincha Atacazo">Pichincha Atacazo</option>
             <option value="Nororiente DMQ">Nororiente DMQ</option>
             <option value="Antisana">Antisana</option>
@@ -178,6 +177,18 @@
             <option value="Noroccidente">Noroccidente</option>
             <option value="Norcentral">Norcentral</option>
           </select>
+        </div>
+
+        <!-- Botón Limpiar Filtros -->
+        <div class="estaciones-filter-field" style="flex: 0 0 auto; min-width: auto;">
+          <label class="estaciones-filter-label" style="visibility: hidden;" aria-hidden="true">Acción:</label>
+          <button type="button" id="btn-limpiar-filtros" class="btn-estaciones-limpiar" aria-label="Limpiar todos los filtros">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            Limpiar
+          </button>
         </div>
       </div>
 
@@ -223,34 +234,49 @@
             </div>
         </div>
 
-        <table class="estaciones-table" role="table">
-          <thead>
-            <tr>
-              <th scope="col" style="width: 50px;">No.</th>
-              <th scope="col" class="th-sortable" data-col="codigo">
-                Código <span class="sort-icon"></span>
-              </th>
-              <th scope="col" class="th-sortable" data-col="nombre">
-                Nombre <span class="sort-icon"></span>
-              </th>
-              <th scope="col" class="th-sortable" data-col="tipo">
-                Tipo <span class="sort-icon"></span>
-              </th>
-              <th scope="col" class="th-sortable" data-col="provincia">
-                Provincia <span class="sort-icon"></span>
-              </th>
-              <th scope="col" class="th-sortable" data-col="ejeDeTrabajo">
-                Eje de trabajo <span class="sort-icon"></span>
-              </th>
-              <th scope="col" class="th-sortable" data-col="transmision">
-                Transmisión <span class="sort-icon"></span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="estaciones-table-body">
-            <!-- Dynamic Rows -->
-          </tbody>
-        </table>
+        <!-- Table Scrollable Responsive Wrapper -->
+        <div class="estaciones-table-responsive" tabindex="0" role="region" aria-label="Tabla de estaciones con desplazamiento horizontal">
+          <table class="estaciones-table" role="table">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 50px;">No.</th>
+                <th scope="col" class="th-sortable" data-col="codigo">
+                  Código <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="nombre">
+                  Nombre <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="tipo">
+                  Tipo <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="provincia">
+                  Provincia <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="ejeDeTrabajo">
+                  Eje de trabajo <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="latitud">
+                  Latitud <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="longitud">
+                  Longitud <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="altura">
+                  Altura <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="fechaInicio">
+                  Inicio del Periodo <span class="sort-icon"></span>
+                </th>
+                <th scope="col" class="th-sortable" data-col="transmision">
+                  Transmisión <span class="sort-icon"></span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="estaciones-table-body">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
 
         <!-- Table Card Footer Pagination -->
         <div class="estaciones-pagination-bar">

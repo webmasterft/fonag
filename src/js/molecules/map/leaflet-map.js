@@ -139,6 +139,13 @@ export function formatEjeName(name) {
   return name;
 }
 
+export function getEjeConfig(name) {
+  if (!name) return EJES_CONFIG['PITA'];
+  const formatted = formatEjeName(name).toUpperCase();
+  const matchKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === formatted || k === formatted);
+  return matchKey ? EJES_CONFIG[matchKey] : { name, color: '#64748b', border: '#475569' };
+}
+
 /**
  * Inicializa el mapa interactivo del Anuario Hidroclimático
  * @param {string|HTMLElement} containerId

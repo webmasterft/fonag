@@ -207,6 +207,36 @@
   box-shadow: 0px 3px 6px #00000029, 0 0 0 3px rgba(65, 166, 229, 0.15);
 }
 
+.btn-estaciones-limpiar {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: var(--font-family-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-estaciones-limpiar:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.cell-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* Table Toolbar */
 .estaciones-table-toolbar {
   display: flex;
@@ -311,20 +341,49 @@
   pointer-events: none;
 }
 
+/* Table Responsive Horizontal Scroll Wrapper */
+.estaciones-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.estaciones-table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.estaciones-table-responsive::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.estaciones-table-responsive::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+  border: 2px solid #f8fafc;
+}
+
+.estaciones-table-responsive::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
 .estaciones-table {
   width: 100%;
+  min-width: 980px;
   border-collapse: collapse;
   text-align: left;
   font-family: var(--font-family-sans);
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .estaciones-table thead th {
   background-color: var(--color-palette-offwhite-1);
   color: #1e2347;
   font-weight: 800;
-  font-size: 13px;
-  padding: 14px 18px;
+  font-size: 12.5px;
+  padding: 12px 14px;
   border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
 }
@@ -387,9 +446,10 @@
 }
 
 .estaciones-table td {
-  padding: 14px 18px;
+  padding: 11px 14px;
   color: #334155;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .cell-no {
