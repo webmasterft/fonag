@@ -87,11 +87,11 @@ const EJES_CONFIG = {
     hidro: 0,
     pct: 0
   },
-  'ALTO PITA': {
-    name: 'Alto Pita',
-    color: '#93c5fd',
+  'PISQUE': {
+    name: 'Pisque',
+    color: '#f472b6',
     fillOpacity: 0.55,
-    border: '#60a5fa',
+    border: '#db2777',
     total: 0,
     meteo: 0,
     pluvio: 0,
@@ -101,6 +101,17 @@ const EJES_CONFIG = {
   'NOROCCIDENTE': {
     name: 'Noroccidente',
     displayName: 'Noroccidente del DMQ',
+    color: '#93c5fd',
+    fillOpacity: 0.55,
+    border: '#60a5fa',
+    total: 0,
+    meteo: 0,
+    pluvio: 0,
+    hidro: 0,
+    pct: 0
+  },
+  'NORCENTRAL': {
+    name: 'Norcentral',
     color: '#b4a2b8',
     fillOpacity: 0.55,
     border: '#9a859f',
@@ -330,7 +341,7 @@ export async function initHomeStationsMap() {
     if (activeEje === 'ALL') {
       // Vista 1: Lista completa de Ejes de trabajo (Figma captura 1)
       cardAside.innerHTML = `
-        <h2 class="home-ejes-title">Ejes de trabajo</h2>
+        <h2 class="home-ejes-title">Numero de estaciones por eje de trabajo</h2>
         <div class="home-ejes-underline" aria-hidden="true"></div>
         <p class="home-ejes-subtitle">Ver detalle por eje</p>
 
