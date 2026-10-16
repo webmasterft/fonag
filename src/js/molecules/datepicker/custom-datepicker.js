@@ -68,7 +68,7 @@ function openDatePickerPopup(inputEl) {
   popup._targetInput = inputEl;
 
   const rect = inputEl.getBoundingClientRect();
-  const popupWidth = 245;
+  const popupWidth = 265;
   popup.style.top = `${window.scrollY + rect.bottom + 6}px`;
 
   let leftPos = window.scrollX + rect.left;
@@ -78,8 +78,6 @@ function openDatePickerPopup(inputEl) {
   popup.style.left = `${leftPos}px`;
 
   function renderGrid() {
-    const monthName = MONTH_NAMES_ES[viewMonth];
-    
     const firstDayOfMonth = new Date(viewYear, viewMonth, 1);
     let startingDay = firstDayOfMonth.getDay() - 1;
     if (startingDay < 0) startingDay = 6;
@@ -109,13 +107,29 @@ function openDatePickerPopup(inputEl) {
       daysHtml += `<div class="cdp-day-cell cdp-day-other-month" data-day="${day}" data-month-offset="1">${day}</div>`;
     }
 
+    // Generar opciones de meses
+    const monthsOptions = MONTH_NAMES_ES.map((m, idx) => `
+      <option value="${idx}" ${idx === viewMonth ? 'selected' : ''}>${m}</option>
+    `).join('');
+
+    // Generar rango de años (desde 1990 hasta año actual + 2)
+    const currentYearNum = new Date().getFullYear();
+    const minYear = 1990;
+    const maxYear = currentYearNum + 2;
+    let yearsOptions = '';
+    for (let y = maxYear; y >= minYear; y--) {
+      yearsOptions += `<option value="${y}" ${y === viewYear ? 'selected' : ''}>${y}</option>`;
+    }
+
     popup.innerHTML = `
       <div class="cdp-header">
-        <div class="cdp-month-year-selector" id="cdp-month-year-label">
-          <span>${monthName} ${viewYear}</span>
-          <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor">
-            <path d="M0 0l5 6 5-6z"/>
-          </svg>
+        <div class="cdp-header-selects">
+          <select class="cdp-select cdp-select-month" id="cdp-select-month" aria-label="Seleccionar mes">
+            ${monthsOptions}
+          </select>
+          <select class="cdp-select cdp-select-year" id="cdp-select-year" aria-label="Seleccionar año">
+            ${yearsOptions}
+          </select>
         </div>
         <div class="cdp-nav-btns">
           <button type="button" class="cdp-nav-btn" id="cdp-btn-prev" aria-label="Mes anterior">
@@ -150,6 +164,25 @@ function openDatePickerPopup(inputEl) {
         <button type="button" class="cdp-footer-btn" id="cdp-btn-today">Today</button>
       </div>
     `;
+
+    // Listeners de cambio de Mes y Año
+    const selectMonth = popup.querySelector('#cdp-select-month');
+    if (selectMonth) {
+      selectMonth.addEventListener('change', (e) => {
+        e.stopPropagation();
+        viewMonth = parseInt(selectMonth.value, 10);
+        renderGrid();
+      });
+    }
+
+    const selectYear = popup.querySelector('#cdp-select-year');
+    if (selectYear) {
+      selectYear.addEventListener('change', (e) => {
+        e.stopPropagation();
+        viewYear = parseInt(selectYear.value, 10);
+        renderGrid();
+      });
+    }
 
     popup.querySelector('#cdp-btn-prev').addEventListener('click', (e) => {
       e.stopPropagation();

@@ -10,7 +10,7 @@
   padding: 16px 18px 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
-  width: 245px;
+  width: 265px;
   font-family: 'Inter', sans-serif;
   user-select: none;
   display: flex;
@@ -36,6 +36,41 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 2px;
+  gap: 6px;
+}
+
+.cdp-header-selects {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.cdp-select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1e2347;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cdp-select:focus {
+  border-color: #389ce8;
+  box-shadow: 0 0 0 2px rgba(56, 156, 232, 0.2);
+}
+
+.cdp-select-month {
+  flex: 1.2;
+}
+
+.cdp-select-year {
+  flex: 1;
 }
 
 .cdp-month-year-selector {
@@ -55,7 +90,7 @@
 .cdp-nav-btns {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .cdp-nav-btn {
