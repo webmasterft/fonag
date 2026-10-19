@@ -13,3 +13,6 @@ dist/
 .continue/
 .kiro/
 skills-lock.json
+
+# CodeGraph local index
+.codegraph/
