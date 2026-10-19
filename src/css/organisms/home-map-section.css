@@ -16,8 +16,8 @@
 /* Split View: Map + Right Ejes de Trabajo Card */
 .home-map-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr) var(--map-side-column-width);
+  gap: var(--map-layout-gap);
   align-items: stretch;
 }
 

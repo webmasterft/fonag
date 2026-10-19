@@ -13,6 +13,10 @@
   --space-16: 4rem;    /* 64px */
   --space-20: 5rem;    /* 80px */
 
+  /* Map + right column layout shared by every page with a map (reference: /consultas/periodo/) */
+  --map-side-column-width: 380px;
+  --map-layout-gap: var(--space-5);
+
   /* Border Radii */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;

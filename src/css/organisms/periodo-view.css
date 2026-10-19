@@ -271,8 +271,8 @@
 /* Split Main Layout */
 .periodo-split-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) var(--map-side-column-width);
+  gap: var(--map-layout-gap);
   align-items: stretch;
 }
 

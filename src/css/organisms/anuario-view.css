@@ -282,8 +282,8 @@
 /* Split Main Layout (Map + Cards) */
 .anuario-split-layout {
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) var(--map-side-column-width);
+  gap: var(--map-layout-gap);
   align-items: stretch;
 }
 

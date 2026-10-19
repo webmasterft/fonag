@@ -242,8 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       color: currentVar.color
     };
 
-    // Same Plotly figure as SEDC (data, U S / U i thresholds, Máx, mín, ACU, last reading)
-    series.figure = buildTelemetriaFigure(currentVar.id, series.raw);
+    // Same Plotly figure as SEDC (data and U S / U i thresholds), with the standard
+    // "Eje • Periodo" subtitle (date and time) used by the modal header and the other consultas
+    const chartSubtitle = `Eje: ${displayValue(currentModalEstacion.ejeCalculado)} • Periodo: ${buildPeriodText(series, currentTelemetryResult, sDate)}`;
+    series.figure = buildTelemetriaFigure(currentVar.id, series.raw, { subtitle: chartSubtitle });
 
     renderModalHeader(currentModalEstacion, varConfig, sDate, series, currentTelemetryResult);
     renderPeriodoChart(chartCanvas, series, varConfig);

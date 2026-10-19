@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateCompiladoLabel() {
-    if (btnCompiladoLabel) btnCompiladoLabel.textContent = `Descargar copilado ${currentYear}`;
+    if (btnCompiladoLabel) btnCompiladoLabel.textContent = `Descargar compilado ${currentYear}`;
   }
 
   function renderModalHeader(estacion) {

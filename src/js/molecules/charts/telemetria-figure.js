@@ -123,10 +123,23 @@ function buildWindFigure(item) {
 /**
  * @param {string} varId SEDC variable key in the telemetry response (1 = precipitation, 405 = wind)
  * @param {Object} item One value of the /ajax/telemetria/consulta response
+ * @param {{ subtitle?: string }} [options] subtitle: escaped HTML shown under the title
  * @returns {{ data: Array, layout: Object } | null}
  */
-export function buildTelemetriaFigure(varId, item) {
+export function buildTelemetriaFigure(varId, item, { subtitle = '' } = {}) {
   if (!item?.datos) return null;
-  if (String(varId) === WIND_VAR_ID) return buildWindFigure(item);
-  return buildSeriesFigure(item, String(varId) === PRECIPITATION_VAR_ID);
+  const figure = String(varId) === WIND_VAR_ID
+    ? buildWindFigure(item)
+    : buildSeriesFigure(item, String(varId) === PRECIPITATION_VAR_ID);
+
+  // Same "Eje • Periodo" line as the modal header and the other consultas.
+  // `subtitle` must already be escaped HTML (it is built from API values by the page).
+  if (subtitle) {
+    figure.layout.title = {
+      ...figure.layout.title,
+      subtitle: { text: subtitle, font: { size: 12, color: '#64748b' } },
+    };
+    figure.layout.margin = { ...figure.layout.margin, t: Math.max(figure.layout.margin?.t || 0, 80) };
+  }
+  return figure;
 }

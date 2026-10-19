@@ -176,7 +176,8 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
     ...figure.layout,
     height: undefined,
     autosize: true,
-    margin: { t: 40, r: 40, b: dynamicMarginBottom, l: 70 },
+    // Extra top room when the title carries a subtitle (e.g. "Eje • Periodo" in tiempo real)
+    margin: { t: figure.layout?.title?.subtitle ? 80 : 40, r: 40, b: dynamicMarginBottom, l: 70 },
     legend: {
       orientation: 'h',
       x: 0.5,
