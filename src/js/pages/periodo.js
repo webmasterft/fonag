@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Actualizar texto contador
     if (counterEl) {
-      counterEl.textContent = `${filtered.length} estaciones con ${varCfg.name.toLowerCase()}`;
+      counterEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'estación' : 'estaciones'} con ${varCfg.name.toLowerCase()}`;
     }
 
     // Actualizar marcadores en el mapa

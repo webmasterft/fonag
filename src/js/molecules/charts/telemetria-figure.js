@@ -1,19 +1,14 @@
 /**
  * Molecule: Telemetry figure (SEDC)
  * Builds the same Plotly figure as SEDC's /static/telemetria/visualizar.js from one
- * /ajax/telemetria/consulta item: data trace, upper/lower thresholds (U S / U i),
- * Máx, mín, Acumulado (precipitation) and the last reading in the legend.
+ * /ajax/telemetria/consulta item: data trace and upper/lower thresholds (U S / U i).
+ * The legend only lists the data and the thresholds (no Máx / mín / Último entries).
  */
 import { escapeHtml } from '../../atoms/escape-html.js';
 
 const PRECIPITATION_VAR_ID = '1';
 const WIND_VAR_ID = '405';
 const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-
-const toNumbers = (values = []) => values.map((v) => parseFloat(v)).filter((v) => !isNaN(v));
-
-/** Legend-only entry (no visible mark), the way Django shows Máx/mín/Acumulado. */
-const legendEntry = (name, x) => ({ name, x: [x], y: [null], type: 'scatter', mode: 'text', hoverinfo: 'skip' });
 
 const thresholdLine = (name, value, x0, x1, color) => ({
   name,
@@ -25,16 +20,10 @@ const thresholdLine = (name, value, x0, x1, color) => ({
   hoverinfo: 'name'
 });
 
-function lastReadingText(value, unit, fecha = '') {
-  // Plotly renders legend names as pseudo-HTML: API strings are escaped
-  return `Último: <b>${escapeHtml(value)} ${escapeHtml(unit)}</b><br>${escapeHtml(fecha.slice(0, 10))} ${escapeHtml(fecha.slice(11, 19))}`;
-}
-
 function buildSeriesFigure(item, isPrecipitation) {
   const fechas = item.datos?.fecha || [];
   const valores = item.datos?.valor || [];
   const unit = item.var_unidad || '';
-  const numbers = toNumbers(valores);
   const x0 = fechas[0];
   const x1 = fechas[fechas.length - 1];
 
@@ -59,20 +48,11 @@ function buildSeriesFigure(item, isPrecipitation) {
     data.push(thresholdLine(`U i: ${item.umbral_inferior} ${unit}`, item.umbral_inferior, x0, x1, 'rgb(0, 127, 255)'));
   }
 
-  if (numbers.length) {
-    data.push(legendEntry(`Máx: ${Math.max(...numbers)} ${unit}`, x0));
-    data.push(legendEntry(`mín: ${Math.min(...numbers)} ${unit}`, x0));
-  }
-
-  const lastValue = parseFloat(valores[valores.length - 1]);
-  if (!isNaN(lastValue)) {
-    data.push(legendEntry(lastReadingText(lastValue, unit, x1), x0));
-  }
-
   return {
     data,
     layout: {
-      title: { text: `${item.estacion}: ${item.var_nombre} (${unit})` },
+      // Plotly renders titles as pseudo-HTML: API strings are escaped
+      title: { text: `${escapeHtml(item.estacion)}: ${escapeHtml(item.var_nombre)} (${escapeHtml(unit)})` },
       margin: { r: 10, t: 50, b: 60, l: 50 },
       legend: {
         orientation: 'h',
@@ -92,7 +72,6 @@ function buildWindFigure(item) {
   const lastSpeed = parseFloat(velocidad[n - 1]);
   const lastDir = direccion[n - 1];
   const cardinal = DIRECTIONS[Math.round((Number(lastDir) % 360) / 45) % 8];
-  const numbers = toNumbers(velocidad);
 
   const data = [{
     name: 'Datos anteriores',
@@ -107,7 +86,9 @@ function buildWindFigure(item) {
 
   if (n > 0 && !isNaN(lastSpeed)) {
     data.push({
-      name: `Último dato:<br>Velocidad: ${lastSpeed} m/s<br>Dirección: desde ${cardinal} (${parseInt(String(lastDir), 10)}°)`,
+      // Plain legend label; the reading itself is shown on hover
+      name: 'Último dato',
+      hovertemplate: `Velocidad: ${lastSpeed} m/s<br>Dirección: desde ${cardinal} (${parseInt(String(lastDir), 10)}°)<extra></extra>`,
       type: 'scatterpolar',
       r: [lastSpeed],
       theta: [lastDir],
@@ -116,21 +97,11 @@ function buildWindFigure(item) {
       marker: { color: 'rgb(64, 64, 255)', size: 11, symbol: 'diamond', line: { color: 'rgb(30, 30, 150)', width: 2 } }
     });
   }
-  if (numbers.length) {
-    data.push({
-      name: `Máx: ${Math.max(...numbers)} m/s`,
-      type: 'scatterpolar',
-      r: [null],
-      theta: [0],
-      mode: 'text',
-      hoverinfo: 'skip'
-    });
-  }
 
   return {
     data,
     layout: {
-      title: { text: `${item.estacion}: ${item.var_nombre} (${item.var_unidad || ''})` },
+      title: { text: `${escapeHtml(item.estacion)}: ${escapeHtml(item.var_nombre)} (${escapeHtml(item.var_unidad || '')})` },
       showlegend: true,
       margin: { r: 10, t: 60, b: 30, l: 30 },
       polar: {

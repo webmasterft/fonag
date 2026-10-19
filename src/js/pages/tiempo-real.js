@@ -248,6 +248,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentTelemetryResult = null;
   }
 
+  /**
+   * "Periodo: <inicio> - <fin>" with date and time (YYYY-MM-DD HH:MM), same label as the other
+   * consultas. Uses the first/last reading of the selected variable; wind readings carry no
+   * dates, so it falls back to another variable of the same response, then to the query date.
+   */
+  function buildPeriodText(series, telResult, sDate) {
+    const withDates = [series, ...Object.values(telResult.seriesByVar || {})]
+      .find((s) => s.some((p) => p.fecha)) || [];
+    const fechas = withDates.map((p) => p.fecha).filter(Boolean);
+    const fmt = (f) => String(f).replace('T', ' ').substring(0, 16);
+    if (!fechas.length) return `${escapeHtml(sDate)} 00:00`;
+    return `${escapeHtml(fmt(fechas[0]))} - ${escapeHtml(fmt(fechas[fechas.length - 1]))}`;
+  }
+
   function renderModalHeader(estacion, varCfg, sDate, series, telResult) {
     if (!modalHeader) return;
 
@@ -294,6 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lastPoint = series.length > 0 ? series[series.length - 1] : null;
     const lastVal = lastPoint ? `${displayValue(lastPoint.valor)} ${unit}` : '-';
     const lastTime = lastPoint ? displayValue(lastPoint.fecha) : '-';
+    const periodText = buildPeriodText(series, telResult, sDate);
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
@@ -332,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Desde ${escapeHtml(sDate.replace('T', ' '))}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${periodText}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-tr-csv">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -352,8 +367,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
     modalHeader.querySelector('#btn-modal-tr-csv')?.addEventListener('click', () => {
-      // Client CSV of the telemetry already received from SEDC (there is no official export)
-      exportarSerieCsv(estacion, varCfg.code, series, 'tiempo-real');
+      // CSV of the variable currently selected, built from the telemetry already received
+      // from SEDC (there is no official export). The variable object is passed as-is because
+      // telemetry variables are not in the periodo catalog.
+      exportarSerieCsv(estacion, varCfg, series, 'tiempo-real', 'Telemetría en tiempo real');
     });
 
     modalHeader.querySelectorAll('.btn-var-selector').forEach((btn) => {
@@ -425,7 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Actualizar texto contador
     if (counterEl) {
-      counterEl.textContent = `${filtered.length} estaciones con telemetría`;
+      counterEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'estación' : 'estaciones'} con telemetría`;
     }
 
     // Actualizar marcadores en el mapa

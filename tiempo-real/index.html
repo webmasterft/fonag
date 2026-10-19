@@ -154,11 +154,6 @@
               <option value="Pluviométrica">Pluviométrica</option>
             </select>
           </div>
-
-          <!-- Dynamic Counter -->
-          <div class="tiempo-real-counter-wrap">
-            <span id="tr-stations-counter" class="tiempo-real-counter-text">-</span>
-          </div>
         </div>
       </div>
 
@@ -176,6 +171,9 @@
 
         <!-- Right Column: Stations Cards List -->
         <div class="tiempo-real-cards-wrapper">
+          <div class="tiempo-real-counter-wrap">
+            <span id="tr-stations-counter" class="tiempo-real-counter-text" aria-live="polite">-</span>
+          </div>
           <div class="tiempo-real-cards-column" id="tr-cards-list" role="feed" aria-label="Lista de estaciones telemétricas">
             <!-- Initial loader (visible from first paint); replaced by the page JS -->
             <div class="fonag-inline-loader is-static" role="status" aria-live="polite">

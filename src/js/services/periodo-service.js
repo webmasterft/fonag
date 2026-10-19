@@ -211,14 +211,22 @@ export async function downloadPeriodoExport(estacion, variableCode, startDate, e
 /**
  * Exporta a CSV, en el cliente, una serie de tiempo ya recibida de la API (datos reales de SEDC).
  * @param {Object} estacion
- * @param {string} variableCode
+ * @param {string|{ code?: string, name: string, unit: string }} variable Catalog code (periodo)
+ *   or the variable object itself (tiempo real, whose variables are not in the periodo catalog)
  * @param {Array<Object>} series
  * @param {string} frecuencia
+ * @param {string} [consulta] Title written in the CSV header
  */
-export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'diario') {
-  const config = VARIABLES_CONFIG[variableCode] || { code: variableCode, name: variableCode, unit: '' };
+export function exportarSerieCsv(estacion, variable, series, frecuencia = 'diario', consulta = 'Series de tiempo por periodo') {
+  const config = typeof variable === 'object' && variable
+    ? variable
+    : VARIABLES_CONFIG[variable] || { code: variable, name: variable, unit: '' };
+  // File-name safe identifier of the variable (its name when there is no SEDC code)
+  const varSlug = String(config.code || config.name || 'variable')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
   let content = `FONAG - SEDC Sistema de Estandarización de Datos Crudos\n`;
-  content += `Consulta: Series de tiempo por periodo\n`;
+  content += `Consulta: ${consulta}\n`;
   content += `Código Estación: ${estacion.codigo}\n`;
   content += `Nombre Estación: ${estacion.nombre}\n`;
   content += `Tipo: ${estacion.tipo}\n`;
@@ -226,7 +234,7 @@ export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'd
   content += `Frecuencia: ${frecuencia}\n`;
   content += `Fecha de exportación: ${new Date().toISOString().substring(0, 10)}\n\n`;
 
-  content += `Fecha,Valor_${config.code}_${config.unit}\n`;
+  content += `Fecha,"${config.name} (${config.unit})"\n`;
 
   series.forEach((item) => {
     // Missing values are exported as empty cells
@@ -238,7 +246,7 @@ export function exportarSerieCsv(estacion, variableCode, series, frecuencia = 'd
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `${estacion.codigo}_${config.code}_${frecuencia}.csv`);
+  link.setAttribute('download', `${estacion.codigo}_${varSlug}_${frecuencia}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
