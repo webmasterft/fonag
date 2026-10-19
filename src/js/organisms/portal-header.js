@@ -102,12 +102,3 @@ export function initPortalHeader() {
     }
   });
 }
-
-// Auto-inicialización si el DOM ya está listo
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPortalHeader);
-  } else {
-    initPortalHeader();
-  }
-}

@@ -22,26 +22,6 @@ export async function fetchEstaciones() {
 }
 
 /**
- * Obtiene el FeatureCollection GeoJSON de estaciones desde la API del SEDC.
- * @param {string} section - 'hydroclimate' | 'wetland' | 'quality' | 'soil'
- * @param {string} [variable] - Código opcional de variable
- * @returns {Promise<Object>}
- */
-export async function fetchPointGeojson(section = 'hydroclimate', variable = '') {
-  const params = new URLSearchParams({ section });
-  if (variable) params.append('variable', variable);
-
-  const res = await fetch(`/api/sedc/point_geojson?${params.toString()}`);
-  if (res.ok) {
-    const geojson = await res.json();
-    if (geojson && geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
-      return geojson;
-    }
-  }
-  throw new Error('Error en el API, intenta más tarde.');
-}
-
-/**
  * Normaliza los campos recibidos de la API SEDC autenticada.
  * eje_trabajo viene como string ya resuelto por el backend Django.
  * @param {Array<Object>} list
@@ -74,6 +54,7 @@ export function normalizeEstaciones(list) {
         : '';
 
       // Sin valores inventados: un dato que la API no trae queda vacío (la UI muestra '-')
+      const altura = parseFloat(item.est_altura);
       return {
         id: item.est_id,
         codigo: item.est_codigo || '',
@@ -86,10 +67,10 @@ export function normalizeEstaciones(list) {
         // null coordinates: the station is listed but not drawn on the map
         latitud: Number.isFinite(lat) ? lat : null,
         longitud: Number.isFinite(lng) ? lng : null,
-        altura: item.est_altura ? `${parseFloat(item.est_altura).toFixed(0)} m` : 'N/D',
+        altura: Number.isFinite(altura) ? `${altura.toFixed(0)} m` : '',
         administrador: item.administrador || '',
         transmision: Boolean(item.transmision),
-        fechaInicio: item.est_fecha_inicio || 'N/D',
+        fechaInicio: item.est_fecha_inicio || '',
         // Fila original de /estacion/list/: algunos reportes SEDC (hydro_annual) la requieren completa
         raw: item,
       };

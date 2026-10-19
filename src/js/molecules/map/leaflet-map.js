@@ -7,8 +7,9 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import ejesGeojsonData from '../../../data/ejes_2026.json';
+import { escapeHtml, displayValue } from '../../atoms/escape-html.js';
 
-// Paleta corporativa unificada de colores por tipo (Coincide 100% con el Home)
+// Paleta corporativa unificada de colores por tipo (single source, also used by the Home map)
 export const TYPE_COLORS = {
   'Meteorológica': '#f59e0b', // Naranja
   'Pluviométrica': '#8b5cf6', // Morado
@@ -16,7 +17,7 @@ export const TYPE_COLORS = {
   'default': '#64748b'
 };
 
-// Configuración territorial de los 9 Ejes de Trabajo
+// Configuración visual de los 9 Ejes de Trabajo (single source, also used by the Home map)
 export const EJES_CONFIG = {
   'PITA': {
     name: 'Pita',
@@ -75,57 +76,8 @@ export const EJES_CONFIG = {
   }
 };
 
-/**
- * Algoritmo Point-in-Polygon (Ray Casting) para asociar coordenadas al Eje exacto.
- */
-export function pointInPoly(x, y, poly) {
-  let inside = false;
-  let p1x = poly[0][0];
-  let p1y = poly[0][1];
-  const n = poly.length;
-  for (let i = 0; i < n; i++) {
-    const p2x = poly[(i + 1) % n][0];
-    const p2y = poly[(i + 1) % n][1];
-    if (y > Math.min(p1y, p2y)) {
-      if (y <= Math.max(p1y, p2y)) {
-        if (x <= Math.max(p1x, p2x)) {
-          let xinters = 0;
-          if (p1y !== p2y) {
-            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
-          }
-          if (p1x === p2x || x <= xinters) {
-            inside = !inside;
-          }
-        }
-      }
-    }
-    p1x = p2x;
-    p1y = p2y;
-  }
-  return inside;
-}
-
-export function getEjeForCoords(lng, lat) {
-  if (!ejesGeojsonData || !Array.isArray(ejesGeojsonData.features)) return 'Pita';
-
-  for (const f of ejesGeojsonData.features) {
-    const geom = f.geometry;
-    if (!geom) continue;
-    const name = f.properties?.eje_trab || '';
-
-    if (geom.type === 'Polygon') {
-      if (pointInPoly(lng, lat, geom.coordinates[0])) return formatEjeName(name);
-    } else if (geom.type === 'MultiPolygon') {
-      for (const poly of geom.coordinates) {
-        if (pointInPoly(lng, lat, poly[0])) return formatEjeName(name);
-      }
-    }
-  }
-  return null;
-}
-
 export function formatEjeName(name) {
-  if (!name) return 'Pita';
+  if (!name) return '';
   const u = name.toUpperCase();
   if (u.includes('PITA')) return 'Pita';
   if (u.includes('PICHINCHA')) return 'Pichincha Atacazo';
@@ -139,8 +91,11 @@ export function formatEjeName(name) {
   return name;
 }
 
+const UNKNOWN_EJE_CONFIG = { name: '', color: '#cbd5e1', border: '#94a3b8' };
+
 export function getEjeConfig(name) {
-  if (!name) return EJES_CONFIG['PITA'];
+  // No eje_trabajo from the API: neutral color, never another eje's config
+  if (!name) return UNKNOWN_EJE_CONFIG;
   const formatted = formatEjeName(name).toUpperCase();
   const matchKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === formatted || k === formatted);
   return matchKey ? EJES_CONFIG[matchKey] : { name, color: '#64748b', border: '#475569' };
@@ -258,7 +213,7 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
             interactive: false
           });
           labelsLayer.addLayer(labelMarker);
-        } catch (e) {
+        } catch {
           // ignore center calculation exception
         }
       }
@@ -287,7 +242,7 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
   /**
    * Actualiza los marcadores en el mapa basados en la lista filtrada de estaciones.
    */
-  function setMarkers(estaciones, onSelectStation, year = '2025') {
+  function setMarkers(estaciones, onSelectStation, year = '') {
     markerLayer.clearLayers();
     markerMap.clear();
 
@@ -315,10 +270,10 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
 
       const marker = L.marker([estacion.latitud, estacion.longitud], { icon: customIcon });
 
-      const btnLabelText = typeof year === 'object' ? (year.buttonText || 'Ver datos') : `Ver estadísticas ${year}`;
+      const btnLabelText = escapeHtml(typeof year === 'object' ? (year.buttonText || 'Ver datos') : `Ver estadísticas ${year}`.trim());
 
       const formatCoord = (val) => {
-        if (val == null || val === '' || isNaN(Number(val))) return 'N/D';
+        if (val == null || val === '' || isNaN(Number(val))) return '-';
         return Number(val).toFixed(4);
       };
 
@@ -327,13 +282,13 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
-              <strong style="color: #242857; font-size: 14px;">${estacion.codigo}</strong>
+              <strong style="color: #242857; font-size: 14px;">${displayValue(estacion.codigo)}</strong>
             </div>
           </div>
-          <p style="margin: 0 0 6px; color: #475569; font-weight: 500;">${estacion.nombre}</p>
+          <p style="margin: 0 0 6px; color: #475569; font-weight: 500;">${displayValue(estacion.nombre)}</p>
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px;">
-            <span>Tipo: <strong>${estacion.tipo}</strong></span>
-            <span>Alt: <strong>${estacion.altura}</strong></span>
+            <span>Tipo: <strong>${displayValue(estacion.tipo)}</strong></span>
+            <span>Alt: <strong>${displayValue(estacion.altura)}</strong></span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 8px;">
             <span>Latitud: <strong style="color: #242857;">${formatCoord(estacion.latitud)}</strong></span>
@@ -341,7 +296,7 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
           </div>
           <button
             class="btn-popup-ver-datos"
-            data-codigo="${estacion.codigo}"
+            data-codigo="${escapeHtml(estacion.codigo)}"
             style="
               width: 100%;
               padding: 6px 10px;
@@ -367,8 +322,8 @@ export function initLeafletMap(containerId = 'station-map', options = {}) {
         }
       });
 
-      marker.on('popupopen', () => {
-        const popupEl = document.querySelector(`.btn-popup-ver-datos[data-codigo="${estacion.codigo}"]`);
+      marker.on('popupopen', (e) => {
+        const popupEl = e.popup.getElement()?.querySelector('.btn-popup-ver-datos');
         if (popupEl) {
           popupEl.addEventListener('click', () => {
             if (typeof onSelectStation === 'function') {

@@ -3,22 +3,26 @@
  * Orchestrates atomic modules and bootstraps the application.
  */
 import { initButtons } from './atoms/button.js';
-import { initSearch } from './molecules/search.js';
 import { initThemeToggle } from './organisms/theme-toggle.js';
 import { initConstituentsCarousel } from './organisms/constituents-carousel.js';
 import { initHomeStationsMap } from './organisms/home-map.js';
 import { initGlobalHttpLoader } from './atoms/global-loader.js';
 import { initPortalHeader } from './organisms/portal-header.js';
+import { initPortalStats } from './organisms/portal-stats.js';
+import { fetchEstaciones } from './services/estaciones-service.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize atomic interaction modules
   initPortalHeader();
   initGlobalHttpLoader();
   initButtons();
-  initSearch('#component-search', '.card');
   initThemeToggle();
   initConstituentsCarousel('#constituents-embla');
-  initHomeStationsMap();
+
+  // One /estacion/list request shared by the home map and the "Cifras del Portal" figures
+  const estacionesPromise = fetchEstaciones();
+  initHomeStationsMap(estacionesPromise);
+  initPortalStats(estacionesPromise);
 
   // Permite hacer clic en cualquier parte de las tarjetas de Cifras del Portal
   document.querySelectorAll('.stat-card').forEach((card) => {

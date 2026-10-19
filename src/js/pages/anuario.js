@@ -7,7 +7,8 @@ import {
   fetchAnuarioSedc,
   downloadAnuarioExcel
 } from '../services/anuario-service.js';
-import { showApiError } from '../atoms/api-error.js';
+import { showApiError, apiErrorHtml, API_ERROR_MESSAGE } from '../atoms/api-error.js';
+import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderAnuarioSedc, destroyAnuarioSedc } from '../molecules/charts/anuario-sedc.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   const selectYear = document.getElementById('select-consult-year');
   const btnCompilado = document.getElementById('btn-download-compilado');
+  const btnCompiladoLabel = document.getElementById('btn-download-compilado-label');
 
   // Elementos de la leyenda flotante "TIPO DE ESTACIÓN"
   const countMeteoEl = document.getElementById('anuario-count-meteo');
@@ -50,7 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const modalBody = document.getElementById('anuario-modal-body');
 
   let allEstaciones = [];
-  let currentYear = selectYear ? selectYear.value : '2025';
+  // Stations currently visible with the active filters (code, name, type, eje, legend, year)
+  let filteredEstaciones = [];
+  // Selected year: set from the SEDC stations once they load (see populateYearOptions)
+  let currentYear = '';
+  const thisYear = new Date().getFullYear();
   let activeCardEl = null;
   let currentModalEstacion = null;
   let currentModalTab = 'charts'; // 'charts' | 'table'
@@ -74,13 +80,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error('[Anuario] Error cargando estaciones:', err);
     showApiError(cardsContainer);
-    if (counterEl) counterEl.textContent = '';
+    if (counterEl) counterEl.textContent = '-';
+    if (selectYear) selectYear.disabled = true;
+    if (btnCompilado) btnCompilado.disabled = true;
     return;
   }
   allEstaciones = rawEstaciones.map((est) => ({
     ...est,
     ejeCalculado: est.eje_trabajo
   }));
+  populateYearOptions();
 
   // 2. Renderizar inicial
   applyFilters();
@@ -136,7 +145,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const updateNotice = () => {
       if (!noticeEl) return;
-      noticeEl.style.display = currentYear === '2026' ? 'block' : 'none';
+      const currentEl = document.getElementById('year-notice-current');
+      if (currentEl) currentEl.textContent = thisYear;
+      noticeEl.style.display = currentYear === String(thisYear) ? 'block' : 'none';
     };
     updateNotice();
 
@@ -177,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               </div>
               <div class="fonag-loader-text-group">
                 <span class="fonag-loader-title">Consultando servidor...</span>
-                <span class="fonag-loader-subtitle">Cargando estadísticas del año ${currentYear}...</span>
+                <span class="fonag-loader-subtitle">Cargando estadísticas del año ${escapeHtml(currentYear)}...</span>
               </div>
             </div>
             </div>
@@ -186,17 +197,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // 3. Actualizar componentes con el nuevo año
-      if (btnCompilado) {
-        btnCompilado.disabled = false;
-        btnCompilado.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Descargar copilado ${currentYear}
-        `;
-      }
+      if (btnCompilado) btnCompilado.disabled = false;
+      updateCompiladoLabel();
 
       applyFilters();
 
@@ -219,7 +221,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnCompilado) {
     btnCompilado.addEventListener('click', () => {
-      runDownload(btnCompilado, () => exportarCompilado(allEstaciones, currentYear));
+      // The compilado follows the active filters: only the stations currently listed
+      if (!filteredEstaciones.length) return;
+      runDownload(btnCompilado, () => exportarCompilado(filteredEstaciones, currentYear));
     });
   }
 
@@ -253,6 +257,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     destroyAnuarioSedc();
   }
 
+  /**
+   * Year options from the current year down to the earliest est_fecha_inicio of the SEDC stations.
+   * Default: the previous year (last complete one) when available.
+   */
+  function populateYearOptions() {
+    if (!selectYear) return;
+    const startYears = allEstaciones
+      .map((est) => parseInt((est.fechaInicio || '').substring(0, 4), 10))
+      .filter((y) => Number.isFinite(y) && y <= thisYear);
+    const firstYear = startYears.length ? Math.min(...startYears) : thisYear;
+
+    const years = [];
+    for (let y = thisYear; y >= firstYear; y--) years.push(String(y));
+    selectYear.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join('');
+
+    const previousYear = String(thisYear - 1);
+    currentYear = years.includes(previousYear) ? previousYear : years[0];
+    selectYear.value = currentYear;
+    updateCompiladoLabel();
+  }
+
+  function updateCompiladoLabel() {
+    if (btnCompiladoLabel) btnCompiladoLabel.textContent = `Descargar copilado ${currentYear}`;
+  }
+
   function renderModalHeader(estacion) {
     if (!modalHeader) return;
 
@@ -260,28 +289,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
-    const ejeName = estacion.cuenca || estacion.eje || 'Pita';
-    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
-    const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
+    // Only letters reach the class name (tipo comes from the API)
+    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
+    // altura already comes formatted by the service ("N m"); missing values show '-'
+    const ejeName = displayValue(estacion.eje_trabajo);
+    const alturaVal = displayValue(estacion.altura);
+    const stationName = displayValue(estacion.nombre || estacion.codigo);
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">Estación ${estacion.codigo} - ${stationName}</h3>
+            <h3 class="modal-station-title">Estación ${displayValue(estacion.codigo)} - ${stationName}</h3>
           </div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>
-            <span>${estacion.tipo || 'Hidrológica'}</span>
+            <span>${displayValue(estacion.tipo)}</span>
           </div>
         </div>
         <button type="button" class="btn-modal-close-x" id="btn-close-modal" aria-label="Cerrar modal">X</button>
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Año: ${currentYear}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Año: ${escapeHtml(currentYear)}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-download-excel">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -376,7 +407,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('[Anuario] Error consultando hydro_annual:', err);
       anuarioCache.delete(cacheKey);
       if (token === modalRenderToken) {
-        modalBody.innerHTML = '<div class="anuario-sedc-empty">No se pudo consultar el anuario en SEDC. Intenta más tarde.</div>';
+        modalBody.innerHTML = apiErrorHtml();
       }
     } finally {
       removeLoader();
@@ -391,7 +422,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();
     const qTipo = selectTipo ? selectTipo.value : '';
-    const numYear = parseInt(currentYear, 10) || 2025;
+    const numYear = parseInt(currentYear, 10) || thisYear;
 
     // Calcular conteos para la leyenda flotante según el eje activo y año seleccionado
     let countMeteo = 0;
@@ -408,7 +439,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           countHidro++;
         } else if (est.tipo?.includes('Pluvio')) {
           countPluvio++;
-        } else {
+        } else if (est.tipo?.includes('Meteo')) {
           countMeteo++;
         }
       }
@@ -436,9 +467,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       return matchCodigo && matchNombre && matchTipo && matchEje && matchFloatingTipo && matchYear;
     });
 
+    filteredEstaciones = filtered;
+    if (btnCompilado) {
+      btnCompilado.disabled = filtered.length === 0;
+      btnCompilado.title = filtered.length
+        ? `Descarga el anuario ${currentYear} de las ${filtered.length} estaciones filtradas`
+        : 'No hay estaciones con los filtros seleccionados';
+    }
+
     // Actualizar contador
     if (counterEl) {
-      counterEl.textContent = `${filtered.length} estaciones`;
+      counterEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'estación' : 'estaciones'}`;
     }
 
     // Actualizar marcadores en el mapa para el año seleccionado
@@ -484,20 +523,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       return `
-      <article class="station-card-item" id="card-${est.codigo}" data-codigo="${est.codigo}">
+      <article class="station-card-item" id="card-${escapeHtml(est.codigo)}" data-codigo="${escapeHtml(est.codigo)}">
         <div class="station-card-top">
           <span class="station-card-dot" style="background-color: ${dotColor};"></span>
-          <span class="station-card-province">${est.provincia}</span>
+          <span class="station-card-province">${displayValue(est.provincia)}</span>
         </div>
-        <div class="station-card-code">${est.codigo}</div>
-        <div style="font-size: 13px; color: #475569; font-weight: 500;">${est.nombre}</div>
-        <div class="station-card-pill ${pillClass}">• ${est.tipo}</div>
+        <div class="station-card-code">${displayValue(est.codigo)}</div>
+        <div style="font-size: 13px; color: #475569; font-weight: 500;">${displayValue(est.nombre)}</div>
+        <div class="station-card-pill ${pillClass}">• ${displayValue(est.tipo)}</div>
         <div class="station-card-actions">
-          <button class="btn-card-ver-estadisticas" data-codigo="${est.codigo}">
+          <button class="btn-card-ver-estadisticas" data-codigo="${escapeHtml(est.codigo)}">
             <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
             Ver estadísticas
           </button>
-          <button class="btn-card-descargar" data-codigo="${est.codigo}">
+          <button class="btn-card-descargar" data-codigo="${escapeHtml(est.codigo)}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -551,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Compilado oficial de SEDC: un solo Excel con el anuario de todas las estaciones
+  // Compilado oficial de SEDC: un solo Excel con el anuario de las estaciones filtradas
   function exportarCompilado(stations, year) {
     return downloadAnuarioExcel(stations, year);
   }
@@ -568,7 +607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await task();
     } catch (err) {
       console.error('[Anuario] Error descargando Excel:', err);
-      alert('No se pudo descargar el anuario desde SEDC. Intenta más tarde.');
+      alert(API_ERROR_MESSAGE);
     } finally {
       button.disabled = false;
       button.innerHTML = original;

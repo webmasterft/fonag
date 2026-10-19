@@ -10,7 +10,7 @@ La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Depen
 
 ### 1.1. Principios Fundamentales
 1. **Concepts > Code**: Separación estricta de responsabilidades (SoC), modularidad limpia y diseño arquitectónico robusto antes que el uso irreflexivo de frameworks.
-2. **Cero Runtimes Pesados (Vanilla JS)**: Erradicación total de jQuery, Bootstrap y virtual DOMs (React, Vue, Angular). El navegador ejecuta manipular directamente el DOM de manera determinista e inmutable.
+2. **Cero Runtimes Pesados (Vanilla JS)**: sin jQuery, Bootstrap ni virtual DOMs (React, Vue, Angular). El DOM se manipula directamente de manera determinista.
 3. **Arquitectura Multi-Page (MPA)**: Mapeo nativo de URLs del navegador con los puntos de entrada del servidor (`/`, `/estaciones/`, `/consultas/periodo/`, `/consultas/anuario/`, `/tiempo-real/`, `/contacto/`).
 4. **Datos 100% SEDC, sin respaldos**: Todo dato mostrado o descargado proviene en vivo de la API autenticada del SEDC. No existen datasets locales de respaldo ni datos simulados: si la API falla, el cliente muestra un mensaje de error explícito ("Error en el API, intenta más tarde.").
 ### 1.2. Tech Stack (Pila Tecnológica Detallada)
@@ -19,14 +19,15 @@ La aplicación se diseñó como un **Portal Web de Alto Rendimiento y Cero Depen
 |---|---|---|---|
 | **Core Client** | Vanilla JavaScript (ES6+ / ESM) | ECMAScript 2024 | Lógica de cliente reactiva funcional inmutable sin sobrecarga de virtual DOM. |
 | **Markup Semántico** | HTML5 Standard + WAI-ARIA | HTML5 W3C | Estructura semántica accesible con migas de pan, landmarks y accesibilidad WCAG 2.2. |
-| **Bundler & Dev Server** | Vite | `^6.2.0` | Empaquetador ultra-rápido ESM, soporte Multi-Page (MPA), HMR y Proxy HTTP Inverso. |
+| **Bundler & Dev Server** | Vite | `^6.2.0` | Empaquetador ESM, soporte Multi-Page (MPA), HMR y middleware de desarrollo para `/api/sedc/*`. |
 | **CSS Engine** | Vanilla CSS Tokens + Tailwind CSS Bridge | `^4.0.9` | Design tokens canónicos en `:root`, variables CSS nativas e integración modular. |
 | **Cartografía Interactiva** | Leaflet.js | `^1.9.4` | Renderizado ligero de polígonos GeoJSON de Ejes y marcadores vectoriales interactivos. |
-| **Visualización de Datos** | Chart.js | `^4.5.1` | Gráficos estadísticos de series de tiempo, precipitación, temperatura y humedad. |
+| **Visualización de Datos** | Plotly (`plotly.js-dist-min`) | `^4.1.1` | Figuras oficiales de SEDC (periodo, anuario, telemetría); carga diferida. |
+| **Visualización secundaria** | Chart.js | `^4.5.1` | Solo para series de periodo que no traen figura de SEDC. |
 | **Carrusel Component** | Embla Carousel | `^8.6.0` | Controlador fluido de carrusel con soporte para gestos táctiles y accesibilidad en socios. |
 | **Calidad y Linting** | ESLint + Stylelint | `^10.10.0` / `^17.15.0` | Validación estática estricta de código JS y estándares CSS canónicos. |
-| **Proxy API Inverso** | Node.js HTTPS Native Module | `v18+ / v20+` | Gestor de sesión persistente con autenticación `sessionid` y `csrftoken` contra SEDC. |
-| **Despliegue & Hosting** | Vercel Platform | Clean URLs | Hosting global edge con soporte para rewrites y rutas limpias (`cleanUrls: true`). |
+| **Capa API propia** | Vercel Serverless Functions (Node.js `https`) | `v18+ / v20+` | `api/*.js` + `api/_lib/sedc.js`: login Django (`sessionid` + `csrftoken`) y reenvío a SEDC. Reutilizadas por el proxy de desarrollo. |
+| **Despliegue & Hosting** | Vercel Platform | Clean URLs | Hosting con rewrites (`vercel.json`) de `/api/sedc/*` a las funciones y rutas limpias (`cleanUrls: true`). |
 
 ---
 
@@ -36,86 +37,70 @@ El proyecto sigue una estructura limpia de **Multi-Page Application (MPA)** gest
 
 ```
 ./ (Raíz del Repositorio FONAG)
-├── index.html                           # Entry point: Landing Page / Portal Principal
-├── estaciones/
-│   └── index.html                       # Entry point: Visor de Estaciones Hidroclimáticas
+├── index.html                           # Entry point: Portada (mapa + Cifras del Portal)
+├── estaciones/index.html                # Entry point: Catálogo de Estaciones Hidroclimáticas
 ├── consultas/
-│   ├── periodo/
-│   │   └── index.html                   # Entry point: Consultas por Periodo y Gráficas
-│   └── anuario/
-│       └── index.html                   # Entry point: Anuario Hidroclimático Estadístico
-├── tiempo-real/
-│   └── index.html                       # Entry point: Telemetría en Vivo de Sensores
-├── contacto/
-│   └── index.html                       # Entry point: Formulario de Contacto y Ubicación
+│   ├── periodo/index.html               # Entry point: Consultas por Periodo
+│   └── anuario/index.html               # Entry point: Anuario Hidroclimático
+├── tiempo-real/index.html               # Entry point: Telemetría en Tiempo Real
+├── contacto/index.html                  # Entry point: Formulario de Contacto
+├── api/                                 # Vercel Serverless Functions (también usadas en desarrollo)
+│   ├── _lib/sedc.js                     # Helpers compartidos: config por env, login + CSRF, sedcGet/sedcPost, sendJson
+│   ├── estaciones.js                    # GET  /estacion/list/
+│   ├── variables.js                     # GET  /variable/<seccion>/list
+│   ├── hydro-annual.js                  # POST /hydro_annual (JSON o Excel oficial)
+│   ├── telemetria.js                    # POST /ajax/telemetria/consulta
+│   └── periodo.js                       # POST /reportes/consultas_periodo (JSON o archivo oficial)
+├── scripts/check-secrets.js             # Detector de credenciales (hook pre-commit y npm run check:secrets)
+├── .githooks/pre-commit                 # Ejecuta check-secrets sobre los cambios en stage
 ├── src/
 │   ├── css/
-│   │   ├── main.css                     # Punto de entrada CSS (Vite + CSS Tokens Bridge)
-│   │   ├── tokens/                      # Tokens Canónicos de Diseño
-│   │   │   ├── colors.css               # Paleta oficial FONAG (Navy #242857, Orange #F19001, Cyan #41A6E5)
-│   │   │   ├── typography.css           # Inter Font (Pesos 400, 500, 600, 700, 800)
-│   │   │   ├── spacing.css              # Escala modular de espaciados
-│   │   │   ├── borders.css              # Radios de bordes (8px, 12px, 14px, 18px, full)
-│   │   │   └── index.css                # Agregador central de tokens
-│   │   ├── atoms/                       # Estilos de elementos indivisibles
-│   │   │   ├── buttons.css              # Botones primarios, CTA naranja, outline
-│   │   │   ├── inputs.css               # Inputs de texto, selectores, datepickers
-│   │   │   ├── badges.css               # Chips de tipo de estación y estado
-│   │   │   ├── icons-sprite.css         # Sprites e íconos SVG vectoriales
-│   │   │   └── global-loader.css        # Indicador global de carga HTTP
-│   │   ├── molecules/                   # Combinación de átomos
-│   │   │   ├── nav-menu.css             # Navegación con dropdowns accesibles
-│   │   │   ├── hero-search.css          # Estilos de búsqueda
-│   │   │   ├── stat-card.css            # Tarjetas de cifras y métricas
-│   │   │   ├── constituent-item.css     # Medallones institucionales
-│   │   │   └── data-table.css           # Tablas de datos semánticas
-│   │   ├── organisms/                   # Secciones complejas de la UI
-│   │   │   ├── portal-header.css        # Navegación global del portal
-│   │   │   ├── hero-portal.css          # Hero banner institucional
-│   │   │   ├── home-map-section.css     # Sección de Mapa + Tarjeta lateral de Ejes
-│   │   │   ├── periodo-view.css         # Layout split de Consultas por Periodo
-│   │   │   ├── anuario-view.css         # Layout del Anuario Hidroclimático
-│   │   │   ├── tiempo-real-view.css     # Layout de Telemetría en Vivo
-│   │   │   ├── contacto-view.css        # Layout de Contacto y Formulario
-│   │   │   └── footer.css               # Pie de página corporativo
-│   │   └── templates/
-│   │       └── layout.css               # Estructura del grid principal y contenedores (1366px)
-│   ├── data/                            # Geografía estática (no es respaldo de la API)
-│   │   └── ejes_2026.json               # GeoJSON de Polígonos de los Ejes de Trabajo FONAG
+│   │   ├── main.css                     # Punto de entrada CSS (Tailwind + imports en orden de cascada)
+│   │   ├── tokens/                      # colors.css, typography.css, spacing.css, index.css
+│   │   ├── atoms/                       # buttons, inputs, badges, sprites, loader.css (loader + error de API)
+│   │   ├── molecules/                   # card, stat-card, nav-menu, custom-datepicker, data-table...
+│   │   ├── organisms/                   # header, hero, home-map-section, vistas (periodo, anuario, tiempo real...)
+│   │   └── templates/layout.css         # Grid principal y contenedores
+│   ├── data/
+│   │   └── ejes_2026.json               # GeoJSON de los Ejes de Trabajo (geografía estática, no respaldo)
+│   ├── images/                          # Imágenes y sprites (.webp)
 │   └── js/
-│       ├── main.js                      # Controller: Landing Page
+│       ├── main.js                      # Controller: Portada
 │       ├── atoms/
-│       │   ├── button.js                # Ripple effect y accesibilidad en botones
-│       │   └── global-loader.js         # Interceptor visual de peticiones HTTP
+│       │   ├── api-error.js             # Estado de error compartido (API_ERROR_MESSAGE, apiErrorHtml, showApiError)
+│       │   ├── escape-html.js           # escapeHtml() / displayValue() para todo dato de la API en innerHTML
+│       │   ├── global-loader.js         # Interceptor de fetch + loader global e inline (showInlineLoader)
+│       │   ├── plotly-loader.js         # Carga diferida de Plotly
+│       │   └── button.js                # Interacción de botones
 │       ├── molecules/
-│       │   ├── datepicker/              # Componente custom DatePicker
-│       │   ├── map/
-│       │   │   └── leaflet-map.js       # Controlador modular del Mapa Leaflet (GeoJSON + Markers)
 │       │   ├── charts/
-│       │   │   ├── periodo-charts.js    # Renderizador Chart.js para Series de Tiempo
-│       │   │   └── anuario-charts.js    # Renderizador Chart.js para Estadísticas Anuales
-│       │   └── data-table/              # MOTOR FUNCIONAL DE TABLAS DE DATOS
-│       │       ├── table-core.js        # Lógica pura de filtrado, ordenación, paginación y CSV/XLSX
-│       │       ├── table-renderer.js    # Generación pura de elementos DOM
-│       │       └── anuario-table.js     # Tablas divididas por variable para el Anuario
+│       │   │   ├── periodo-charts.js    # Figura Plotly de SEDC (Chart.js solo si no hay figura)
+│       │   │   ├── anuario-sedc.js      # Tablas y figuras de /hydro_annual
+│       │   │   └── telemetria-figure.js # Figura Plotly de telemetría (igual que Django)
+│       │   ├── data-table/column-filter.js  # Selector de columnas visibles
+│       │   ├── datepicker/custom-datepicker.js
+│       │   └── map/leaflet-map.js       # Mapa Leaflet + EJES_CONFIG / TYPE_COLORS (fuente única)
 │       ├── organisms/
-│       │   ├── home-map.js              # Orquestador del mapa e interacción de Ejes en la Home
-│       │   ├── theme-toggle.js          # Gestor de tema claro/oscuro
-│       │   └── constituents-carousel.js # Controlador de Embla Carousel
-│       ├── services/                    # CAPA DE SERVICIOS Y API INTEGRACIÓN
-│       │   ├── estaciones-service.js    # Consumo de red de estaciones (API SEDC, sin respaldo)
-│       │   ├── periodo-service.js       # Consumo de series históricas por periodo
-│       │   ├── anuario-service.js       # Consumo de resúmenes estadísticos anuales
-│       │   └── telemetria-service.js    # Consumo de lecturas telemétricas en tiempo real
-│       └── pages/                       # Controllers por Entrada MPA
-│           ├── estaciones.js            # Controller: /estaciones/
-│           ├── periodo.js               # Controller: /consultas/periodo/
-│           ├── anuario.js               # Controller: /consultas/anuario/
-│           ├── tiempo-real.js           # Controller: /tiempo-real/
-│           └── contacto.js              # Controller: /contacto/
-├── vite.config.js                       # Configuración MPA + Server Proxy Autenticado SEDC
-├── vercel.json                          # Configuración de despliegue y Clean URLs
-└── package.json                         # Scripts y dependencias del proyecto
+│       │   ├── home-map.js              # Mapa y tarjeta de ejes de la portada
+│       │   ├── portal-stats.js          # Cifras del Portal calculadas con la API
+│       │   ├── portal-header.js         # Navegación global (se inicializa desde cada página)
+│       │   ├── theme-toggle.js          # Fuerza el tema claro
+│       │   └── constituents-carousel.js # Embla Carousel
+│       ├── services/
+│       │   ├── estaciones-service.js    # fetchEstaciones() + normalización
+│       │   ├── periodo-service.js       # Variables, estaciones por variable, series y exportación oficial
+│       │   ├── anuario-service.js       # /hydro_annual (JSON y Excel)
+│       │   └── telemetria-service.js    # Telemetría (solo fecha de inicio)
+│       └── pages/                       # Controllers por entrada MPA
+│           ├── estaciones.js
+│           ├── periodo.js
+│           ├── anuario.js
+│           ├── tiempo-real.js
+│           └── contacto.js
+├── vite.config.js                       # MPA + middleware de desarrollo que ejecuta api/*.js
+├── vercel.json                          # Rewrites /api/sedc/* → api/* y Clean URLs
+├── eslint.config.js                     # ESLint (no-undef con globals de navegador y Node declarados)
+└── package.json                         # Scripts y dependencias
 ```
 
 ---
@@ -148,34 +133,33 @@ El sistema visual está construido en Vanilla CSS utilizando **Custom Properties
 Las constantes del sistema de diseño se declaran centralizadamente en `:root`:
 
 ```css
+/* Extracto de src/css/tokens/ (colors.css, spacing.css, typography.css) */
 :root {
-  /* Paleta Canónica FONAG */
-  --color-palette-navy: #242857;          /* Azul Primario Corporativo */
-  --color-palette-navy-hover: #1e2347;
-  --color-brand-orange: #F19001;          /* Naranja Acento / CTA */
-  --color-brand-orange-hover: #d97f00;
-  --color-brand-cyan: #41A6E5;            /* Cian Datos / Agua */
+  /* Matriz oficial de color (Brand Guide) y alias semánticos */
+  --palette-r1-c3: #242857;
+  --palette-r1-c4: #41a6e5;
+  --palette-r1-c6: #f19001;
+  --color-palette-navy: var(--palette-r1-c3);    /* Azul primario corporativo */
+  --color-palette-blue: var(--palette-r1-c4);    /* Cian datos / agua */
+  --color-palette-orange: var(--palette-r1-c6);  /* Naranja acento / CTA */
+  --color-brand-primary: var(--color-palette-navy);
+  --color-brand-orange: var(--color-palette-orange);
+  --color-brand-orange-hover: #d97d00;
 
   /* Tipografía */
-  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  
-  /* Escala de Espaciado Modular */
-  --spacing-1: 0.25rem; /* 4px */
-  --spacing-2: 0.5rem;  /* 8px */
-  --spacing-3: 0.75rem; /* 12px */
-  --spacing-4: 1.00rem; /* 16px */
-  --spacing-6: 1.50rem; /* 24px */
-  --spacing-8: 2.00rem; /* 32px */
+  --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 
-  /* Radios de Bordes */
-  --radius-8: 8px;      /* Botones e inputs */
-  --radius-12: 12px;    /* Tarjetas pequeñas y badges */
-  --radius-14: 14px;    /* Tarjetas de filtros y modales */
-  --radius-18: 18px;    /* Contenedores de mapa y hero */
-  --radius-full: 9999px;/* Pill badges y botones circulares */
+  /* Escala de espaciado (base 4px) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-8: 2rem;
 
-  /* Layout Boundaries */
-  --container-max-width: 1366px;
+  /* Radios */
+  --radius-md: 0.5rem;
+  --radius-12: 0.75rem;
+  --radius-18: 1.125rem;
+  --radius-full: 9999px;
 }
 ```
 
@@ -196,7 +180,7 @@ Se prohíbe el uso de estado global mutable descontrolado. La lógica de filtrad
 const filtered = allEstaciones.filter((est) => {
   const matchPeriod = !est.fechaInicio || est.fechaInicio <= eDate;
   const matchVar = estacionTieneVariable(est, varCode);
-  const matchEje = (activeEje === 'ALL') || (est.ejeCalculado?.toUpperCase() === activeEje.toUpperCase());
+  const matchEje = (activeEje === 'ALL') || (est.eje_trabajo?.toUpperCase() === activeEje.toUpperCase());
   const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
   const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
   const matchNombre = !qNombre || est.nombre.toLowerCase().includes(qNombre);
@@ -205,64 +189,66 @@ const filtered = allEstaciones.filter((est) => {
 });
 ```
 
-### 5.2. Motor Funcional de Tablas (`src/js/molecules/data-table/table-core.js`)
-El motor de tablas no acopla la lógica al DOM:
+### 5.2. Tablas y exportación
+- **Estaciones** (`src/js/pages/estaciones.js`): filtrado, ordenamiento y paginación dentro del controlador; columnas visibles con `molecules/data-table/column-filter.js`; descarga CSV del listado recibido de la API.
+- **Anuario** (`molecules/charts/anuario-sedc.js`): tablas mensuales con las columnas que usa `hydro_annual.js` de SEDC; Excel oficial vía `downloadAnuarioExcel()`.
+- **Periodo**: archivo oficial de SEDC (`downloadPeriodoExport()`); si falla se informa el error, sin CSV sustituto.
+- **Tiempo Real**: SEDC no exporta telemetría; `exportarSerieCsv()` genera el CSV con las lecturas reales ya recibidas.
 
-```
-[Dataset Inmutable] ──> [table-core.js (Filtro / Ordenación / Paginación Pura)]
-                              │
-                              ▼
-                     [table-renderer.js (Generación de DOM HTML Semántico)]
-                              │
-                              ▼
-                     [Vistas / Modales del Portal]
-```
-
-1. **`filterRows(rows, filters, searchFields)`**: Genera un nuevo array filtrado sin modificar el original.
-2. **`sortRows(rows, key, direction)`**: Ordena inmutablemente por claves simples o compuestas.
-3. **`paginateRows(rows, page, pageSize)`**: Computa los slices exactos e índices de paginación.
-4. **`exportRowsToCsv(columns, rows, filename)` / `exportAnuarioCsv`**: Genera archivos estructurados RFC4180 CSV o planillas Excel (`.xlsx`) y dispara la descarga cliente nativa vía Blob.
+### 5.3. Inserción segura en el DOM
+Todo string de la API pasa por `escapeHtml()` / `displayValue()` (`src/js/atoms/escape-html.js`) antes de `innerHTML` (tarjetas, opciones de selects, cabeceras de modales, filas de tablas, popups de mapas, contadores). Los encabezados de tablas del anuario conservan solo los `<br>` que envía SEDC.
 
 ---
 
-## 6. Arquitectura de Integración API & Proxy de Desarrollo
+## 6. Arquitectura de Integración API (Vercel Functions + proxy de desarrollo)
 
-Para conectar con la infraestructura autenticada del backend Django del **SEDC FONAG** (`https://sedc.fonag.org.ec`), se construyó una arquitectura de **Proxy Inverso Autenticado en el Servidor de Desarrollo** (`vite.config.js`).
+El cliente solo llama a rutas `/api/sedc/*` del mismo origen. Una única implementación en `api/` atiende esas rutas en ambos entornos:
 
-### 6.1. Diagrama de Secuencia de Peticiones HTTP
+- **Producción (Vercel)**: `vercel.json` reescribe cada ruta a su Serverless Function (`/api/sedc/estacion/list` → `/api/estaciones`, `/api/sedc/variable/:seccion/list` → `/api/variables?seccion=:seccion`, `/api/sedc/hydro_annual` → `/api/hydro-annual`, `/api/sedc/telemetria/consulta` → `/api/telemetria`, `/api/sedc/reportes/consultas_periodo` → `/api/periodo`). `/api/sedc/point_geojson` se reescribe directo a SEDC (es pública).
+- **Desarrollo (`npm run dev`)**: el middleware de `vite.config.js` monta esas mismas funciones en las mismas rutas (adapta `req`/`res` al formato de Vercel: `status()`, `json()`, `send()`, `req.query`, `req.body`) y hace lo mismo con `point_geojson`. Cualquier otra ruta `/api/sedc/*` responde `404`, como en producción. Las variables `SEDC_*` de `.env` se cargan con `loadEnv()` y se exponen en `process.env`, que es lo que lee `api/_lib/sedc.js`.
+
+### 6.1. Diagrama de Secuencia
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Cliente as Frontend (Vanilla JS)
-    participant Proxy as Vite Server Proxy (Node.js)
-    participant Auth as Auth Manager (vite.config.js)
-    participant SEDC as Backend SEDC FONAG (sedc.fonag.org.ec)
+    participant Fn as api/telemetria.js (Vercel o middleware de Vite)
+    participant Lib as api/_lib/sedc.js
+    participant SEDC as Backend SEDC (sedc.fonag.org.ec)
 
-    Cliente->>Proxy: POST /api/sedc/telemetria/consulta (Body: {estacion: "1", inicio: "2026-09-01"})
-    Note over Proxy,Auth: Verifica validez de galleta de sesión
-    alt Sesión expirada o no iniciada
-        Auth->>SEDC: GET /login/
-        SEDC-->>Auth: 200 OK (Set-Cookie: csrftoken=...)
-        Auth->>SEDC: POST /login/ (Body: username, password, csrftoken)
-        SEDC-->>Auth: 302 Found (Set-Cookie: sessionid=..., csrftoken=...)
+    Cliente->>Fn: POST /api/sedc/telemetria/consulta {estacion, inicio}
+    Fn->>Lib: sedcPost('/ajax/telemetria/consulta', campos)
+    alt Sin sesión en caché (o expirada, 30 min)
+        Lib->>SEDC: GET /login/ (csrftoken)
+        Lib->>SEDC: POST /login/ (username, password, csrfmiddlewaretoken)
+        SEDC-->>Lib: Set-Cookie: sessionid, csrftoken
+        Note over Lib: Sin sessionid = login fallido → 502
     end
-    Proxy->>SEDC: POST /telemetria/consulta (Header: Cookie: csrftoken=...; sessionid=...)
-    SEDC-->>Proxy: 200 OK (JSON con mediciones reales)
-    Proxy-->>Cliente: 200 OK (JSON en vivo)
+    Lib->>SEDC: POST /ajax/telemetria/consulta (Cookie + X-CSRFToken + X-Requested-With)
+    SEDC-->>Fn: JSON con mediciones
+    Fn-->>Cliente: JSON (mismo status de SEDC)
 ```
 
 ### 6.2. Seguridad de Credenciales y Entorno
-1. **Aislamiento en `.env`**: Las credenciales (`SEDC_USERNAME`, `SEDC_PASSWORD`) se configuran únicamente en variables de entorno sin el prefijo `VITE_`.
-2. **Protección contra fugas**: Al no usar el prefijo `VITE_`, las contraseñas residen exclusivamente en el runtime de Node.js en el proxy y nunca se empaquetan en el cliente frontend.
+1. **Solo variables de entorno**: `SEDC_USERNAME` / `SEDC_PASSWORD` (y opcionalmente `SEDC_API_BASE_URL`) vienen de `.env` en desarrollo y de las Environment Variables de Vercel en producción. No hay valores por defecto en el código; sin credenciales las funciones responden `502`.
+2. **Sin prefijo `VITE_`**: las credenciales nunca se empaquetan en el cliente; solo existen en el runtime de Node.js.
+3. **Sin logs de sesión**: no se registran cookies, tokens ni cuerpos de respuesta.
+4. **Sin CORS**: las funciones no envían `Access-Control-Allow-Origin`; el portal las llama desde el mismo origen.
+5. **Hook pre-commit**: `.githooks/pre-commit` ejecuta `scripts/check-secrets.js` (activado por `npm install` vía `prepare`).
 
 ### 6.3. Catálogo de Servicios SEDC Integrados
 
-| # | Servicio | Endpoint SEDC Remoto | Ruta Proxy Local | Formato |
-|---|---|---|---|---|
-| **01** | **Red de Estaciones** | `/informacion_red/list/` | `/api/sedc/informacion_red/list/` | JSON List |
-| **02** | **Series por Periodo** | `/reportes/consultas_periodo` | `/api/sedc/reportes/consultas_periodo` | JSON Graph Data |
-| **03** | **Telemetría en Vivo** | `/telemetria/consulta` | `/api/sedc/telemetria/consulta` | JSON Sensor Data |
+| Ruta del cliente | Función | Endpoint SEDC | Respuesta |
+|---|---|---|---|
+| `GET /api/sedc/estacion/list/` | `api/estaciones.js` | `GET /estacion/list/` | JSON (lista de estaciones) |
+| `GET /api/sedc/variable/<seccion>/list` | `api/variables.js` | `GET /variable/<seccion>/list` | JSON (catálogo de variables) |
+| `GET /api/sedc/point_geojson` | rewrite directo | `GET /point_geojson` | GeoJSON (estaciones por variable) |
+| `POST /api/sedc/hydro_annual` | `api/hydro-annual.js` | `POST /hydro_annual` | JSON (tablas + figuras) o Excel (`export: true`) |
+| `POST /api/sedc/telemetria/consulta` | `api/telemetria.js` | `POST /ajax/telemetria/consulta` | JSON (solo acepta `inicio`, sin fecha fin) |
+| `POST /api/sedc/reportes/consultas_periodo` | `api/periodo.js` | `POST /reportes/consultas_periodo` | JSON (figura Plotly) o archivo oficial (`export: true`) |
+
+En las exportaciones la función omite `X-Requested-With` y devuelve el archivo con el `content-type` y `content-disposition` de Django.
 
 ---
 
@@ -275,9 +261,11 @@ Todo dato proviene del SEDC. Cuando el backend no responde o la sesión no está
    - `fetchEstaciones()` lanza un error si la API falla o si SEDC devuelve el listado sin sesión autenticada (sin `eje_trabajo` / `est_id`).
    - `fetchSeriesDeTiempo()` lanza un error ante fallos de red/HTTP; devuelve `[]` cuando SEDC responde sin registros ("No existe información para el periodo y estación seleccionada.").
    - `fetchAnuarioSedc()` / `downloadAnuarioExcel()` consultan `POST /hydro_annual` (tablas, figuras y Excel oficial del anuario).
-   - `fetchTelemetriaReal()` devuelve `hasData: false` con el mensaje de error.
-3. **Datos faltantes**: se muestran como `-` (o celda vacía en CSV); nunca se rellenan con valores por defecto.
-4. **Único dato local**: `src/data/ejes_2026.json`, polígonos GeoJSON de los Ejes de Trabajo (geografía estática, no respaldo).
+   - `fetchTelemetriaReal()` devuelve `hasData: false`; con `apiError: true` cuando la API falló (la página muestra el error compartido) o con un mensaje cuando no hay lecturas.
+   - Si falla una descarga oficial (Excel/CSV) se muestra `alert(API_ERROR_MESSAGE)`; no hay archivo sustituto.
+3. **Datos faltantes**: se muestran como `-` (`displayValue()`) o celda vacía en CSV; nunca se rellenan con valores por defecto. Los contadores del HTML arrancan en `-` y se llenan con la API.
+4. **Valores derivados de la API**: las "Cifras del Portal", los años del selector del anuario (del año actual al `est_fecha_inicio` más antiguo) y los conteos por tipo/eje se calculan con los datos recibidos.
+5. **Único dato local**: `src/data/ejes_2026.json`, polígonos GeoJSON de los Ejes de Trabajo (geografía estática, no respaldo).
 
 ---
 
@@ -299,9 +287,11 @@ El desarrollo del portal siguió rigurosamente **Spec-Driven Development (SDD)**
 
 El proyecto incluye comandos de automatización en `package.json`:
 
-- `npm run dev`: Inicia el servidor de desarrollo Vite en `http://localhost:9000/` con Proxy SEDC activo.
-- `npm run build`: Ejecuta la compilación de producción Multi-Page Application (MPA) optimizando bundles JS/CSS.
-- `npm run preview`: Sirve la build de producción localmente para pruebas de rendimiento.
+- `npm run dev`: servidor de desarrollo Vite en `http://localhost:9000/` con el middleware SEDC (ejecuta `api/*.js`).
+- `npm run build`: compilación de producción de la MPA.
+- `npm run preview`: sirve la build de producción localmente.
+- `npm run lint` / `npm run lint:js` / `npm run lint:css`: ESLint (`src/js`, `api/`, `scripts/`, `vite.config.js`, con `no-undef`) y Stylelint.
+- `npm run check:secrets`: revisa todos los archivos versionados en busca de credenciales.
 
 ---
 

@@ -6,124 +6,19 @@
  */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { fetchEstaciones } from '../services/estaciones-service.js';
 import ejesGeojsonData from '../../data/ejes_2026.json';
 import { showInlineLoader } from '../atoms/global-loader.js';
 import { showApiError } from '../atoms/api-error.js';
+import { escapeHtml, displayValue } from '../atoms/escape-html.js';
+import { EJES_CONFIG, TYPE_COLORS } from '../molecules/map/leaflet-map.js';
 
-// Paleta de colores para los tipos de estación (Figma Match)
-const TYPE_COLORS = {
-  'Meteorológica': '#f59e0b', // Naranja
-  'Pluviométrica': '#8b5cf6', // Morado
-  'Hidrológica': '#38bdf8',   // Celeste
-  'default': '#64748b'
-};
+// Per-eje counts computed from the API stations (key = EJES_CONFIG key)
+const EMPTY_COUNTS = { total: 0, meteo: 0, pluvio: 0, hidro: 0, pct: 0 };
 
-// Configuración visual por Eje de Trabajo; los conteos se calculan con las estaciones de la API
-const EJES_CONFIG = {
-  'PITA': {
-    name: 'Pita',
-    color: '#f9b872',
-    fillOpacity: 0.55,
-    border: '#e0984c',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'PICHINCHA ATACAZO': {
-    name: 'Pichincha Atacazo',
-    color: '#a3c97e',
-    fillOpacity: 0.55,
-    border: '#83a85e',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'NORORIENTE DMQ': {
-    name: 'Nororiente DMQ',
-    color: '#c98a75',
-    fillOpacity: 0.55,
-    border: '#ad725e',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'ANTISANA': {
-    name: 'Antisana',
-    color: '#5c7cfa',
-    fillOpacity: 0.55,
-    border: '#4263eb',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'PAPALLACTA - OYACACHI': {
-    name: 'Papallacta - Oyacachi',
-    color: '#f1dfbb',
-    fillOpacity: 0.65,
-    border: '#d6c096',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'SAN PEDRO': {
-    name: 'San Pedro',
-    color: '#63b39d',
-    fillOpacity: 0.55,
-    border: '#4a9984',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'PISQUE': {
-    name: 'Pisque',
-    color: '#f472b6',
-    fillOpacity: 0.55,
-    border: '#db2777',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'NOROCCIDENTE': {
-    name: 'Noroccidente',
-    displayName: 'Noroccidente del DMQ',
-    color: '#93c5fd',
-    fillOpacity: 0.55,
-    border: '#60a5fa',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  },
-  'NORCENTRAL': {
-    name: 'Norcentral',
-    color: '#b4a2b8',
-    fillOpacity: 0.55,
-    border: '#9a859f',
-    total: 0,
-    meteo: 0,
-    pluvio: 0,
-    hidro: 0,
-    pct: 0
-  }
-};
-
-export async function initHomeStationsMap() {
+/**
+ * @param {Promise<Array<Object>>} estacionesPromise Result of fetchEstaciones(), shared with the portal stats
+ */
+export async function initHomeStationsMap(estacionesPromise) {
   const container = document.getElementById('home-stations-map');
   if (!container) return;
 
@@ -156,6 +51,8 @@ export async function initHomeStationsMap() {
   const labelsLayer = L.layerGroup().addTo(map);
 
   let currentEstaciones = [];
+  const ejeCounts = {};
+  const countsFor = (key) => ejeCounts[key] || EMPTY_COUNTS;
   let activeEje = 'ALL';
   let activeTipo = 'ALL';
   const polygonLayersMap = new Map();
@@ -239,7 +136,7 @@ export async function initHomeStationsMap() {
             interactive: false
           });
           labelsLayer.addLayer(labelMarker);
-        } catch (e) {
+        } catch {
           // center calculation fallback
         }
       }
@@ -267,10 +164,10 @@ export async function initHomeStationsMap() {
     // Actualizar dinámicamente los contadores de la tarjeta flotante "TIPO DE ESTACIÓN"
     if (activeEje !== 'ALL') {
       const cfgKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === activeEje.toUpperCase());
-      const cfg = cfgKey ? EJES_CONFIG[cfgKey] : null;
-      if (countMeteoEl) countMeteoEl.textContent = cfg ? cfg.meteo : meteoCount;
-      if (countPluvioEl) countPluvioEl.textContent = cfg ? cfg.pluvio : pluvioCount;
-      if (countHidroEl) countHidroEl.textContent = cfg ? cfg.hidro : hidroCount;
+      const counts = cfgKey ? countsFor(cfgKey) : null;
+      if (countMeteoEl) countMeteoEl.textContent = counts ? counts.meteo : meteoCount;
+      if (countPluvioEl) countPluvioEl.textContent = counts ? counts.pluvio : pluvioCount;
+      if (countHidroEl) countHidroEl.textContent = counts ? counts.hidro : hidroCount;
     } else {
       if (countMeteoEl) countMeteoEl.textContent = meteoCount;
       if (countPluvioEl) countPluvioEl.textContent = pluvioCount;
@@ -289,8 +186,7 @@ export async function initHomeStationsMap() {
       const lng = est.longitud;
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-      const tipo = est.tipo || 'default';
-      const color = TYPE_COLORS[tipo] || TYPE_COLORS.default;
+      const color = TYPE_COLORS[est.tipo] || TYPE_COLORS.default;
 
       const customIcon = L.divIcon({
         className: 'station-marker-icon',
@@ -314,14 +210,14 @@ export async function initHomeStationsMap() {
         <div style="font-family: 'Inter', sans-serif; font-size: 13px; min-width: 180px;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
-            <strong style="color: #242857; font-size: 14px;">${est.codigo}</strong>
+            <strong style="color: #242857; font-size: 14px;">${displayValue(est.codigo)}</strong>
           </div>
-          <p style="margin: 0 0 4px; color: #475569; font-weight: 500;">${est.nombre}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-weight: 500;">${displayValue(est.nombre)}</p>
           <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">
-            Tipo: <strong>${tipo}</strong>
+            Tipo: <strong>${displayValue(est.tipo)}</strong>
           </div>
           <div style="margin-top: 6px;">
-            <a href="/consultas/anuario/?codigo=${encodeURIComponent(est.codigo)}" 
+            <a href="/consultas/anuario/?codigo=${escapeHtml(encodeURIComponent(est.codigo))}" 
                style="font-size: 11.5px; color: #f19001; font-weight: 700; text-decoration: none;">
               Ver en Anuario &rarr;
             </a>
@@ -346,11 +242,11 @@ export async function initHomeStationsMap() {
         <p class="home-ejes-subtitle">Ver detalle por eje</p>
 
         <div class="home-ejes-list" id="home-ejes-list" role="list">
-          ${Object.values(EJES_CONFIG).map(cfg => `
+          ${Object.entries(EJES_CONFIG).map(([key, cfg]) => `
             <button class="eje-list-item" data-eje="${cfg.name}" type="button" role="listitem">
               <span class="eje-indicator" style="background-color: ${cfg.color};"></span>
               <span class="eje-item-name">${cfg.name}</span>
-              <span class="eje-item-count">${cfg.total}</span>
+              <span class="eje-item-count">${countsFor(key).total}</span>
             </button>
           `).join('')}
         </div>
@@ -365,8 +261,11 @@ export async function initHomeStationsMap() {
 
     } else {
       // Vista 2: Detalle del Eje Seleccionado (Figma captura 2)
-      const configKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === activeEje.toUpperCase()) || 'PITA';
-      const cfg = EJES_CONFIG[configKey] || EJES_CONFIG['PITA'];
+      // activeEje always comes from EJES_CONFIG (polygon / list click)
+      const configKey = Object.keys(EJES_CONFIG).find(k => EJES_CONFIG[k].name.toUpperCase() === activeEje.toUpperCase());
+      if (!configKey) return;
+      const cfg = EJES_CONFIG[configKey];
+      const counts = countsFor(configKey);
 
       cardAside.innerHTML = `
         <div class="eje-detail-view">
@@ -382,7 +281,7 @@ export async function initHomeStationsMap() {
               <span class="eje-detail-header-title">${cfg.name}</span>
             </div>
             <div class="eje-detail-header-count-row">
-              <span class="eje-detail-header-count">${cfg.total}</span>
+              <span class="eje-detail-header-count">${counts.total}</span>
               <span class="eje-detail-header-label">estaciones activas</span>
             </div>
           </div>
@@ -396,28 +295,28 @@ export async function initHomeStationsMap() {
                   <span class="tipo-legend-dot meteo"></span>
                   <span>Meteorológica</span>
                 </div>
-                <span class="type-count meteo">${cfg.meteo}</span>
+                <span class="type-count meteo">${counts.meteo}</span>
               </div>
               <div class="eje-detail-type-item">
                 <div class="eje-detail-type-label">
                   <span class="tipo-legend-dot pluvio"></span>
                   <span>Pluviométrica</span>
                 </div>
-                <span class="type-count pluvio">${cfg.pluvio}</span>
+                <span class="type-count pluvio">${counts.pluvio}</span>
               </div>
               <div class="eje-detail-type-item">
                 <div class="eje-detail-type-label">
                   <span class="tipo-legend-dot hidro"></span>
                   <span>Hidrológica</span>
                 </div>
-                <span class="type-count hidro">${cfg.hidro}</span>
+                <span class="type-count hidro">${counts.hidro}</span>
               </div>
             </div>
           </div>
 
           <!-- Representation Info Box -->
           <div class="eje-detail-callout">
-            <strong>${cfg.name}</strong> representa el <strong>${cfg.pct}%</strong> de las estaciones activas de la red
+            <strong>${cfg.name}</strong> representa el <strong>${counts.pct}%</strong> de las estaciones activas de la red
           </div>
 
           <!-- Bottom CTA Button -->
@@ -479,7 +378,7 @@ export async function initHomeStationsMap() {
   showLoading(true);
   try {
     renderEjesPolygons();
-    currentEstaciones = await fetchEstaciones();
+    currentEstaciones = await estacionesPromise;
 
     // Conteos por eje calculados con las estaciones de la API
     const liveCounts = {};
@@ -494,15 +393,14 @@ export async function initHomeStationsMap() {
       else if (est.tipo === 'Hidrológica') liveCounts[key].hidro++;
     });
 
-    // Actualizar EJES_CONFIG con los conteos de la API
+    // Conteos por eje de la API (EJES_CONFIG queda solo como configuración visual)
     const totalGlobal = currentEstaciones.length;
     Object.keys(EJES_CONFIG).forEach(k => {
       if (liveCounts[k]) {
-        EJES_CONFIG[k].total = liveCounts[k].total;
-        EJES_CONFIG[k].meteo = liveCounts[k].meteo;
-        EJES_CONFIG[k].pluvio = liveCounts[k].pluvio;
-        EJES_CONFIG[k].hidro = liveCounts[k].hidro;
-        EJES_CONFIG[k].pct = totalGlobal ? Math.round((liveCounts[k].total / totalGlobal) * 100) : 0;
+        ejeCounts[k] = {
+          ...liveCounts[k],
+          pct: totalGlobal ? Math.round((liveCounts[k].total / totalGlobal) * 100) : 0
+        };
       }
     });
 

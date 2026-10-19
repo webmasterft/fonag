@@ -3,20 +3,22 @@
  * Conecta al endpoint /api/sedc/telemetria/consulta autenticado con SEDC FONAG.
  * Sin datos simulados: si la API falla se devuelve un error para mostrarlo en la página.
  */
+import { API_ERROR_MESSAGE } from '../atoms/api-error.js';
 
 /**
  * Consulta las lecturas telemétricas reales para una estación y fecha de inicio.
  * Si la API responde con éxito, formatea las series de cada sensor.
  * Si la API no responde o no hay datos, retorna estado vacío sin simular valores.
  * 
+ * SEDC only accepts the start date (`inicio`): there is no end date parameter.
+ *
  * @param {Object} estacion Objeto estación (incluye id, codigo, nombre, tipo)
- * @param {string} fechaInicio 'YYYY-MM-DD'
- * @param {string} fechaFin 'YYYY-MM-DD'
+ * @param {string} fechaInicio 'YYYY-MM-DD' (obligatoria)
  * @returns {Promise<Object>} { variables: Array, seriesByVar: Object, hasData: boolean, error?: string }
  */
-export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', fechaFin = '2026-09-03') {
+export async function fetchTelemetriaReal(estacion, fechaInicio) {
   try {
-    const cleanStartDate = (fechaInicio || '2026-09-01').substring(0, 10);
+    const cleanStartDate = String(fechaInicio || '').substring(0, 10);
     const res = await fetch('/api/sedc/telemetria/consulta', {
       method: 'POST',
       headers: {
@@ -41,7 +43,7 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
           const item = data[key];
           if (!item) return;
 
-          const varNombre = item.var_nombre || 'Variable';
+          const varNombre = item.var_nombre || '';
           const varUnidad = item.var_unidad || '';
           // Wind (velocidad/direccion) has no "valor": its speed feeds the table and CSV
           const isWind = item.datos && Array.isArray(item.datos.velocidad);
@@ -91,16 +93,10 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
         hasData: false,
         variables: [],
         seriesByVar: {},
-        error: 'No hay mediciones telemétricas registradas para esta estación en las fechas seleccionadas.'
-      };
-    } else {
-      return {
-        hasData: false,
-        variables: [],
-        seriesByVar: {},
-        error: `Error al consultar la API del SEDC (${res.status}).`
+        error: 'No hay mediciones telemétricas registradas para esta estación desde la fecha seleccionada.'
       };
     }
+    console.warn('[SEDC Live Telemetry] HTTP', res.status);
   } catch (err) {
     console.warn('[SEDC Live Telemetry] Error de conexión:', err);
   }
@@ -110,7 +106,8 @@ export async function fetchTelemetriaReal(estacion, fechaInicio = '2026-09-01', 
     hasData: false,
     variables: [],
     seriesByVar: {},
-    error: 'Error en el API, intenta más tarde.'
+    apiError: true,
+    error: API_ERROR_MESSAGE
   };
 }
 

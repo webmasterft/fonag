@@ -91,10 +91,10 @@
         <span class="active">Estaciones</span>
       </nav>
 
-      <!-- Header Section: 61 estaciones activas + Red de Monitoreo + Pills -->
+      <!-- Header Section: estaciones activas (from the API) + Red de Monitoreo + Pills -->
       <div class="estaciones-header-wrapper">
         <div class="estaciones-header-left">
-          <span class="estaciones-count-badge" id="estaciones-total-count">61 estaciones activas</span>
+          <span class="estaciones-count-badge" id="estaciones-total-count">- estaciones activas</span>
           <h1 class="estaciones-title">Red de Monitoreo Hidrometeorológico FONAG</h1>
           <div class="estaciones-title-underline" aria-hidden="true"></div>
         </div>
@@ -102,15 +102,15 @@
         <div class="estaciones-header-stats" role="group" aria-label="Filtrar por tipo rápido">
           <button type="button" class="estaciones-stat-pill" data-tipo="Meteorológica">
             <span class="estaciones-stat-dot meteo"></span>
-            <span>Meteorológica (16)</span>
+            <span>Meteorológica (-)</span>
           </button>
           <button type="button" class="estaciones-stat-pill" data-tipo="Pluviométrica">
             <span class="estaciones-stat-dot pluvio"></span>
-            <span>Pluviométrica (24)</span>
+            <span>Pluviométrica (-)</span>
           </button>
           <button type="button" class="estaciones-stat-pill" data-tipo="Hidrológica">
             <span class="estaciones-stat-dot hidro"></span>
-            <span>Hidrológica (21)</span>
+            <span>Hidrológica (-)</span>
           </button>
         </div>
       </div>
@@ -196,7 +196,7 @@
       <div class="estaciones-table-card">
         <!-- Table Toolbar: Counter + Buttons -->
         <div class="estaciones-table-toolbar">
-          <span class="estaciones-found-counter" id="estaciones-found-count">61 estaciones encontradas</span>
+          <span class="estaciones-found-counter" id="estaciones-found-count">- estaciones encontradas</span>
           <div class="estaciones-toolbar-actions">
             <button type="button" class="btn-columnas-dropdown">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -281,7 +281,7 @@
         <!-- Table Card Footer Pagination -->
         <div class="estaciones-pagination-bar">
           <div class="pagination-page-size">
-            <span id="pagination-range-text">Mostrando <strong>1 &ndash; 10</strong> de <strong>61</strong> resultados por página:</span>
+            <span id="pagination-range-text">Mostrando <strong>-</strong> de <strong>-</strong> resultados por página:</span>
             <select id="select-page-size" class="select-page-size" aria-label="Resultados por página">
               <option value="10" selected>10</option>
               <option value="20">20</option>

@@ -62,7 +62,7 @@
   font: 500 14px/20px 'Inter', sans-serif;
   color: #475569;
   margin: 0;
-  max-width: 457px;
+  width: 100%;
 }
 
 /* Year Control Bar */
@@ -256,13 +256,17 @@
   color: #334155;
 }
 
-.filter-counter-wrap {
+/* Stations counter above the cards column (same as periodo) */
+.anuario-counter-wrap {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+  padding: 0 4px;
 }
 
-.filter-counter-text {
-  font-size: 15px;
+.anuario-counter-text {
+  font-size: 14px;
   font-weight: 800;
   color: #242857;
 }
@@ -501,8 +505,9 @@
   background-color: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 1280px;
+  /* Same width for every "Ver datos" modal: 90% of the viewport */
+  width: 90vw;
+  max-width: 90vw;
   max-height: 92vh;
   display: flex;
   flex-direction: column;
@@ -770,16 +775,35 @@
   background-color: #f8fafc;
 }
 
-/* Charts view: one figure per cell, two columns when there is room */
-.anuario-sedc-graphs {
+/* Charts view (same as SEDC): table on the left, its figure on the right; blocks stacked */
+.anuario-sedc-block {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 1.5rem;
+  align-items: center;
+}
+
+.anuario-sedc-block.is-full {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.anuario-sedc-wind-graphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .anuario-sedc-graph {
   width: 100%;
   min-height: 400px;
+}
+
+/* Narrow screens: the figure goes below its table */
+@media (max-width: 900px) {
+  .anuario-sedc-block {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .anuario-sedc-empty {

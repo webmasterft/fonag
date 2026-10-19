@@ -2,8 +2,10 @@ import https from 'https';
 
 /**
  * Shared SEDC helpers for the Vercel Serverless Functions (files under api/_lib are not routes).
- * Mirrors the authenticated proxy that vite.config.js provides in development.
- * Credentials come only from the Vercel environment variables SEDC_USERNAME / SEDC_PASSWORD.
+ * vite.config.js reuses these same functions (and the api/*.js handlers) as the development proxy.
+ * Credentials come only from the environment variables SEDC_USERNAME / SEDC_PASSWORD
+ * (Vercel Environment Variables in production, .env in development).
+ * No CORS headers: the portal calls these functions from the same origin only.
  */
 
 const SESSION_TTL_MS = 1000 * 60 * 30;
@@ -16,15 +18,6 @@ export function getConfig() {
     username: clean(process.env.SEDC_USERNAME),
     password: clean(process.env.SEDC_PASSWORD),
   };
-}
-
-/**
- * Agrega headers CORS para permitir peticiones desde cualquier origen o preview de Vercel.
- */
-export function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization');
 }
 
 /**
@@ -74,7 +67,7 @@ export async function getSedcSession() {
     const missing = [];
     if (!username) missing.push('SEDC_USERNAME');
     if (!password) missing.push('SEDC_PASSWORD');
-    console.error(`[SEDC] Variables de entorno faltantes en Vercel: ${missing.join(', ')}`);
+    console.error(`[SEDC] Variables de entorno faltantes: ${missing.join(', ')}`);
     return null;
   }
 
@@ -184,7 +177,6 @@ export function parseBody(req) {
 
 /** Sends the SEDC JSON response through, or 502 when the session could not be created. */
 export function sendJson(res, sedcResponse) {
-  setCorsHeaders(res);
   if (!sedcResponse) {
     const { username, password } = getConfig();
     let msg = 'No se pudo autenticar con SEDC.';
@@ -192,9 +184,9 @@ export function sendJson(res, sedcResponse) {
       const missing = [];
       if (!username) missing.push('SEDC_USERNAME');
       if (!password) missing.push('SEDC_PASSWORD');
-      msg = `Variables no configuradas en Vercel: ${missing.join(', ')}. Recuerda desplegar nuevamente tras agregarlas.`;
+      msg = `Variables no configuradas: ${missing.join(', ')}. En Vercel, recuerda desplegar nuevamente tras agregarlas.`;
     } else {
-      msg = 'SEDC rechazó las credenciales configuradas en Vercel. Verifica usuario y contraseña.';
+      msg = 'No se pudo iniciar sesión en SEDC con las credenciales configuradas. Verifica usuario y contraseña.';
     }
     res.status(502).json({ error: msg });
     return;
@@ -205,11 +197,6 @@ export function sendJson(res, sedcResponse) {
 }
 
 export function methodGuard(req, res, method) {
-  setCorsHeaders(res);
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return false;
-  }
   if (req.method === method) return true;
   res.status(405).json({ error: 'Method Not Allowed' });
   return false;

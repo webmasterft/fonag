@@ -3,7 +3,8 @@
  * Renders the response of POST /hydro_annual exactly as the Django app does:
  * the monthly tables and the Plotly figure(s) sent by the server, shown in separate views.
  */
-import { loadPlotly } from '../../atoms/plotly-loader.js';
+import { loadPlotly, normalizeSedcTraces } from '../../atoms/plotly-loader.js';
+import { escapeHtml } from '../../atoms/escape-html.js';
 
 const WIND_DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
 const RAD_HOURS = Array.from({ length: 14 }, (_, i) => String(i + 5)); // 5..18 h
@@ -16,11 +17,9 @@ function formatValue(value) {
   return String(value);
 }
 
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+/** Header titles: escaped, but the <br> line breaks SEDC (and the static headers) use are kept. */
+function formatTitle(title) {
+  return escapeHtml(title).replace(/&lt;br\s*\/?&gt;/gi, '<br>');
 }
 
 /**
@@ -110,9 +109,9 @@ function getRadiationColumns(block, factor) {
 }
 
 function buildTable({ headers, fields }, rows) {
-  // Header titles come from SEDC and may contain <br>; everything else is escaped
+  // Header titles come from SEDC and may contain <br>: escaped except for those line breaks
   const thead = headers.map((row) => `<tr>${row.map((c) => `
-    <th${c.colspan ? ` colspan="${c.colspan}"` : ''}${c.rowspan ? ` rowspan="${c.rowspan}"` : ''}>${c.title ?? ''}</th>`).join('')}
+    <th${c.colspan ? ` colspan="${c.colspan}"` : ''}${c.rowspan ? ` rowspan="${c.rowspan}"` : ''}>${formatTitle(c.title)}</th>`).join('')}
   </tr>`).join('');
 
   const tbody = (rows || []).map((r) => `<tr>${fields.map((f) => `<td>${escapeHtml(formatValue(r[f]))}</td>`).join('')}</tr>`).join('');
@@ -164,7 +163,7 @@ export async function renderAnuarioSedc(container, data, { view = 'charts' } = {
     const cleanAnnotations = (figure.layout?.annotations || []).filter(
       (a) => !/acumulado/i.test(a.text || '')
     );
-    const cleanData = (figure.data || []).map((t) => {
+    const cleanData = normalizeSedcTraces(figure.data).map((t) => {
       if (/acumulado/i.test(t.name || '')) {
         return { ...t, showlegend: false };
       }
@@ -221,25 +220,50 @@ function buildTablesView(entries) {
   return { markup, figures: [] };
 }
 
-/** "Gráficas estadísticas": only the Plotly figures sent by SEDC (RAD has none). */
+/**
+ * "Gráficas estadísticas": same layout as SEDC's hydro_annual page — one block per variable,
+ * its monthly table on the left and its figure on the right, blocks stacked vertically.
+ * Wind (VVI) shows its table full width with the three figures below; RAD has tables only.
+ */
 function buildChartsView(entries) {
   const figures = []; // [{ id, figure }]
 
-  entries.forEach(([variable, block]) => {
-    const graph = block.graph;
-    if (!graph) return;
-    if (variable === 'VVI') {
-      ['speed', 'frequency', 'both']
-        .filter((f) => graph[f])
-        .forEach((f) => figures.push({ id: `anuario-graph-${variable}-${f}`, figure: graph[f] }));
-      return;
+  const markup = entries.map(([variable, block]) => {
+    if (variable === 'RAD') {
+      return ['maximum', 'minimum']
+        .filter((factor) => block[factor])
+        .map((factor) => `
+          <section class="anuario-sedc-block is-full">
+            <div class="anuario-sedc-table-wrap">${buildTable(getRadiationColumns(block[factor], factor), block[factor].table)}</div>
+          </section>
+        `).join('');
     }
-    if (graph.data) figures.push({ id: `anuario-graph-${variable}`, figure: graph });
-  });
 
-  const markup = figures.length
-    ? `<div class="anuario-sedc-graphs">${figures.map(({ id }) => `<div class="anuario-sedc-graph" id="${id}"></div>`).join('')}</div>`
-    : '';
+    const table = buildTable(getColumns(variable, block), block.table);
+    const graph = block.graph;
+
+    if (variable === 'VVI') {
+      const windIds = graph ? ['speed', 'frequency', 'both'].filter((f) => graph[f]) : [];
+      windIds.forEach((f) => figures.push({ id: `anuario-graph-${variable}-${f}`, figure: graph[f] }));
+      return `
+        <section class="anuario-sedc-block is-full">
+          <div class="anuario-sedc-table-wrap">${table}</div>
+          ${windIds.length ? `<div class="anuario-sedc-wind-graphs">
+            ${windIds.map((f) => `<div class="anuario-sedc-graph" id="${escapeHtml(`anuario-graph-${variable}-${f}`)}"></div>`).join('')}
+          </div>` : ''}
+        </section>
+      `;
+    }
+
+    const hasGraph = Boolean(graph?.data);
+    if (hasGraph) figures.push({ id: `anuario-graph-${variable}`, figure: graph });
+    return `
+      <section class="anuario-sedc-block${hasGraph ? '' : ' is-full'}">
+        <div class="anuario-sedc-table-wrap">${table}</div>
+        ${hasGraph ? `<div class="anuario-sedc-graph" id="${escapeHtml(`anuario-graph-${variable}`)}"></div>` : ''}
+      </section>
+    `;
+  }).join('');
 
   return { markup, figures };
 }

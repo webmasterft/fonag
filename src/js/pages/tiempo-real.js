@@ -7,7 +7,8 @@
 import { fetchEstaciones } from '../services/estaciones-service.js';
 import { fetchTelemetriaReal } from '../services/telemetria-service.js';
 import { exportarSerieCsv } from '../services/periodo-service.js';
-import { showApiError } from '../atoms/api-error.js';
+import { showApiError, apiErrorHtml } from '../atoms/api-error.js';
+import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
 import { buildTelemetriaFigure } from '../molecules/charts/telemetria-figure.js';
@@ -16,17 +17,34 @@ import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
 import { initPortalHeader } from '../organisms/portal-header.js';
 
+/**
+ * Today's date in local time (YYYY-MM-DD): default start date of the telemetry query.
+ * SEDC /ajax/telemetria/consulta only accepts `inicio` (there is no end date).
+ * @returns {string}
+ */
+function todayLocal() {
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${today.getFullYear()}-${mm}-${dd}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   initPortalHeader();
   initGlobalHttpLoader();
   initThemeToggle();
+
+  // The date is set before the datepicker starts, since it reads the initial value
+  const inputFechaInicio = document.getElementById('input-tr-fecha-inicio');
+  if (inputFechaInicio) {
+    inputFechaInicio.value = todayLocal();
+    inputFechaInicio.max = todayLocal();
+  }
   initCustomDatePickers();
 
   let activeEje = 'ALL';
 
   // DOM Elements
-  const inputFechaInicio = document.getElementById('input-tr-fecha-inicio');
-  const inputFechaFin = document.getElementById('input-tr-fecha-fin');
   const btnLimpiar = document.getElementById('btn-tr-limpiar');
 
   const inputCodigo = document.getElementById('input-tr-codigo');
@@ -62,24 +80,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error('[TiempoReal] Error cargando estaciones:', err);
     showApiError(cardsContainer);
-    if (counterEl) counterEl.textContent = '';
+    if (counterEl) counterEl.textContent = '-';
     return;
   }
+  // The number of variables per station is only known after querying its telemetry
   telemetriaEstaciones = rawEstaciones
     .filter((est) => Boolean(est.transmision))
-    .map((est) => {
-      const ejeCalc = est.eje_trabajo;
-      
-      let varCount = 1;
-      if (est.tipo?.includes('Meteorológica')) varCount = 6;
-      else if (est.tipo?.includes('Hidrológica')) varCount = 3;
-
-      return {
-        ...est,
-        ejeCalculado: ejeCalc,
-        varCount
-      };
-    });
+    .map((est) => ({
+      ...est,
+      ejeCalculado: est.eje_trabajo
+    }));
 
   // 2. Renderizar inicial
   applyFilters();
@@ -92,10 +102,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     inputFechaInicio.addEventListener('change', applyFilters);
     inputFechaInicio.addEventListener('input', applyFilters);
   }
-  if (inputFechaFin) {
-    inputFechaFin.addEventListener('change', applyFilters);
-    inputFechaFin.addEventListener('input', applyFilters);
-  }
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
   if (selectTipo) selectTipo.addEventListener('change', applyFilters);
@@ -103,8 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Botón Limpiar
   if (btnLimpiar) {
     btnLimpiar.addEventListener('click', () => {
-      if (inputFechaInicio) inputFechaInicio.value = '2026-09-01';
-      if (inputFechaFin) inputFechaFin.value = '2026-09-03';
+      if (inputFechaInicio) inputFechaInicio.value = todayLocal();
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
       if (selectTipo) selectTipo.value = '';
@@ -128,14 +133,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!modal) return;
     currentModalEstacion = estacion;
 
-    const sDate = inputFechaInicio?.value || '2026-09-01';
-    const eDate = inputFechaFin?.value || '2026-09-03';
+    const sDate = inputFechaInicio?.value || todayLocal();
 
     // Mostrar estado de carga en el modal
     if (modalHeader) {
       modalHeader.innerHTML = `
         <div style="padding: 1rem 0; text-align: center;">
-          <h3 style="margin: 0; color: #242857;">Cargando datos en vivo de ${estacion.nombre}...</h3>
+          <h3 style="margin: 0; color: #242857;">Cargando datos en vivo de ${displayValue(estacion.nombre || estacion.codigo)}...</h3>
         </div>
       `;
     }
@@ -147,10 +151,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.style.overflow = 'hidden';
 
     // Consultar telemetría real desde la API del SEDC
-    currentTelemetryResult = await fetchTelemetriaReal(estacion, sDate, eDate);
+    currentTelemetryResult = await fetchTelemetriaReal(estacion, sDate);
 
     if (!currentTelemetryResult.hasData || currentTelemetryResult.variables.length === 0) {
-      renderModalEmptyState(estacion, currentTelemetryResult.error || 'No hay datos telemétricos disponibles para el período seleccionado.', sDate, eDate);
+      renderModalEmptyState(estacion, currentTelemetryResult, sDate);
       return;
     }
 
@@ -160,21 +164,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateModalView();
   }
 
-  function renderModalEmptyState(estacion, message, sDate, eDate) {
+  function renderModalEmptyState(estacion, telResult, sDate) {
     if (modalHeader) {
       modalHeader.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="periodo-station-pill ${estacion.tipo === 'Hidrológica' ? 'tipo-hidro' : (estacion.tipo === 'Pluviométrica' ? 'tipo-pluvio' : 'tipo-meteo')}">
-              ${estacion.tipo}
+              ${displayValue(estacion.tipo)}
             </span>
-            <span style="font-size: 13px; font-weight: 700; color: #64748b;">${estacion.codigo}</span>
+            <span style="font-size: 13px; font-weight: 700; color: #64748b;">${displayValue(estacion.codigo)}</span>
           </div>
           <button id="btn-tr-close-modal" style="background: transparent; border: none; font-size: 24px; color: #64748b; cursor: pointer;">&times;</button>
         </div>
-        <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${estacion.codigo} - ${estacion.nombre}</h3>
+        <h3 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #242857;">${displayValue(estacion.codigo)} - ${displayValue(estacion.nombre)}</h3>
         <p style="margin: 0; font-size: 13px; color: #64748b;">
-          Eje: <strong>${estacion.ejeCalculado}</strong> &middot; Periodo: ${sDate.replace('T', ' ')} a ${eDate.replace('T', ' ')}
+          Eje: <strong>${displayValue(estacion.ejeCalculado)}</strong> &middot; Desde ${escapeHtml(sDate.replace('T', ' '))}
         </p>
       `;
       modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
@@ -188,7 +192,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    if (tablePreviewContainer) {
+    if (tablePreviewContainer && telResult.apiError) {
+      // The API failed: shared error state (not "no records")
+      tablePreviewContainer.innerHTML = apiErrorHtml();
+    } else if (tablePreviewContainer) {
+      const message = telResult.error || 'No hay datos telemétricos disponibles para el período seleccionado.';
       tablePreviewContainer.innerHTML = `
         <div style="padding: 3rem 1.5rem; text-align: center; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1;">
           <svg style="margin: 0 auto 12px; color: #94a3b8;" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -197,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px; font-weight: 700;">Sin registros telemétricos</h4>
-          <p style="margin: 0; color: #64748b; font-size: 13.5px; max-width: 480px; margin: 0 auto;">${message}</p>
+          <p style="margin: 0; color: #64748b; font-size: 13.5px; max-width: 480px; margin: 0 auto;">${escapeHtml(message)}</p>
         </div>
       `;
     }
@@ -210,13 +218,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       chartCanvas.parentElement.style.display = 'block';
     }
 
-    const sDate = inputFechaInicio?.value || '2026-09-01';
-    const eDate = inputFechaFin?.value || '2026-09-03';
+    const sDate = inputFechaInicio?.value || todayLocal();
 
     const currentVar = currentTelemetryResult.variables.find((v) => v.id === activeVariableId) || currentTelemetryResult.variables[0];
     const series = currentTelemetryResult.seriesByVar[currentVar.id] || [];
 
     const varConfig = {
+      code: currentVar.code,
       name: currentVar.name,
       unit: currentVar.unit,
       chartType: currentVar.code === 'PRE' ? 'bar' : 'line',
@@ -226,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Same Plotly figure as SEDC (data, U S / U i thresholds, Máx, mín, ACU, last reading)
     series.figure = buildTelemetriaFigure(currentVar.id, series.raw);
 
-    renderModalHeader(currentModalEstacion, varConfig, sDate, eDate, series, currentTelemetryResult);
+    renderModalHeader(currentModalEstacion, varConfig, sDate, series, currentTelemetryResult);
     renderPeriodoChart(chartCanvas, series, varConfig);
     renderTablePreview(series, varConfig);
   }
@@ -240,14 +248,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentTelemetryResult = null;
   }
 
-  function renderModalHeader(estacion, varCfg, sDate, eDate, series, telResult) {
+  function renderModalHeader(estacion, varCfg, sDate, series, telResult) {
     if (!modalHeader) return;
-
-    // Only real SEDC data reaches this point (no simulated mode)
-    const sourceBadge = `<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 9999px;">
-           <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
-           API SEDC EN VIVO
-         </span>`;
 
     // Botones selectores de variables disponibles recibidas del backend
     const varButtons = telResult.variables.map((v) => {
@@ -256,7 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <button
           type="button"
           class="btn-var-selector"
-          data-var-id="${v.id}"
+          data-var-id="${escapeHtml(v.id)}"
           style="
             background: ${isActive ? '#242857' : '#ffffff'};
             color: ${isActive ? '#ffffff' : '#334155'};
@@ -269,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             transition: all 0.15s ease;
           "
         >
-          ${v.name} (${v.unit || 'n/a'}) [${v.count}]
+          ${displayValue(v.name)} (${displayValue(v.unit)}) [${v.count}]
         </button>
       `;
     }).join(' ');
@@ -278,28 +280,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
-    const ejeName = estacion.ejeCalculado || estacion.cuenca || 'Pita';
-    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
-    const stationName = estacion.nombre || estacion.codigo || 'Estación';
+    // Only letters reach the class name (tipo comes from the API)
+    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
+    // altura already comes formatted by the service ("N m"); missing values show '-'
+    const ejeName = displayValue(estacion.ejeCalculado);
+    const alturaVal = displayValue(estacion.altura);
+    const stationName = displayValue(estacion.nombre || estacion.codigo);
+    const unit = escapeHtml(varCfg.unit);
     // Calcular estadísticas de la serie activa (Máximo, Mínimo y Último dato)
     const validValues = series.map((s) => s.valor).filter((v) => typeof v === 'number' && !isNaN(v));
-    const maxVal = validValues.length > 0 ? Math.max(...validValues) : 'N/D';
-    const minVal = validValues.length > 0 ? Math.min(...validValues) : 'N/D';
+    const maxVal = validValues.length > 0 ? `${Math.max(...validValues)} ${unit}` : '-';
+    const minVal = validValues.length > 0 ? `${Math.min(...validValues)} ${unit}` : '-';
     const lastPoint = series.length > 0 ? series[series.length - 1] : null;
-    const lastVal = lastPoint ? `${lastPoint.valor} ${varCfg.unit}` : 'N/D';
-    const lastTime = lastPoint ? lastPoint.fecha : 'N/D';
+    const lastVal = lastPoint ? `${displayValue(lastPoint.valor)} ${unit}` : '-';
+    const lastTime = lastPoint ? displayValue(lastPoint.fecha) : '-';
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">Estación ${estacion.codigo} - ${stationName}</h3>
+            <h3 class="modal-station-title">Estación ${displayValue(estacion.codigo)} - ${stationName}</h3>
           </div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>
-            <span>${estacion.tipo || 'Hidrológica'}</span>
+            <span>${displayValue(estacion.tipo)}</span>
           </div>
         </div>
         <button type="button" class="btn-modal-close-x" id="btn-tr-close-modal" aria-label="Cerrar modal">X</button>
@@ -315,19 +320,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase;">Valor Máximo</div>
-          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${maxVal} ${varCfg.unit}</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${maxVal}</div>
           <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
         </div>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase;">Valor Mínimo</div>
-          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${minVal} ${varCfg.unit}</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${minVal}</div>
           <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
         </div>
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Rango: ${sDate.replace('T', ' ')} a ${eDate.replace('T', ' ')}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Desde ${escapeHtml(sDate.replace('T', ' '))}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-tr-csv">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -347,7 +352,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     modalHeader.querySelector('#btn-tr-close-modal')?.addEventListener('click', closeModal);
     modalHeader.querySelector('#btn-modal-tr-csv')?.addEventListener('click', () => {
-      exportarSerieCsv(estacion, varCfg.code || 'PRE', series, 'tiempo-real');
+      // Client CSV of the telemetry already received from SEDC (there is no official export)
+      exportarSerieCsv(estacion, varCfg.code, series, 'tiempo-real');
     });
 
     modalHeader.querySelectorAll('.btn-var-selector').forEach((btn) => {
@@ -368,7 +374,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           Datos en tiempo real (mostrando ${preview.length} de ${series.length} registros)
         </h4>
         <span style="font-size: 11.5px; color: #64748b;">
-          Variable: <strong>${varCfg.name}</strong>
+          Variable: <strong>${displayValue(varCfg.name)}</strong>
         </span>
       </div>
       <div style="overflow-x: auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -376,15 +382,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           <thead>
             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Fecha / Hora</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">${varCfg.name} (${varCfg.unit})</th>
+              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">${displayValue(varCfg.name)} (${displayValue(varCfg.unit)})</th>
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Estado / Transmisión</th>
             </tr>
           </thead>
           <tbody>
             ${preview.map((p) => `
               <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${p.fecha}</td>
-                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor}</td>
+                <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${displayValue(p.fecha)}</td>
+                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${displayValue(p.valor)}</td>
                 <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">
                   Dato Crudo (Telemetría SEDC)
                 </td>
@@ -404,11 +410,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();
     const qTipo = selectTipo ? selectTipo.value : '';
 
-    const eDate = inputFechaFin?.value || '2026-09-03';
+    const sDate = inputFechaInicio?.value || todayLocal();
 
     // Filtrar lista de estaciones telemétricas
     const filtered = telemetriaEstaciones.filter((est) => {
-      const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
+      const matchPeriod = !est.fechaInicio || est.fechaInicio <= sDate;
       const matchEje = (activeEje === 'ALL') || (est.ejeCalculado && est.ejeCalculado.toUpperCase() === activeEje.toUpperCase());
       const matchTipo = !qTipo || est.tipo.toLowerCase() === qTipo.toLowerCase();
       const matchCodigo = !qCodigo || est.codigo.toLowerCase().includes(qCodigo);
@@ -419,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Actualizar texto contador
     if (counterEl) {
-      counterEl.textContent = `${filtered.length} estaciones con precipitación`;
+      counterEl.textContent = `${filtered.length} estaciones con telemetría`;
     }
 
     // Actualizar marcadores en el mapa
@@ -454,17 +460,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     cardsContainer.innerHTML = list.map((est) => {
       return `
-        <article class="tiempo-real-station-card" id="card-${est.codigo}" data-codigo="${est.codigo}">
+        <article class="tiempo-real-station-card" id="card-${escapeHtml(est.codigo)}" data-codigo="${escapeHtml(est.codigo)}">
           <div class="tiempo-real-card-header">
             <span class="tiempo-real-station-dot"></span>
             <div class="tiempo-real-station-info">
-              <span class="tiempo-real-station-name">${est.nombre}</span>
-              <span class="tiempo-real-station-code">${est.codigo}</span>
-              <span class="tiempo-real-station-meta">${est.ejeCalculado} &bull; ${est.varCount} var.</span>
+              <span class="tiempo-real-station-name">${displayValue(est.nombre)}</span>
+              <span class="tiempo-real-station-code">${displayValue(est.codigo)}</span>
+              <span class="tiempo-real-station-meta">${displayValue(est.ejeCalculado)}</span>
             </div>
           </div>
           <div class="tiempo-real-station-actions">
-            <button class="btn-card-ver-datos-tr" data-codigo="${est.codigo}">
+            <button class="btn-card-ver-datos-tr" data-codigo="${escapeHtml(est.codigo)}">
               <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
               Ver datos
             </button>

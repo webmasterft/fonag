@@ -4,6 +4,7 @@
  * /ajax/telemetria/consulta item: data trace, upper/lower thresholds (U S / U i),
  * Máx, mín, Acumulado (precipitation) and the last reading in the legend.
  */
+import { escapeHtml } from '../../atoms/escape-html.js';
 
 const PRECIPITATION_VAR_ID = '1';
 const WIND_VAR_ID = '405';
@@ -25,7 +26,8 @@ const thresholdLine = (name, value, x0, x1, color) => ({
 });
 
 function lastReadingText(value, unit, fecha = '') {
-  return `Último: <b>${value} ${unit}</b><br>${fecha.slice(0, 10)} ${fecha.slice(11, 19)}`;
+  // Plotly renders legend names as pseudo-HTML: API strings are escaped
+  return `Último: <b>${escapeHtml(value)} ${escapeHtml(unit)}</b><br>${escapeHtml(fecha.slice(0, 10))} ${escapeHtml(fecha.slice(11, 19))}`;
 }
 
 function buildSeriesFigure(item, isPrecipitation) {

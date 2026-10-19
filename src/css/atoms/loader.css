@@ -47,7 +47,7 @@
   pointer-events: none;
   opacity: 0;
   transform: translateY(16px) scale(0.96);
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
 }
 
 .fonag-global-loader.is-active {
@@ -132,6 +132,13 @@
   pointer-events: none;
 }
 
+/* Static variant: written in the page HTML so it is visible from the first paint,
+   before the page JS runs; the JS replaces it with the data or the API error */
+.fonag-inline-loader.is-static {
+  position: static;
+  padding: 2.5rem 0;
+}
+
 /* Keyframes */
 @keyframes fonag-spin {
   0% {
@@ -151,21 +158,6 @@
     transform: scale(1.15);
     opacity: 1;
   }
-}
-
-/* Dark Mode Adaptation */
-[data-theme="dark"] .fonag-loader-card {
-  background: rgba(30, 35, 71, 0.92);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .fonag-loader-title {
-  color: #ffffff;
-}
-
-[data-theme="dark"] .fonag-loader-subtitle {
-  color: #94a3b8;
 }
 
 /* API error state: shown instead of any fallback data when SEDC fails */
@@ -194,13 +186,4 @@
   color: #b91c1c;
   font-size: 13px;
   font-weight: 800;
-}
-
-[data-theme="dark"] .fonag-api-error {
-  color: #fca5a5;
-}
-
-[data-theme="dark"] .fonag-api-error-icon {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
 }

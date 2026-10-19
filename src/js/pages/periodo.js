@@ -10,23 +10,23 @@ import {
   loadEstacionesPorVariable,
   estacionTieneVariable,
   fetchSeriesDeTiempo,
-  downloadPeriodoExport,
-  exportarSerieCsv
+  downloadPeriodoExport
 } from '../services/periodo-service.js';
 import { showApiError, API_ERROR_MESSAGE } from '../atoms/api-error.js';
+import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
 import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
-import { initGlobalHttpLoader } from '../atoms/global-loader.js';
+import { initGlobalHttpLoader, showInlineLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
 import { initPortalHeader } from '../organisms/portal-header.js';
 
-/**
- * Rango de fechas por defecto: 1 de enero del año actual → hoy, en hora local.
- * @returns {{ start: string, end: string }} Fechas en formato YYYY-MM-DD
- */
 const DEFAULT_VARIABLE = 'PRE';
 
+/**
+ * Rango de fechas por defecto: el día de hoy (inicio = fin = hoy), en hora local.
+ * @returns {{ start: string, end: string }} Fechas en formato YYYY-MM-DD
+ */
 function defaultRange() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tablePreviewContainer = document.getElementById('periodo-table-preview-container');
 
   let allEstaciones = [];
-  let currentModalEstacion = null;
 
   function updateSubhorarioWarning() {
     if (!warningSubhorarioEl) return;
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error('[Periodo] Error cargando estaciones:', err);
     showApiError(cardsContainer);
-    if (counterEl) counterEl.textContent = '';
+    if (counterEl) counterEl.textContent = '-';
     return;
   }
 
@@ -130,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (selectEje) {
     const ejesUnicos = Array.from(new Set(allEstaciones.map(e => e.eje_trabajo).filter(Boolean))).sort();
     selectEje.innerHTML = '<option value="">Todos los ejes</option>' +
-      ejesUnicos.map(eje => `<option value="${eje}">${eje}</option>`).join('');
+      ejesUnicos.map(eje => `<option value="${escapeHtml(eje)}">${escapeHtml(eje)}</option>`).join('');
   }
 
   // Catálogo de variables desde la API SEDC (por defecto PRE si existe)
@@ -138,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const variables = await loadVariables();
     if (selectVariable) {
       selectVariable.innerHTML = variables
-        .map((v) => `<option value="${v.code}">${v.label}</option>`)
+        .map((v) => `<option value="${escapeHtml(v.code)}">${escapeHtml(v.label)}</option>`)
         .join('');
       selectVariable.value = VARIABLES_CONFIG[DEFAULT_VARIABLE] ? DEFAULT_VARIABLE : (variables[0]?.code || '');
     }
@@ -146,6 +145,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error('[Periodo] Error cargando variables:', err);
     if (selectVariable) selectVariable.innerHTML = '<option value="">Variables no disponibles</option>';
+    // Without the variable catalog no station can be matched: show the API error
+    showApiError(cardsContainer);
+    if (counterEl) counterEl.textContent = '-';
+    return;
   }
 
   // 2. Renderizar inicial
@@ -194,10 +197,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Las estaciones por variable vienen de point_geojson: cargarlas antes de filtrar
   async function onVariableChange() {
     const code = selectVariable?.value;
+    // Loader over the cards while SEDC answers which stations measure the variable
+    const removeLoader = showInlineLoader(cardsContainer?.parentElement, { subtitle: 'Cargando estaciones de la variable' });
     try {
       await loadEstacionesPorVariable(code);
     } catch (err) {
       console.error('[Periodo] Error cargando estaciones de la variable:', err);
+      if (selectVariable?.value === code) {
+        showApiError(cardsContainer);
+        if (counterEl) counterEl.textContent = '-';
+      }
+      return;
+    } finally {
+      removeLoader();
     }
     if (selectVariable?.value === code) applyFilters();
   }
@@ -233,9 +245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function openModal(estacion) {
     if (!modal) return;
-    currentModalEstacion = estacion;
 
-    const varCode = selectVariable?.value || 'PRE';
+    const varCode = selectVariable?.value || '';
     const varCfg = VARIABLES_CONFIG[varCode] || { code: varCode, name: varCode, unit: '', chartType: 'line' };
     const sDate = inputFechaInicio?.value || defaultRange().start;
     const eDate = inputFechaFin?.value || defaultRange().end;
@@ -245,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
-    renderModalHeader(estacion, varCfg, sDate, eDate, freq, []);
+    renderModalHeader(estacion, varCfg, sDate, eDate, freq);
     // Loader de la app en el área del gráfico hasta que termine de dibujarse
     showPeriodoChartLoader(chartCanvas);
     if (tablePreviewContainer) tablePreviewContainer.innerHTML = '';
@@ -260,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    renderModalHeader(estacion, varCfg, sDate, eDate, freq, series);
+    renderModalHeader(estacion, varCfg, sDate, eDate, freq);
     if (!series.figure && series.length === 0) {
       // SEDC respondió sin registros para esa estación/variable/rango (no es un error de la API)
       destroyPeriodoChart();
@@ -280,17 +291,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     destroyPeriodoChart();
   }
 
-  function renderModalHeader(estacion, varCfg, sDate, eDate, freq, series) {
+  function renderModalHeader(estacion, varCfg, sDate, eDate, freq) {
     if (!modalHeader) return;
 
     const normalizedTipo = (estacion.tipo || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo}` : 'tipo-hidrologica';
-    const ejeName = estacion.eje_trabajo || estacion.cuenca || 'General';
-    const alturaVal = estacion.altura ? `${estacion.altura} m.s.n.m.` : '3889 m.s.n.m.';
-    const stationName = estacion.nombre || estacion.codigo || 'Tungurahua';
+    // Only letters reach the class name (tipo comes from the API)
+    const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
+    // altura already comes formatted by the service ("N m"); missing values show '-'
+    const ejeName = displayValue(estacion.eje_trabajo);
+    const alturaVal = displayValue(estacion.altura);
+    const stationName = displayValue(estacion.nombre || estacion.codigo);
 
     const FRECUENCIAS_FEMENINAS = {
       subhorario_validado: 'Subhoraria validada',
@@ -300,25 +313,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       mensual: 'Mensual',
       anual: 'Anual'
     };
-    const freqDisplay = FRECUENCIAS_FEMENINAS[freq] || (freq.charAt(0).toUpperCase() + freq.slice(1));
+    const freqDisplay = escapeHtml(FRECUENCIAS_FEMENINAS[freq] || (freq.charAt(0).toUpperCase() + freq.slice(1)));
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
         <div class="modal-header-left">
           <div class="modal-title-row">
             <span class="modal-title-dot"></span>
-            <h3 class="modal-station-title">Estación ${estacion.codigo} - ${stationName}</h3>
+            <h3 class="modal-station-title">Estación ${displayValue(estacion.codigo)} - ${stationName}</h3>
           </div>
           <div class="modal-type-pill ${tipoClass}">
             <span class="pill-dot"></span>
-            <span>${estacion.tipo || 'Hidrológica'}</span>
+            <span>${displayValue(estacion.tipo)}</span>
           </div>
         </div>
         <button type="button" class="btn-modal-close-x" id="btn-periodo-close-modal" aria-label="Cerrar modal">X</button>
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${sDate} - ${eDate} &bull; Frecuencia: ${freqDisplay}</p>
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${escapeHtml(sDate)} - ${escapeHtml(eDate)} &bull; Frecuencia: ${freqDisplay}</p>
         <button type="button" class="btn-modal-download-navy" id="btn-modal-periodo-csv">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -346,15 +359,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert('Aviso: Al consultar datos subhorarios validados con un rango mayor a 5 años, el proceso de descarga puede demorarse varios minutos debido al gran volumen de datos.');
       }
 
+      // Official SEDC export only: no client-side substitute when it fails
       try {
         await downloadPeriodoExport(estacion, varCfg.code, sDate, eDate, freq);
       } catch (err) {
-        console.warn('[Periodo] Descarga oficial falló, intentando fallback CSV:', err);
-        if (series && series.length > 0) {
-          exportarSerieCsv(estacion, varCfg.code, series, freq);
-        } else {
-          alert('No se pudo descargar los datos para el periodo seleccionado.');
-        }
+        console.error('[Periodo] Error en la descarga oficial de SEDC:', err);
+        alert(API_ERROR_MESSAGE);
       } finally {
         btnModalDownload.disabled = false;
         btnModalDownload.innerHTML = origText;
@@ -378,14 +388,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           <thead>
             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Fecha</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Valor (${varCfg.unit})</th>
+              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Valor (${escapeHtml(varCfg.unit)})</th>
             </tr>
           </thead>
           <tbody>
             ${preview.map((p) => `
               <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${p.fecha}</td>
-                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${p.valor ?? '-'}</td>
+                <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${displayValue(p.fecha)}</td>
+                <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${displayValue(p.valor)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -398,7 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    * Aplica los filtros reactivos y actualiza mapa, leyenda y tarjetas
    */
   function applyFilters() {
-    const varCode = selectVariable?.value || 'PRE';
+    const varCode = selectVariable?.value || '';
     const varCfg = VARIABLES_CONFIG[varCode] || { code: varCode, name: varCode, unit: '', chartType: 'line' };
 
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
@@ -406,7 +416,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qTipo = selectTipo ? selectTipo.value : '';
     const qEje = selectEje ? selectEje.value : '';
 
-    const sDate = inputFechaInicio?.value || defaultRange().start;
     const eDate = inputFechaFin?.value || defaultRange().end;
 
     // Conteos para leyenda flotante
@@ -415,7 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countHidro = 0;
 
     allEstaciones.forEach((est) => {
-      const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
+      const matchPeriod = !est.fechaInicio || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
       // Eje activo viene del mapa (click en polígono) O del select
       const matchMapEje = (activeEje === 'ALL') || (est.eje_trabajo && est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
@@ -424,7 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (matchVar && matchMapEje && matchSelectEje && matchPeriod) {
         if (est.tipo?.includes('Hidro')) countHidro++;
         else if (est.tipo?.includes('Pluvio')) countPluvio++;
-        else countMeteo++;
+        else if (est.tipo?.includes('Meteo')) countMeteo++;
       }
     });
 
@@ -434,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Filtrar lista completa
     const filtered = allEstaciones.filter((est) => {
-      const matchPeriod = !est.fechaInicio || est.fechaInicio === 'N/D' || est.fechaInicio <= eDate;
+      const matchPeriod = !est.fechaInicio || est.fechaInicio <= eDate;
       const matchVar = estacionTieneVariable(est, varCode);
       const matchMapEje = (activeEje === 'ALL') || (est.eje_trabajo && est.eje_trabajo.toUpperCase() === activeEje.toUpperCase());
       const matchSelectEje = !qEje || est.eje_trabajo === qEje;
@@ -492,28 +501,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         dotColor = '#8b5cf6';
       }
 
-      const fechaInicioStr = (est.fechaInicio && est.fechaInicio !== 'N/D') ? est.fechaInicio : 'N/D';
+      const codigoAttr = escapeHtml(est.codigo);
 
       return `
-        <article class="periodo-station-card" id="card-${est.codigo}" data-codigo="${est.codigo}">
+        <article class="periodo-station-card" id="card-${codigoAttr}" data-codigo="${codigoAttr}">
           <div class="periodo-station-card-header">
             <span class="periodo-station-dot" style="background-color: ${dotColor};"></span>
             <div class="periodo-station-info">
-              <span class="periodo-station-code">${est.codigo}</span>
-              <span class="periodo-station-name">${est.nombre}</span>
-              <span class="periodo-station-inicio">Inicio de operaciones: ${fechaInicioStr}</span>
+              <span class="periodo-station-code">${displayValue(est.codigo)}</span>
+              <span class="periodo-station-name">${displayValue(est.nombre)}</span>
+              <span class="periodo-station-inicio">Inicio de operaciones: ${displayValue(est.fechaInicio)}</span>
             </div>
           </div>
           <div class="periodo-station-pill ${pillClass}">
             <span class="pill-dot" style="background-color: ${dotColor};"></span>
-            ${est.tipo}
+            ${displayValue(est.tipo)}
           </div>
           <div class="periodo-station-actions">
-            <button class="btn-card-ver-datos-periodo" data-codigo="${est.codigo}">
+            <button class="btn-card-ver-datos-periodo" data-codigo="${codigoAttr}">
               <span class="icon-sprite icon-sprite-stats icon-white" aria-hidden="true"></span>
               Ver datos
             </button>
-            <button class="btn-card-descargar-periodo" data-codigo="${est.codigo}">
+            <button class="btn-card-descargar-periodo" data-codigo="${codigoAttr}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
@@ -556,21 +565,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Aviso: Al consultar datos subhorarios validados con un rango mayor a 5 años, el proceso de descarga puede demorarse varios minutos debido al gran volumen de datos.');
           }
 
+          // Official SEDC export only: no client-side substitute when it fails
           try {
             await downloadPeriodoExport(est, varCode, sDate, eDate, freq);
           } catch (err) {
-            console.warn('[Periodo] Descarga directa oficial falló, intentando fallback:', err);
-            try {
-              const series = await fetchSeriesDeTiempo(est, varCode, sDate, eDate, freq);
-              if (series.length === 0) {
-                alert('No existe información para el periodo y estación seleccionada.');
-              } else {
-                exportarSerieCsv(est, varCode, series, freq);
-              }
-            } catch (fallbackErr) {
-              console.error('[Periodo] Error descargando la serie:', fallbackErr);
-              alert(API_ERROR_MESSAGE);
-            }
+            console.error('[Periodo] Error en la descarga oficial de SEDC:', err);
+            alert(API_ERROR_MESSAGE);
           } finally {
             btn.disabled = false;
             btn.innerHTML = origText;

@@ -110,13 +110,8 @@
           <!-- Fecha inicio -->
           <div class="tiempo-real-filter-field">
             <label for="input-tr-fecha-inicio" class="tiempo-real-filter-label">Fecha inicio:</label>
-            <input type="date" id="input-tr-fecha-inicio" class="tiempo-real-filter-date" value="2026-09-01">
-          </div>
-
-          <!-- Fecha fin -->
-          <div class="tiempo-real-filter-field">
-            <label for="input-tr-fecha-fin" class="tiempo-real-filter-label">Fecha fin:</label>
-            <input type="date" id="input-tr-fecha-fin" class="tiempo-real-filter-date" value="2026-09-03">
+            <!-- SEDC /ajax/telemetria/consulta only takes a start date: default (today) is set by tiempo-real.js -->
+            <input type="date" id="input-tr-fecha-inicio" class="tiempo-real-filter-date">
           </div>
 
           <!-- Botón Limpiar -->
@@ -162,7 +157,7 @@
 
           <!-- Dynamic Counter -->
           <div class="tiempo-real-counter-wrap">
-            <span id="tr-stations-counter" class="tiempo-real-counter-text">20 estaciones con precipitación</span>
+            <span id="tr-stations-counter" class="tiempo-real-counter-text">-</span>
           </div>
         </div>
       </div>
@@ -182,7 +177,19 @@
         <!-- Right Column: Stations Cards List -->
         <div class="tiempo-real-cards-wrapper">
           <div class="tiempo-real-cards-column" id="tr-cards-list" role="feed" aria-label="Lista de estaciones telemétricas">
-            <!-- Inyectado dinámicamente -->
+            <!-- Initial loader (visible from first paint); replaced by the page JS -->
+            <div class="fonag-inline-loader is-static" role="status" aria-live="polite">
+              <div class="fonag-loader-card">
+                <div class="fonag-loader-spinner-wrapper">
+                  <div class="fonag-loader-ring"></div>
+                  <div class="fonag-loader-inner-dot"></div>
+                </div>
+                <div class="fonag-loader-text-group">
+                  <span class="fonag-loader-title">Consultando servidor...</span>
+                  <span class="fonag-loader-subtitle">Cargando estaciones con telemetría</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

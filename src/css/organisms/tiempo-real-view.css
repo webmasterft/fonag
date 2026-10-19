@@ -421,8 +421,9 @@
 .tiempo-real-modal-dialog {
   background-color: #ffffff;
   border-radius: 16px;
-  width: 100%;
-  max-width: 960px;
+  /* Same width for every "Ver datos" modal: 90% of the viewport */
+  width: 90vw;
+  max-width: 90vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;

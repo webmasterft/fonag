@@ -9,6 +9,8 @@ import { initGlobalHttpLoader } from '../atoms/global-loader.js';
 import { initColumnFilter } from '../molecules/data-table/column-filter.js';
 import { initPortalHeader } from '../organisms/portal-header.js';
 import { getEjeConfig } from '../molecules/map/leaflet-map.js';
+import { apiErrorHtml } from '../atoms/api-error.js';
+import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initPortalHeader();
@@ -67,15 +69,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       return {
         no: idx + 1,
         ...item,
-        ejeDeTrabajo: item.eje_trabajo || 'General'
+        // Empty when SEDC has no eje_trabajo (rendered as '-')
+        ejeDeTrabajo: item.eje_trabajo
       };
     });
   } catch (err) {
+    console.error('[Estaciones] Error cargando estaciones:', err);
     if (tableBody) {
+      const columnCount = tableEstaciones?.querySelectorAll('thead th').length || 11;
       tableBody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align: center; padding: 2.5rem; color: #ef4444; font-weight: 600;">
-            Error en el API, intenta más tarde.
+          <td colspan="${columnCount}" style="text-align: center; padding: 2.5rem;">
+            ${apiErrorHtml()}
           </td>
         </tr>
       `;
@@ -90,13 +95,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (selectEje) {
     const ejesUnicos = Array.from(new Set(allEstaciones.map(e => e.ejeDeTrabajo).filter(Boolean))).sort();
     selectEje.innerHTML = '<option value="">Todos los ejes</option>' + 
-      ejesUnicos.map(eje => `<option value="${eje}">${eje}</option>`).join('');
+      ejesUnicos.map(eje => `<option value="${escapeHtml(eje)}">${escapeHtml(eje)}</option>`).join('');
   }
 
   if (selectProvincia) {
     const provsUnicas = Array.from(new Set(allEstaciones.map(e => e.provincia).filter(Boolean))).sort();
     selectProvincia.innerHTML = '<option value="">Todas</option>' + 
-      provsUnicas.map(p => `<option value="${p}">${p}</option>`).join('');
+      provsUnicas.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
   }
 
   // Actualizar conteos de los Stat Pills superiores
@@ -156,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Contadores
     if (counterFoundEl) counterFoundEl.textContent = `${filtered.length} estaciones encontradas`;
-    if (counterTotalEl) counterTotalEl.textContent = `${filtered.length} estaciones activas`;
+    if (counterTotalEl) counterTotalEl.textContent = `${allEstaciones.length} estaciones activas`;
 
     // Paginación
     const totalPages = Math.ceil(filtered.length / pageSize) || 1;
@@ -189,8 +194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           const latStr = (item.latitud !== null && item.latitud !== undefined) ? item.latitud.toFixed(4) : '-';
           const lngStr = (item.longitud !== null && item.longitud !== undefined) ? item.longitud.toFixed(4) : '-';
-          const altStr = item.altura || '-';
-          const fechaStr = (item.fechaInicio && item.fechaInicio !== 'N/D') ? item.fechaInicio : '-';
+          const altStr = displayValue(item.altura);
+          const fechaStr = displayValue(item.fechaInicio);
 
           const ejeConfig = getEjeConfig(item.ejeDeTrabajo);
 
@@ -198,22 +203,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             <tr>
               <td class="cell-no">${rowNumber}</td>
               <td class="cell-codigo" data-col="codigo">
-                <a href="/consultas/anuario/?codigo=${item.codigo}" style="color: #1e2347; text-decoration: none; font-weight: 700;">
-                  ${item.codigo}
+                <a href="/consultas/anuario/?codigo=${encodeURIComponent(item.codigo)}" style="color: #1e2347; text-decoration: none; font-weight: 700;">
+                  ${displayValue(item.codigo)}
                 </a>
               </td>
-              <td class="cell-nombre" data-col="nombre">${item.nombre}</td>
+              <td class="cell-nombre" data-col="nombre">${displayValue(item.nombre)}</td>
               <td data-col="tipo">
                 <span class="badge-pill-tipo ${badgeClass}">
                   <span class="dot"></span>
-                  ${item.tipo}
+                  ${displayValue(item.tipo)}
                 </span>
               </td>
-              <td data-col="provincia">${item.provincia}</td>
+              <td data-col="provincia">${displayValue(item.provincia)}</td>
               <td data-col="ejeDeTrabajo">
                 <span class="cell-eje">
                   <span class="eje-mini-dot" style="background-color: ${ejeConfig.color}; border-color: ${ejeConfig.border || '#94a3b8'};"></span>
-                  ${item.ejeDeTrabajo}
+                  ${displayValue(item.ejeDeTrabajo)}
                 </span>
               </td>
               <td data-col="latitud" class="cell-num">${latStr}</td>

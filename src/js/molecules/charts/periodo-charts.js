@@ -16,7 +16,7 @@ import {
   SubTitle
 } from 'chart.js';
 import { showInlineLoader } from '../../atoms/global-loader.js';
-import { loadPlotly } from '../../atoms/plotly-loader.js';
+import { loadPlotly, normalizeSedcTraces } from '../../atoms/plotly-loader.js';
 
 Chart.register(
   BarController,
@@ -99,7 +99,7 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
     (a) => !/acumulado/i.test(a.text || '')
   );
 
-  const cleanData = (figure.data || []).map((t) => {
+  const cleanData = normalizeSedcTraces(figure.data).map((t) => {
     // If a trace itself is named Acumulado or shows Acumulado legend
     if (/acumulado/i.test(t.name || '')) {
       return { ...t, showlegend: false };

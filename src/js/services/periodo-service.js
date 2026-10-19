@@ -170,7 +170,7 @@ export async function fetchSeriesDeTiempo(estacion, variableCode = 'PRE', startD
 export async function downloadPeriodoExport(estacion, variableCode, startDate, endDate, frecuencia = 'diario') {
   const estId = estacion.id || estacion.est_id;
   const varId = VARIABLES_CONFIG[variableCode]?.id;
-  const frecId = FRECUENCIA_SEDC_IDS[frecuencia] || 4;
+  const frecId = FRECUENCIA_SEDC_IDS[frecuencia];
   if (!estId || !varId || !frecId) throw new Error('Parámetros de consulta incompletos');
 
   const res = await fetch('/api/sedc/reportes/consultas_periodo', {
@@ -194,7 +194,7 @@ export async function downloadPeriodoExport(estacion, variableCode, startDate, e
   const disposition = res.headers.get('content-disposition') || '';
   const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
   
-  const isSubhorario = frecuencia === 'subhorario_validado' || frecId === 1 || frecId === 2;
+  const isSubhorario = frecuencia === 'subhorario_validado';
   const defaultExt = isSubhorario ? 'csv' : 'xlsx';
   const filename = match ? decodeURIComponent(match[1]) : `${estacion.codigo}_${variableCode}_${frecuencia}.${defaultExt}`;
 
@@ -209,7 +209,7 @@ export async function downloadPeriodoExport(estacion, variableCode, startDate, e
 }
 
 /**
- * Exporta la serie de tiempo a un archivo CSV estándar descargable en el cliente (fallback o directo).
+ * Exporta a CSV, en el cliente, una serie de tiempo ya recibida de la API (datos reales de SEDC).
  * @param {Object} estacion
  * @param {string} variableCode
  * @param {Array<Object>} series

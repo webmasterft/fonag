@@ -1,108 +1,106 @@
 import { defineConfig, loadEnv } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
-import https from 'https';
+import { getConfig, requestHttps } from './api/_lib/sedc.js';
+import estacionesHandler from './api/estaciones.js';
+import variablesHandler from './api/variables.js';
+import hydroAnnualHandler from './api/hydro-annual.js';
+import telemetriaHandler from './api/telemetria.js';
+import periodoHandler from './api/periodo.js';
 
 /**
- * Gestor de sesión persistente con el backend SEDC de FONAG
+ * Development proxy for the SEDC API.
+ * It runs the very same Vercel Serverless Functions (api/*.js + api/_lib/sedc.js) that serve
+ * production, mounted on the same /api/sedc/* paths that vercel.json rewrites, so dev and prod
+ * share one implementation (login, CSRF, forwarded fields, exports).
  */
-let sessionCache = null;
+const SEDC_ROUTES = [
+  { pattern: /^\/api\/sedc\/estacion\/list\/?$/, handler: estacionesHandler },
+  { pattern: /^\/api\/sedc\/variable\/([^/]+)\/list\/?$/, handler: variablesHandler, query: (match) => ({ seccion: match[1] }) },
+  { pattern: /^\/api\/sedc\/hydro_annual\/?$/, handler: hydroAnnualHandler },
+  { pattern: /^\/api\/sedc\/telemetria\/consulta\/?$/, handler: telemetriaHandler },
+  { pattern: /^\/api\/sedc\/reportes\/consultas_periodo\/?$/, handler: periodoHandler },
+];
 
-function requestHttps(url, options = {}, postData = null) {
-  return new Promise((resolve, reject) => {
-    const u = new URL(url);
-    const opts = {
-      hostname: u.hostname,
-      port: 443,
-      path: u.pathname + u.search,
-      method: options.method || 'GET',
-      headers: options.headers || {},
-    };
-    if (postData) {
-      opts.headers['Content-Length'] = Buffer.byteLength(postData);
-    }
-    const req = https.request(opts, (res) => {
-      // Keep raw bytes too: binary responses (Excel exports) break if decoded as text
-      const chunks = [];
-      res.on('data', (c) => chunks.push(c));
-      res.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        resolve({
-          status: res.statusCode,
-          headers: res.headers,
-          body: buffer.toString('utf8'),
-          buffer,
-        });
-      });
-    });
-    req.on('error', (err) => reject(err));
-    if (postData) req.write(postData);
-    req.end();
+// Public SEDC endpoint that vercel.json rewrites straight to SEDC (no session needed)
+const PUBLIC_SEDC_PATHS = ['/api/sedc/point_geojson'];
+
+function readBody(req) {
+  return new Promise((resolveBody, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => (raw += chunk));
+    req.on('end', () => resolveBody(raw));
+    req.on('error', reject);
   });
 }
 
-async function getSedcSession(baseUrl, username, password) {
-  if (sessionCache && Date.now() < sessionCache.expires) {
-    return sessionCache;
-  }
+/** Adds the Vercel response helpers (status / json / send) the api/*.js handlers use. */
+function withVercelResponse(res) {
+  res.status = (code) => {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = (data) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(data));
+    return res;
+  };
+  res.send = (body) => {
+    res.end(body);
+    return res;
+  };
+  return res;
+}
 
-  try {
-    const loginPage = await requestHttps(`${baseUrl}/login/`);
-    let initialCsrf = '';
-    (loginPage.headers['set-cookie'] || []).forEach((c) => {
-      if (c.startsWith('csrftoken=')) {
-        initialCsrf = c.split(';')[0].split('=')[1];
+function sedcDevMiddleware() {
+  return async (req, res) => {
+    const url = new URL(req.originalUrl || req.url, 'http://localhost');
+    const route = SEDC_ROUTES.find((r) => r.pattern.test(url.pathname));
+
+    try {
+      if (route) {
+        req.query = { ...Object.fromEntries(url.searchParams), ...(route.query?.(route.pattern.exec(url.pathname)) || {}) };
+        // Vercel hands the raw body to the handler; parseBody() accepts JSON or form-urlencoded strings
+        req.body = req.method === 'POST' ? await readBody(req) : undefined;
+        await route.handler(req, withVercelResponse(res));
+        return;
       }
-    });
 
-    const postData =
-      'username=' +
-      encodeURIComponent(username) +
-      '&password=' +
-      encodeURIComponent(password) +
-      '&csrfmiddlewaretoken=' +
-      encodeURIComponent(initialCsrf) +
-      '&next=/';
+      if (PUBLIC_SEDC_PATHS.includes(url.pathname)) {
+        const { baseUrl } = getConfig();
+        const sedcPath = url.pathname.replace(/^\/api\/sedc/, '') + url.search;
+        const sedcResponse = await requestHttps(`${baseUrl}${sedcPath}`, { headers: { Referer: baseUrl } });
+        res.statusCode = sedcResponse.status;
+        res.setHeader('Content-Type', sedcResponse.headers['content-type'] || 'application/json');
+        res.end(sedcResponse.buffer);
+        return;
+      }
 
-    const loginRes = await requestHttps(
-      `${baseUrl}/login/`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Cookie: `csrftoken=${initialCsrf}`,
-          Referer: `${baseUrl}/login/`,
-        },
-      },
-      postData
-    );
-
-    let finalCsrf = initialCsrf;
-    let sessionId = '';
-    (loginRes.headers['set-cookie'] || []).forEach((c) => {
-      if (c.startsWith('csrftoken=')) finalCsrf = c.split(';')[0].split('=')[1];
-      if (c.startsWith('sessionid=')) sessionId = c.split(';')[0].split('=')[1];
-    });
-
-    sessionCache = {
-      csrf: finalCsrf,
-      cookie: `csrftoken=${finalCsrf}; sessionid=${sessionId}`,
-      expires: Date.now() + 1000 * 60 * 30, // 30 minutos de caché de sesión
-    };
-
-    return sessionCache;
-  } catch (err) {
-    console.error('[SEDC Proxy Auth Error]:', err);
-    return null;
-  }
+      // Same as production: any other /api/sedc/* path does not exist
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Not Found' }));
+    } catch (error) {
+      console.error('[SEDC Dev Proxy Error]:', error);
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  };
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const baseUrl = env.SEDC_API_BASE_URL || 'https://sedc.fonag.org.ec';
-  // Credentials come only from .env (SEDC_USERNAME / SEDC_PASSWORD); never hardcode them here
-  const username = env.SEDC_USERNAME || '';
-  const password = env.SEDC_PASSWORD || '';
+  // api/_lib/sedc.js reads process.env (as on Vercel): expose the SEDC_* values from .env there.
+  // Credentials come only from .env (SEDC_USERNAME / SEDC_PASSWORD); never hardcode them here.
+  const env = loadEnv(mode, process.cwd(), 'SEDC_');
+  Object.entries(env).forEach(([key, value]) => {
+    process.env[key] = value;
+  });
+  const { username, password } = getConfig();
   if (!username || !password) {
     console.warn('[SEDC Proxy] SEDC_USERNAME / SEDC_PASSWORD no están definidos en .env: los endpoints autenticados fallarán.');
   }
@@ -113,330 +111,14 @@ export default defineConfig(({ mode }) => {
       {
         name: 'sedc-authenticated-api-middleware',
         configureServer(server) {
-          /**
-           * /api/sedc/estacion/list → autenticado con sesión SEDC
-           * Garantiza que eje_trabajo sea devuelto correctamente por el backend Django.
-           */
-          server.middlewares.use('/api/sedc/estacion/list', async (req, res) => {
-            console.log('[SEDC Estacion List] req.url:', req.url);
-            try {
-              const session = await getSedcSession(baseUrl, username, password);
-              console.log('[SEDC Estacion List] session ok:', !!session, 'has sessionId:', session?.cookie?.includes('sessionid='));
-              if (!session) {
-                res.statusCode = 502;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
-                return;
-              }
-              const urlObj = new URL(req.url, 'http://localhost');
-              const qs = urlObj.search || '?administrador=1&limit=300';
-              const targetUrl = `${baseUrl}/estacion/list/${qs}`;
-              console.log('[SEDC Estacion List] targetUrl:', targetUrl);
-              console.log('[SEDC Estacion List] cookie preview:', session.cookie.substring(0, 50));
-              const sedcResponse = await requestHttps(
-                targetUrl,
-                {
-                  headers: {
-                    Cookie: session.cookie,
-                    Referer: baseUrl,
-                    'X-Requested-With': 'XMLHttpRequest',
-                  },
-                }
-              );
-              console.log('[SEDC Estacion List] sedcResponse.status:', sedcResponse.status, 'body prefix:', sedcResponse.body.substring(0, 80));
-              res.statusCode = sedcResponse.status;
-              res.setHeader('Content-Type', 'application/json');
-              res.setHeader('Access-Control-Allow-Origin', '*');
-              res.end(sedcResponse.body);
-            } catch (error) {
-              console.error('[SEDC Estacion List Error]:', error);
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: error.message }));
-            }
-          });
-
-          /**
-           * /api/sedc/telemetria/consulta → POST autenticado
-           */
-          server.middlewares.use('/api/sedc/telemetria/consulta', async (req, res) => {
-            if (req.method !== 'POST') {
-              res.statusCode = 405;
-              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-              return;
-            }
-
-            let rawBody = '';
-            req.on('data', (chunk) => (rawBody += chunk));
-            req.on('end', async () => {
-              try {
-                let parsed = {};
-                try {
-                  parsed = JSON.parse(rawBody);
-                } catch {
-                  const sp = new URLSearchParams(rawBody);
-                  for (const [k, v] of sp) parsed[k] = v;
-                }
-
-                const estacionId = parsed.estacion || '38';
-                const fechaInicio = parsed.inicio || new Date().toISOString().substring(0, 10);
-
-                const session = await getSedcSession(baseUrl, username, password);
-                if (!session) {
-                  res.statusCode = 502;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
-                  return;
-                }
-
-                const postPayload =
-                  'estacion=' +
-                  encodeURIComponent(estacionId) +
-                  '&inicio=' +
-                  encodeURIComponent(fechaInicio) +
-                  '&csrfmiddlewaretoken=' +
-                  encodeURIComponent(session.csrf);
-
-                const sedcResponse = await requestHttps(
-                  `${baseUrl}/ajax/telemetria/consulta`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      Cookie: session.cookie,
-                      'X-CSRFToken': session.csrf,
-                      Referer: `${baseUrl}/telemetria/visualizar/`,
-                      'X-Requested-With': 'XMLHttpRequest',
-                    },
-                  },
-                  postPayload
-                );
-
-                res.statusCode = sedcResponse.status;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(sedcResponse.body);
-              } catch (error) {
-                console.error('[SEDC Telemetria Middleware Error]:', error);
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: error.message }));
-              }
-            });
-          });
-
-          /**
-           * /api/sedc/reportes/consultas_periodo → POST autenticado
-           */
-          server.middlewares.use('/api/sedc/reportes/consultas_periodo', async (req, res) => {
-            if (req.method !== 'POST') {
-              res.statusCode = 405;
-              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-              return;
-            }
-
-            let rawBody = '';
-            req.on('data', (chunk) => (rawBody += chunk));
-            req.on('end', async () => {
-              try {
-                let parsed = {};
-                try {
-                  parsed = JSON.parse(rawBody);
-                } catch {
-                  const sp = new URLSearchParams(rawBody);
-                  for (const [k, v] of sp) parsed[k] = v;
-                }
-
-                const estacionId = parsed.estacion || '50';
-                const variableId = parsed.variable || '1';
-                const frecuenciaId = parsed.frecuencia || '4';
-                const fechaInicio = parsed.fecha_inicio || '2023-01-01';
-                const fechaFin = parsed.fecha_fin || '2023-12-31';
-
-                const session = await getSedcSession(baseUrl, username, password);
-                if (!session) {
-                  res.statusCode = 502;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
-                  return;
-                }
-
-                const postPayload =
-                  'estacion=' + encodeURIComponent(estacionId) +
-                  '&variable=' + encodeURIComponent(variableId) +
-                  '&frecuencia=' + encodeURIComponent(frecuenciaId) +
-                  '&fecha_inicio=' + encodeURIComponent(fechaInicio) +
-                  '&fecha_fin=' + encodeURIComponent(fechaFin) +
-                  '&csrfmiddlewaretoken=' + encodeURIComponent(session.csrf);
-
-                const isExport = !!parsed.export;
-                const sedcResponse = await requestHttps(
-                  `${baseUrl}/reportes/consultas_periodo`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      Cookie: session.cookie,
-                      'X-CSRFToken': session.csrf,
-                      Referer: `${baseUrl}/reportes/consultas_periodo`,
-                      ...(isExport ? {} : { 'X-Requested-With': 'XMLHttpRequest' }),
-                    },
-                  },
-                  postPayload
-                );
-
-                res.statusCode = sedcResponse.status;
-                if (isExport) {
-                  ['content-type', 'content-disposition'].forEach((h) => {
-                    if (sedcResponse.headers[h]) res.setHeader(h, sedcResponse.headers[h]);
-                  });
-                  res.end(sedcResponse.buffer);
-                  return;
-                }
-                res.setHeader('Content-Type', 'application/json');
-                res.end(sedcResponse.body);
-              } catch (error) {
-                console.error('[SEDC Periodo Middleware Error]:', error);
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: error.message }));
-              }
-            });
-          });
-
-          /**
-           * /api/sedc/hydro_annual → POST autenticado (anuario hidroclimático)
-           * Body JSON: { stations: [ {fila de estación de /estacion/list/} ], year }
-           * Responde { tables: { PRE|TAI|CAU|...: { title, subtitle, table, graph } } }
-           */
-          server.middlewares.use('/api/sedc/hydro_annual', async (req, res) => {
-            if (req.method !== 'POST') {
-              res.statusCode = 405;
-              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-              return;
-            }
-
-            let rawBody = '';
-            req.on('data', (chunk) => (rawBody += chunk));
-            req.on('end', async () => {
-              try {
-                const parsed = JSON.parse(rawBody || '{}');
-                const session = await getSedcSession(baseUrl, username, password);
-                if (!session) {
-                  res.statusCode = 502;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
-                  return;
-                }
-
-                // Same form fields the Django page sends (empty filters + selected stations + year)
-                const postPayload = new URLSearchParams({
-                  csrfmiddlewaretoken: session.csrf,
-                  code_station: '',
-                  name_station: '',
-                  type_station: '',
-                  admin_station: '',
-                  stations: JSON.stringify(parsed.stations || []),
-                  year: String(parsed.year || ''),
-                }).toString();
-
-                const sedcResponse = await requestHttps(
-                  `${baseUrl}/hydro_annual`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      Cookie: session.cookie,
-                      'X-CSRFToken': session.csrf,
-                      Referer: `${baseUrl}/hydro_annual`,
-                      // With this header Django answers JSON; without it, the Excel file (export)
-                      ...(parsed.export ? {} : { 'X-Requested-With': 'XMLHttpRequest' }),
-                    },
-                  },
-                  postPayload
-                );
-
-                res.statusCode = sedcResponse.status;
-                if (parsed.export) {
-                  // Pass the file through untouched (type and filename as sent by Django)
-                  ['content-type', 'content-disposition'].forEach((h) => {
-                    if (sedcResponse.headers[h]) res.setHeader(h, sedcResponse.headers[h]);
-                  });
-                  res.end(sedcResponse.buffer);
-                  return;
-                }
-                res.setHeader('Content-Type', 'application/json');
-                res.end(sedcResponse.body);
-              } catch (error) {
-                console.error('[SEDC Hydro Annual Middleware Error]:', error);
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: error.message }));
-              }
-            });
-          });
-
-          /**
-           * /api/sedc/variable/* → GET autenticado con sesión SEDC
-           * Catálogo de variables (/variable/hidro/list) requiere sesión iniciada.
-           */
-          server.middlewares.use('/api/sedc/variable', async (req, res) => {
-            try {
-              const session = await getSedcSession(baseUrl, username, password);
-              if (!session) {
-                res.statusCode = 502;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: 'No se pudo autenticar con SEDC' }));
-                return;
-              }
-              const urlObj = new URL(req.url, 'http://localhost');
-              const targetUrl = `${baseUrl}/variable${urlObj.pathname}${urlObj.search}`;
-              const sedcResponse = await requestHttps(targetUrl, {
-                headers: {
-                  Cookie: session.cookie,
-                  Referer: baseUrl,
-                  'X-Requested-With': 'XMLHttpRequest',
-                },
-              });
-              res.statusCode = sedcResponse.status;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(sedcResponse.body);
-            } catch (error) {
-              console.error('[SEDC Variable List Error]:', error);
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: error.message }));
-            }
-          });
-
-          /**
-           * /api/sedc/* → proxy genérico sin autenticación de sesión
-           * (point_geojson y otros endpoints públicos)
-           */
-          server.middlewares.use('/api/sedc', async (req, res) => {
-            try {
-              const urlObj = new URL(req.url, 'http://localhost');
-              const sedcPath = urlObj.pathname.replace(/^\/api\/sedc/, '') + (urlObj.search || '');
-              const sedcResponse = await requestHttps(`${baseUrl}${sedcPath}`, {
-                headers: { Referer: baseUrl },
-              });
-              res.statusCode = sedcResponse.status;
-              res.setHeader('Content-Type', sedcResponse.headers['content-type'] || 'application/json');
-              res.setHeader('Access-Control-Allow-Origin', '*');
-              res.end(sedcResponse.body);
-            } catch (error) {
-              console.error('[SEDC Generic Proxy Error]:', error);
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: error.message }));
-            }
-          });
+          server.middlewares.use('/api/sedc', sedcDevMiddleware());
         },
       },
     ],
     server: {
       port: 9000,
       open: false,
-      // Sin proxy genérico — todo /api/sedc/* es manejado por los middlewares de arriba
+      // Sin proxy genérico — todo /api/sedc/* es manejado por el middleware de arriba
     },
     build: {
       rollupOptions: {
