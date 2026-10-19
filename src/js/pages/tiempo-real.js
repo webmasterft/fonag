@@ -5,7 +5,7 @@
  * mapa interactivo y modal con conexión directa a la API SEDC en vivo.
  */
 import { fetchEstaciones } from '../services/estaciones-service.js';
-import { fetchTelemetriaReal } from '../services/telemetria-service.js';
+import { fetchTelemetriaReal, fetchEstadoTransmision } from '../services/telemetria-service.js';
 import { exportarSerieCsv } from '../services/periodo-service.js';
 import { showApiError, apiErrorHtml } from '../atoms/api-error.js';
 import { escapeHtml, displayValue } from '../atoms/escape-html.js';
@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       applyFilters();
     }
   });
+
+  // Estado de transmisión calculado por SEDC (NORMAL / EXPECTANTE / FALLO), en paralelo con las
+  // estaciones. Si falla, la tarjeta "Último Dato" queda neutra: no se inventa un estado.
+  const estadosTransmisionPromise = fetchEstadoTransmision().catch((err) => {
+    console.error('[TiempoReal] Error cargando estado de transmisión:', err);
+    return null;
+  });
+  let estadosTransmision = null;
 
   // 1. Cargar Estaciones del Servicio (sin respaldo local: si falla se muestra el error)
   let rawEstaciones;
@@ -151,7 +159,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.style.overflow = 'hidden';
 
     // Consultar telemetría real desde la API del SEDC
-    currentTelemetryResult = await fetchTelemetriaReal(estacion, sDate);
+    [currentTelemetryResult, estadosTransmision] = await Promise.all([
+      fetchTelemetriaReal(estacion, sDate),
+      estadosTransmisionPromise
+    ]);
 
     if (!currentTelemetryResult.hasData || currentTelemetryResult.variables.length === 0) {
       renderModalEmptyState(estacion, currentTelemetryResult, sDate);
@@ -262,6 +273,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `${escapeHtml(fmt(fechas[0]))} - ${escapeHtml(fmt(fechas[fechas.length - 1]))}`;
   }
 
+  /**
+   * Color of the "Último Dato" card from SEDC's transmission state (same thresholds as its
+   * "alarma de transmisión" map): NORMAL → green, EXPECTANTE → yellow, FALLO → red.
+   * Unknown/missing state stays neutral.
+   */
+  function getEstadoTransmisionInfo(estado) {
+    const states = {
+      NORMAL: { className: 'is-normal', label: 'Normal', title: 'Transmisión normal' },
+      EXPECTANTE: { className: 'is-expectante', label: 'Expectante', title: 'Transmisión con retraso' },
+      FALLO: { className: 'is-fallo', label: 'Fallo', title: 'Sin transmisión reciente' },
+    };
+    return states[estado] || { className: '', label: '', title: 'Estado de transmisión no disponible' };
+  }
+
   function renderModalHeader(estacion, varCfg, sDate, series, telResult) {
     if (!modalHeader) return;
 
@@ -285,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             transition: all 0.15s ease;
           "
         >
-          ${displayValue(v.name)} (${displayValue(v.unit)}) [${v.count}]
+          ${displayValue(v.name)} (${displayValue(v.unit)})
         </button>
       `;
     }).join(' ');
@@ -309,6 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lastVal = lastPoint ? `${displayValue(lastPoint.valor)} ${unit}` : '-';
     const lastTime = lastPoint ? displayValue(lastPoint.fecha) : '-';
     const periodText = buildPeriodText(series, telResult, sDate);
+    const estadoInfo = getEstadoTransmisionInfo(estadosTransmision?.get(estacion.codigo)?.estado);
 
     modalHeader.innerHTML = `
       <div class="modal-header-top">
@@ -327,8 +353,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       <!-- Tarjetas resumidas: Máximo, Mínimo y Último Dato -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 10px 0 12px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Último Dato</div>
+        <div class="tr-last-reading ${estadoInfo.className}" title="${escapeHtml(estadoInfo.title)}">
+          <div class="tr-last-reading-label">Último Dato${estadoInfo.label ? ` <span class="tr-last-reading-state">${escapeHtml(estadoInfo.label)}</span>` : ''}</div>
           <div style="font-size: 15px; font-weight: 800; color: #242857; margin-top: 2px;">${lastVal}</div>
           <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">${lastTime}</div>
         </div>
@@ -400,7 +426,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Fecha / Hora</th>
               <th style="padding: 8px 12px; color: #475569; font-weight: 700;">${displayValue(varCfg.name)} (${displayValue(varCfg.unit)})</th>
-              <th style="padding: 8px 12px; color: #475569; font-weight: 700;">Estado / Transmisión</th>
             </tr>
           </thead>
           <tbody>
@@ -408,9 +433,6 @@ document.addEventListener('DOMContentLoaded', async () => {
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 500;">${displayValue(p.fecha)}</td>
                 <td style="padding: 8px 12px; color: #1e293b; font-weight: 700;">${displayValue(p.valor)}</td>
-                <td style="padding: 8px 12px; color: #10b981; font-weight: 600;">
-                  Dato Crudo (Telemetría SEDC)
-                </td>
               </tr>
             `).join('')}
           </tbody>

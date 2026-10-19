@@ -111,6 +111,23 @@ export async function fetchTelemetriaReal(estacion, fechaInicio) {
   };
 }
 
+/**
+ * Estado de transmisión de cada estación con telemetría, calculado por SEDC
+ * (same data as SEDC's "alarma de transmisión" map).
+ * @returns {Promise<Map<string, { estado: string, fechaDato: string }>>} est_codigo → estado
+ *   (NORMAL | EXPECTANTE | FALLO)
+ * @throws {Error} When the API fails (no fallback state is invented)
+ */
+export async function fetchEstadoTransmision() {
+  const res = await fetch('/api/sedc/telemetria/alarma_transmision');
+  if (!res.ok) throw new Error(`Estado de transmisión no disponible (${res.status})`);
+  const data = await res.json();
+  const features = data?.estaciones?.features || data?.estaciones || [];
+  return new Map(features
+    .filter((f) => f?.properties?.codigo)
+    .map((f) => [f.properties.codigo, { estado: f.properties.estado, fechaDato: f.properties.fecha_dato || '' }]));
+}
+
 function getCodeForVarName(name = '') {
   const n = name.toLowerCase();
   if (n.includes('precipit')) return 'PRE';

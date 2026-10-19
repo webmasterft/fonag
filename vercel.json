@@ -23,6 +23,10 @@
       "destination": "/api/telemetria"
     },
     {
+      "source": "/api/sedc/telemetria/alarma_transmision",
+      "destination": "/api/alarma-transmision"
+    },
+    {
       "source": "/api/sedc/reportes/consultas_periodo",
       "destination": "/api/periodo"
     },

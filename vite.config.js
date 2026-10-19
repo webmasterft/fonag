@@ -6,6 +6,7 @@ import estacionesHandler from './api/estaciones.js';
 import variablesHandler from './api/variables.js';
 import hydroAnnualHandler from './api/hydro-annual.js';
 import telemetriaHandler from './api/telemetria.js';
+import alarmaTransmisionHandler from './api/alarma-transmision.js';
 import periodoHandler from './api/periodo.js';
 
 /**
@@ -19,6 +20,7 @@ const SEDC_ROUTES = [
   { pattern: /^\/api\/sedc\/variable\/([^/]+)\/list\/?$/, handler: variablesHandler, query: (match) => ({ seccion: match[1] }) },
   { pattern: /^\/api\/sedc\/hydro_annual\/?$/, handler: hydroAnnualHandler },
   { pattern: /^\/api\/sedc\/telemetria\/consulta\/?$/, handler: telemetriaHandler },
+  { pattern: /^\/api\/sedc\/telemetria\/alarma_transmision\/?$/, handler: alarmaTransmisionHandler },
   { pattern: /^\/api\/sedc\/reportes\/consultas_periodo\/?$/, handler: periodoHandler },
 ];
 

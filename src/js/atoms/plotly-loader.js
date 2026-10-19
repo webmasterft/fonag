@@ -18,14 +18,16 @@ const fixHex = (color) => (typeof color === 'string' && BARE_HEX.test(color) ? `
  */
 export function normalizeSedcTraces(data = []) {
   return data.map((trace) => {
-    const marker = trace.marker ? { ...trace.marker, color: fixHex(trace.marker.color) } : trace.marker;
-    const line = trace.line ? { ...trace.line, color: fixHex(trace.line.color) } : undefined;
-    const isLineTrace = trace.type === undefined || trace.type === 'scatter' || trace.type === 'scattergl';
-    const markerColor = typeof marker?.color === 'string' ? marker.color : null;
+    // Only touch marker/line when the trace has them: Plotly breaks on keys set to undefined
+    // ("Cannot use 'in' operator to search for 'line' in undefined"), e.g. threshold lines.
+    const out = { ...trace };
+    if (trace.marker) out.marker = { ...trace.marker, color: fixHex(trace.marker.color) };
+    if (trace.line) out.line = { ...trace.line, color: fixHex(trace.line.color) };
 
-    const out = { ...trace, marker };
-    if (line || (isLineTrace && markerColor)) {
-      out.line = { ...line, color: line?.color || markerColor };
+    const isLineTrace = trace.type === undefined || trace.type === 'scatter' || trace.type === 'scattergl';
+    const markerColor = typeof out.marker?.color === 'string' ? out.marker.color : null;
+    if (isLineTrace && markerColor && !out.line?.color) {
+      out.line = { ...(out.line || {}), color: markerColor };
     }
     return out;
   });
