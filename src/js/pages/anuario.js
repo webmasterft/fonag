@@ -303,7 +303,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const match = Array.from(selectEje.options).find(
       (o) => o.value && activeEje !== 'ALL' && o.value.toUpperCase() === activeEje.toUpperCase()
     );
-    selectEje.value = match ? match.value : '';
+    if (match || activeEje === 'ALL') {
+      selectEje.value = match ? match.value : '';
+      return;
+    }
+    // Map eje with no stations listed: show it anyway so the select never says "Todos" while filtering
+    const option = document.createElement('option');
+    option.value = activeEje;
+    option.textContent = activeEje;
+    selectEje.add(option);
+    selectEje.value = activeEje;
   }
 
   function updateCompiladoLabel() {

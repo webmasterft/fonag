@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const inputCodigo = document.getElementById('input-tr-codigo');
   const inputNombre = document.getElementById('input-tr-nombre');
   const selectTipo = document.getElementById('select-tr-tipo');
+  const selectEje = document.getElementById('select-tr-eje');
   const counterEl = document.getElementById('tr-stations-counter');
 
   const cardsContainer = document.getElementById('tr-cards-list');
@@ -69,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mapController = initLeafletMap('tiempo-real-stations-map', {
     onEjeSelect: (eje) => {
       activeEje = eje;
+      syncEjeSelect();
       applyFilters();
     }
   });
@@ -98,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ...est,
       ejeCalculado: est.eje_trabajo
     }));
+  populateEjeOptions();
 
   // 2. Renderizar inicial
   applyFilters();
@@ -113,6 +116,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
   if (selectTipo) selectTipo.addEventListener('change', applyFilters);
+  // The select and the map polygons share activeEje: changing one updates the other
+  if (selectEje) selectEje.addEventListener('change', () => {
+    activeEje = selectEje.value || 'ALL';
+    if (mapController) mapController.setEje(activeEje);
+    applyFilters();
+  });
 
   // Botón Limpiar
   if (btnLimpiar) {
@@ -121,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
       if (selectTipo) selectTipo.value = '';
+      if (selectEje) selectEje.value = '';
       activeEje = 'ALL';
       if (mapController) mapController.setEje('ALL');
       applyFilters();
@@ -444,6 +454,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   /**
    * Aplica los filtros reactivos y actualiza mapa y tarjetas
    */
+  /** Eje options from the transmitting stations listed here (stations without one only show under "Todos"). */
+  function populateEjeOptions() {
+    if (!selectEje) return;
+    const ejes = Array.from(new Set(telemetriaEstaciones.map((e) => e.ejeCalculado).filter(Boolean))).sort();
+    selectEje.innerHTML = '<option value="">Todos los ejes</option>' +
+      ejes.map((eje) => `<option value="${escapeHtml(eje)}">${escapeHtml(eje)}</option>`).join('');
+    syncEjeSelect();
+  }
+
+  /** Reflects activeEje (map click) in the select; matching is case-insensitive like the filter. */
+  function syncEjeSelect() {
+    if (!selectEje) return;
+    const match = Array.from(selectEje.options).find(
+      (o) => o.value && activeEje !== 'ALL' && o.value.toUpperCase() === activeEje.toUpperCase()
+    );
+    if (match || activeEje === 'ALL') {
+      selectEje.value = match ? match.value : '';
+      return;
+    }
+    // Map eje with no stations listed: show it anyway so the select never says "Todos" while filtering
+    const option = document.createElement('option');
+    option.value = activeEje;
+    option.textContent = activeEje;
+    selectEje.add(option);
+    selectEje.value = activeEje;
+  }
+
   function applyFilters() {
     const qCodigo = (inputCodigo ? inputCodigo.value : '').trim().toLowerCase();
     const qNombre = (inputNombre ? inputNombre.value : '').trim().toLowerCase();

@@ -105,7 +105,7 @@
 
       <!-- Filter Card (Figma Exact Match) -->
       <div class="tiempo-real-filter-card">
-        <!-- Top Row: Fechas y Botón Limpiar -->
+        <!-- Top Row: Fecha inicio -->
         <div class="tr-filter-row-top">
           <!-- Fecha inicio -->
           <div class="tiempo-real-filter-field">
@@ -113,12 +113,9 @@
             <!-- SEDC /ajax/telemetria/consulta only takes a start date: default (today) is set by tiempo-real.js -->
             <input type="date" id="input-tr-fecha-inicio" class="tiempo-real-filter-date">
           </div>
-
-          <!-- Botón Limpiar -->
-          <button id="btn-tr-limpiar" class="btn-tiempo-real-limpiar" type="button">Limpiar</button>
         </div>
 
-        <!-- Bottom Row: Código, Nombre de estación, Tipo de Estación, Counter -->
+        <!-- Bottom Row: Código, Nombre de estación, Tipo de Estación, Eje de trabajo, Limpiar -->
         <div class="tr-filter-row-bottom">
           <!-- Input Código -->
           <div class="tiempo-real-filter-field" style="max-width: 180px;">
@@ -154,6 +151,17 @@
               <option value="Pluviométrica">Pluviométrica</option>
             </select>
           </div>
+
+          <!-- Select Eje de trabajo (synced with the map polygons) -->
+          <div class="tiempo-real-filter-field" style="min-width: 180px;">
+            <label for="select-tr-eje" class="tiempo-real-filter-label">Eje de trabajo:</label>
+            <select id="select-tr-eje" class="tiempo-real-filter-select">
+              <option value="">Todos los ejes</option>
+            </select>
+          </div>
+
+          <!-- Botón Limpiar -->
+          <button id="btn-tr-limpiar" class="btn-tiempo-real-limpiar" type="button">Limpiar</button>
         </div>
       </div>
 
