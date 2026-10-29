@@ -194,23 +194,7 @@
   box-shadow: 0px 3px 6px #00000029, 0 0 0 3px rgba(65, 166, 229, 0.15);
 }
 
-.btn-periodo-limpiar {
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  height: 38px;
-}
 
-.btn-periodo-limpiar:hover {
-  background-color: #e2e8f0;
-  color: #334155;
-}
 
 .periodo-counter-wrap {
   display: flex;

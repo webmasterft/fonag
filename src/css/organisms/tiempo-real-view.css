@@ -216,24 +216,7 @@
   box-shadow: 0 0 0 3px rgba(65, 166, 229, 0.15);
 }
 
-.btn-tiempo-real-limpiar {
-  background-color: #ffffff;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 7px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  height: 38px;
-}
 
-.btn-tiempo-real-limpiar:hover {
-  background-color: #f8fafc;
-  color: #1e293b;
-  border-color: #cbd5e1;
-}
 
 /* Stations counter above the cards column (same as anuario and periodo) */
 .tiempo-real-counter-wrap {
