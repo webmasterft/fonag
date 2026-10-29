@@ -15,7 +15,7 @@ import {
 import { showApiError, API_ERROR_MESSAGE } from '../atoms/api-error.js';
 import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
-import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
+import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader, buildStationChartTitle } from '../molecules/charts/periodo-charts.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader, showInlineLoader } from '../atoms/global-loader.js';
 import { initCustomDatePickers } from '../molecules/datepicker/custom-datepicker.js';
@@ -271,8 +271,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    renderModalHeader(estacion, varCfg, sDate, eDate, freq);
-    if (!series.figure && series.length === 0) {
+    const hasData = !!series.figure || series.length > 0;
+    renderModalHeader(estacion, varCfg, sDate, eDate, freq, { hasData });
+    if (!hasData) {
       // SEDC respondió sin registros para esa estación/variable/rango (no es un error de la API)
       destroyPeriodoChart();
       if (tablePreviewContainer) {
@@ -280,7 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       return;
     }
-    renderPeriodoChart(chartCanvas, series, varCfg, freq);
+    renderPeriodoChart(chartCanvas, series, varCfg, freq, { title: buildStationChartTitle(estacion) });
     renderTablePreview(series, varCfg);
   }
 
@@ -291,7 +292,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     destroyPeriodoChart();
   }
 
-  function renderModalHeader(estacion, varCfg, sDate, eDate, freq) {
+  // The download button stays hidden until the series is known to have data
+  function renderModalHeader(estacion, varCfg, sDate, eDate, freq, { hasData = false } = {}) {
     if (!modalHeader) return;
 
     const normalizedTipo = (estacion.tipo || '')
@@ -300,9 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/[\u0300-\u036f]/g, '');
     // Only letters reach the class name (tipo comes from the API)
     const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
-    // altura already comes formatted by the service ("N m"); missing values show '-'
     const ejeName = displayValue(estacion.eje_trabajo);
-    const alturaVal = displayValue(estacion.altura);
     const stationName = displayValue(estacion.nombre || estacion.codigo);
 
     const FRECUENCIAS_FEMENINAS = {
@@ -331,8 +331,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${escapeHtml(sDate)} - ${escapeHtml(eDate)} &bull; Frecuencia: ${freqDisplay}</p>
-        <button type="button" class="btn-modal-download-navy" id="btn-modal-periodo-csv">
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Periodo: ${escapeHtml(sDate)} - ${escapeHtml(eDate)} &bull; Frecuencia: ${freqDisplay}</p>
+        <button type="button" class="btn-modal-download-navy" id="btn-modal-periodo-csv"${hasData ? '' : ' hidden'}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>

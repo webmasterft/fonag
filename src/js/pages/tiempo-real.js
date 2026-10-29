@@ -10,7 +10,7 @@ import { exportarSerieCsv } from '../services/periodo-service.js';
 import { showApiError, apiErrorHtml } from '../atoms/api-error.js';
 import { escapeHtml, displayValue } from '../atoms/escape-html.js';
 import { initLeafletMap } from '../molecules/map/leaflet-map.js';
-import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader } from '../molecules/charts/periodo-charts.js';
+import { renderPeriodoChart, destroyPeriodoChart, showPeriodoChartLoader, buildStationChartTitle } from '../molecules/charts/periodo-charts.js';
 import { buildTelemetriaFigure } from '../molecules/charts/telemetria-figure.js';
 import { initThemeToggle } from '../organisms/theme-toggle.js';
 import { initGlobalHttpLoader } from '../atoms/global-loader.js';
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     series.figure = buildTelemetriaFigure(currentVar.id, series.raw, { subtitle: chartSubtitle });
 
     renderModalHeader(currentModalEstacion, varConfig, sDate, series, currentTelemetryResult);
-    renderPeriodoChart(chartCanvas, series, varConfig);
+    renderPeriodoChart(chartCanvas, series, varConfig, undefined, { title: buildStationChartTitle(currentModalEstacion) });
     renderTablePreview(series, varConfig);
   }
 
@@ -323,9 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/[\u0300-\u036f]/g, '');
     // Only letters reach the class name (tipo comes from the API)
     const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
-    // altura already comes formatted by the service ("N m"); missing values show '-'
     const ejeName = displayValue(estacion.ejeCalculado);
-    const alturaVal = displayValue(estacion.altura);
     const stationName = displayValue(estacion.nombre || estacion.codigo);
     const unit = escapeHtml(varCfg.unit);
     // Calcular estadísticas de la serie activa (Máximo, Mínimo y Último dato)
@@ -375,8 +373,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Periodo: ${periodText}</p>
-        <button type="button" class="btn-modal-download-navy" id="btn-modal-tr-csv">
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Periodo: ${periodText}</p>
+        <button type="button" class="btn-modal-download-navy" id="btn-modal-tr-csv"${series.length ? '' : ' hidden'}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>

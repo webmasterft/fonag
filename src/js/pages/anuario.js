@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mapController = initLeafletMap('station-map', {
     onEjeSelect: (eje) => {
       activeEje = eje;
+      syncEjeSelect();
       applyFilters();
     }
   });
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const inputCodigo = document.getElementById('input-filter-codigo');
   const inputNombre = document.getElementById('input-filter-nombre');
   const selectTipo = document.getElementById('select-filter-tipo');
+  const selectEje = document.getElementById('select-filter-eje');
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   const selectYear = document.getElementById('select-consult-year');
   const btnCompilado = document.getElementById('btn-download-compilado');
@@ -90,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ejeCalculado: est.eje_trabajo
   }));
   populateYearOptions();
+  populateEjeOptions();
 
   // 2. Renderizar inicial
   applyFilters();
@@ -100,6 +103,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3. Listeners de filtros
   if (inputCodigo) inputCodigo.addEventListener('input', applyFilters);
   if (inputNombre) inputNombre.addEventListener('input', applyFilters);
+  // The select and the map polygons share activeEje: changing one updates the other
+  if (selectEje) selectEje.addEventListener('change', () => {
+    activeEje = selectEje.value || 'ALL';
+    if (mapController) mapController.setEje(activeEje);
+    applyFilters();
+  });
   if (selectTipo) selectTipo.addEventListener('change', () => {
     activeFloatingTipo = 'ALL';
     legendItems.forEach(i => i.style.opacity = '1');
@@ -128,6 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (inputCodigo) inputCodigo.value = '';
       if (inputNombre) inputNombre.value = '';
       if (selectTipo) selectTipo.value = '';
+      if (selectEje) selectEje.value = '';
       activeEje = 'ALL';
       activeFloatingTipo = 'ALL';
       legendItems.forEach(i => i.style.opacity = '1');
@@ -278,6 +288,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateCompiladoLabel();
   }
 
+  /** Eje options from the eje_trabajo values of the SEDC stations (stations without one only show under "Todos"). */
+  function populateEjeOptions() {
+    if (!selectEje) return;
+    const ejes = Array.from(new Set(allEstaciones.map((e) => e.ejeCalculado).filter(Boolean))).sort();
+    selectEje.innerHTML = '<option value="">Todos los ejes</option>' +
+      ejes.map((eje) => `<option value="${escapeHtml(eje)}">${escapeHtml(eje)}</option>`).join('');
+    syncEjeSelect();
+  }
+
+  /** Reflects activeEje (map click or ?eje= param) in the select; matching is case-insensitive like the filter. */
+  function syncEjeSelect() {
+    if (!selectEje) return;
+    const match = Array.from(selectEje.options).find(
+      (o) => o.value && activeEje !== 'ALL' && o.value.toUpperCase() === activeEje.toUpperCase()
+    );
+    selectEje.value = match ? match.value : '';
+  }
+
   function updateCompiladoLabel() {
     if (btnCompiladoLabel) btnCompiladoLabel.textContent = `Descargar compilado ${currentYear}`;
   }
@@ -291,9 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/[\u0300-\u036f]/g, '');
     // Only letters reach the class name (tipo comes from the API)
     const tipoClass = normalizedTipo ? `tipo-${normalizedTipo.replace(/[^a-z]/g, '')}` : '';
-    // altura already comes formatted by the service ("N m"); missing values show '-'
     const ejeName = displayValue(estacion.eje_trabajo);
-    const alturaVal = displayValue(estacion.altura);
     const stationName = displayValue(estacion.nombre || estacion.codigo);
 
     modalHeader.innerHTML = `
@@ -312,8 +338,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-header-bottom">
-        <p class="modal-meta-info">Eje: ${ejeName} &bull; Altura: ${alturaVal} &bull; Año: ${escapeHtml(currentYear)}</p>
-        <button type="button" class="btn-modal-download-navy" id="btn-modal-download-excel">
+        <p class="modal-meta-info">Eje: ${ejeName} &bull; Año: ${escapeHtml(currentYear)}</p>
+        <button type="button" class="btn-modal-download-navy" id="btn-modal-download-excel" hidden>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
@@ -378,6 +404,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function setExcelDownloadVisible(visible) {
+    const btnExcel = modalHeader?.querySelector('#btn-modal-download-excel');
+    if (btnExcel) btnExcel.hidden = !visible;
+  }
+
   // Respuesta de /hydro_annual por estación+año: cambiar de pestaña no vuelve a consultar
   const anuarioCache = new Map();
   let modalRenderToken = 0;
@@ -399,6 +430,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (token !== modalRenderToken) return; // otra estación/año/pestaña se pidió mientras cargaba
 
+      // The Excel download is only offered when SEDC returned tables for the station/year
+      setExcelDownloadVisible(Object.keys(anuarioCache.get(cacheKey)?.tables || {}).length > 0);
+
       // "Gráficas estadísticas": solo las figuras de SEDC; "Tabla de datos": solo las tablas
       await renderAnuarioSedc(modalBody, anuarioCache.get(cacheKey), {
         view: currentModalTab === 'table' ? 'table' : 'charts'
@@ -407,6 +441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('[Anuario] Error consultando hydro_annual:', err);
       anuarioCache.delete(cacheKey);
       if (token === modalRenderToken) {
+        setExcelDownloadVisible(false);
         modalBody.innerHTML = apiErrorHtml();
       }
     } finally {

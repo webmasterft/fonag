@@ -17,6 +17,7 @@ import {
 } from 'chart.js';
 import { showInlineLoader } from '../../atoms/global-loader.js';
 import { loadPlotly, normalizeSedcTraces } from '../../atoms/plotly-loader.js';
+import { escapeHtml } from '../../atoms/escape-html.js';
 
 Chart.register(
   BarController,
@@ -63,10 +64,42 @@ export function destroyPeriodoChart({ keepLoader = false } = {}) {
 
   if (activePlotlyEl) {
     const el = activePlotlyEl;
+    // The container grows to fit the legend/stats: give it back its CSS height
+    if (el.parentElement) el.parentElement.style.height = '';
     loadPlotly().then((Plotly) => Plotly.purge(el));
     el.remove();
     activePlotlyEl = null;
   }
+}
+
+// Pixel sizes of the area under the plot (x-axis ticks, legend rows, stats row)
+const MARGIN_TOP = 40;
+const MARGIN_TOP_WITH_SUBTITLE = 80;
+const BASE_MARGIN_BOTTOM = 50;
+const AXIS_TICKS_PX = 45;
+const LEGEND_ROW_PX = 24;
+const STATS_ROW_PX = 30;
+const BOTTOM_PADDING_PX = 10;
+
+/**
+ * Estimates how many rows Plotly's horizontal legend wraps into for the given width.
+ * @param {Array<{ name?: string }>} traces Visible legend entries
+ * @param {number} availableWidth
+ * @returns {number}
+ */
+function estimateLegendRows(traces, availableWidth) {
+  let rows = 1;
+  let rowWidth = 0;
+  traces.forEach((t) => {
+    // Symbol + padding (~40px) plus ~7.5px per character at the default 12px font
+    const itemWidth = 40 + (t.name || '').length * 7.5;
+    if (rowWidth > 0 && rowWidth + itemWidth > availableWidth) {
+      rows++;
+      rowWidth = 0;
+    }
+    rowWidth += itemWidth;
+  });
+  return rows;
 }
 
 /**
@@ -74,8 +107,9 @@ export function destroyPeriodoChart({ keepLoader = false } = {}) {
  * @param {HTMLCanvasElement} canvasEl
  * @param {{ data: Array, layout: Object }} figure
  * @param {string} freqDisplay
+ * @param {string} [title] Escaped title that replaces the figure's own title (subtitle is kept)
  */
-async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
+async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '', title = '') {
   canvasEl.style.display = 'none';
   const el = document.createElement('div');
   el.style.width = '100%';
@@ -93,7 +127,6 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
   }
   if (activePlotlyEl !== el) return; // modal closed or re-rendered while loading
 
-  // Django's layout sets a fixed height; let the modal container size the figure instead
   // Remove Acumulado text annotations and move legend to bottom
   const cleanAnnotations = (figure.layout?.annotations || []).filter(
     (a) => !/acumulado/i.test(a.text || '')
@@ -106,23 +139,6 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
     }
     return t;
   });
-
-  // Calcular dinámicamente el margen inferior según el número de series visibles
-  const visibleTraces = cleanData.filter((t) => t.showlegend !== false);
-  const totalNamesLength = visibleTraces.reduce((acc, t) => acc + (t.name ? t.name.length : 0), 0);
-
-  let dynamicMarginBottom = 50;
-  let dynamicLegendY = -0.16;
-
-  if (visibleTraces.length > 0) {
-    if (visibleTraces.length > 3 || totalNamesLength > 45) {
-      dynamicMarginBottom = 120;
-      dynamicLegendY = -0.19;
-    } else {
-      dynamicMarginBottom = 90;
-      dynamicLegendY = -0.15;
-    }
-  }
 
   // Separar anotaciones estadísticas (Mínimo, Máximo, Promedio) de otras anotaciones
   const statsAnnotations = [];
@@ -137,17 +153,32 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
     }
   });
 
-  const hasStats = statsAnnotations.length > 0;
-  // Si hay estadísticas abajo de la leyenda, reservamos espacio inferior extra
-  if (hasStats) {
-    dynamicMarginBottom += 45;
-  }
+  // The plot area keeps the container's CSS height; the space under it (ticks, legend rows,
+  // stats) is computed in pixels and the container grows to fit it, so nothing gets clipped.
+  // Plotly positions legend/annotations in fractions of the plot area, so pixels are converted.
+  const container = canvasEl.parentElement;
+  const marginTop = figure.layout?.title?.subtitle ? MARGIN_TOP_WITH_SUBTITLE : MARGIN_TOP;
+  const marginLeft = 70;
+  const marginRight = 40;
+  const plotAreaHeight = Math.max(container.clientHeight - marginTop - BASE_MARGIN_BOTTOM, 160);
 
-  // Agrupar o alinear las estadísticas debajo de la leyenda horizontalmente
-  // Si hay 3 estadísticas (ej. Mín, Máx, Promedio), distribuirlas horizontalmente debajo de la leyenda
+  const visibleTraces = cleanData.filter((t) => t.showlegend !== false);
+  const legendRows = visibleTraces.length > 0
+    ? estimateLegendRows(visibleTraces, container.clientWidth - marginLeft - marginRight)
+    : 0;
+  const hasStats = statsAnnotations.length > 0;
+
+  const legendTopPx = AXIS_TICKS_PX;
+  const statsTopPx = legendTopPx + legendRows * LEGEND_ROW_PX + BOTTOM_PADDING_PX;
+  const marginBottom = statsTopPx + (hasStats ? STATS_ROW_PX : 0) + BOTTOM_PADDING_PX;
+  const totalHeight = marginTop + plotAreaHeight + marginBottom;
+
+  container.style.height = `${totalHeight}px`;
+  el.style.height = `${totalHeight}px`;
+
+  // Distribuir las estadísticas horizontalmente debajo de la leyenda
   const positionedStats = statsAnnotations.map((a, idx) => {
     const total = statsAnnotations.length;
-    // Distribuir en el eje horizontal centrado debajo de la leyenda
     let xPos = 0.5;
     if (total === 3) {
       xPos = idx === 0 ? 0.25 : (idx === 1 ? 0.5 : 0.75);
@@ -160,7 +191,7 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
       yref: 'paper',
       x: xPos,
       xanchor: 'center',
-      y: dynamicLegendY - 0.12,
+      y: -statsTopPx / plotAreaHeight,
       yanchor: 'top',
       font: {
         family: "'Inter', sans-serif",
@@ -174,19 +205,23 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
 
   const layout = {
     ...figure.layout,
-    height: undefined,
+    height: totalHeight,
     autosize: true,
-    // Extra top room when the title carries a subtitle (e.g. "Eje • Periodo" in tiempo real)
-    margin: { t: figure.layout?.title?.subtitle ? 80 : 40, r: 40, b: dynamicMarginBottom, l: 70 },
+    margin: { t: marginTop, r: marginRight, b: marginBottom, l: marginLeft },
     legend: {
       orientation: 'h',
       x: 0.5,
       xanchor: 'center',
-      y: dynamicLegendY,
+      y: -legendTopPx / plotAreaHeight,
       yanchor: 'top'
     },
     annotations: [...otherAnnotations, ...positionedStats]
   };
+
+  if (title) {
+    const baseTitle = typeof figure.layout?.title === 'string' ? {} : (figure.layout?.title || {});
+    layout.title = { ...baseTitle, text: title };
+  }
 
   // En frecuencias mensuales y anuales, el eje de porcentaje (yaxis2 o yaxis) debe decir "Porcentaje de Datos (%)" y tener rango [0, 100]
   const yaxis2Title = typeof layout.yaxis2?.title === 'string' ? layout.yaxis2.title : (layout.yaxis2?.title?.text || '');
@@ -234,6 +269,18 @@ async function renderPlotlyFigure(canvasEl, figure, freqDisplay = '') {
   }
 }
 
+/**
+ * Standard chart title for every consulta: "Estación [Código] [Nombre]".
+ * @param {{ codigo?: string, nombre?: string }} estacion
+ * @returns {string} Escaped title (Plotly renders titles as pseudo-HTML)
+ */
+export function buildStationChartTitle(estacion) {
+  return ['Estación', estacion?.codigo, estacion?.nombre]
+    .filter((part) => part && String(part).trim())
+    .map(escapeHtml)
+    .join(' ');
+}
+
 const FRECUENCIAS_FEMENINAS = {
   subhorario_validado: 'Subhoraria validada',
   subhorario: 'Subhoraria',
@@ -249,8 +296,9 @@ const FRECUENCIAS_FEMENINAS = {
  * @param {Array<{ fecha: string, valor: number }>} series
  * @param {Object} variableConfig
  * @param {string} frecuencia
+ * @param {{ title?: string }} [options] title: escaped chart title (see buildStationChartTitle)
  */
-export function renderPeriodoChart(canvasEl, series, variableConfig, frecuencia = 'diario') {
+export function renderPeriodoChart(canvasEl, series, variableConfig, frecuencia = 'diario', { title = '' } = {}) {
   if (!canvasEl) return;
   // Plotly is loaded lazily: keep the loader visible until the figure is drawn
   destroyPeriodoChart({ keepLoader: !!series.figure });
@@ -258,7 +306,7 @@ export function renderPeriodoChart(canvasEl, series, variableConfig, frecuencia 
   const freqDisplay = FRECUENCIAS_FEMENINAS[frecuencia] || (frecuencia ? frecuencia.charAt(0).toUpperCase() + frecuencia.slice(1) : 'Diaria');
 
   if (series.figure) {
-    renderPlotlyFigure(canvasEl, series.figure, freqDisplay);
+    renderPlotlyFigure(canvasEl, series.figure, freqDisplay, title);
     return;
   }
   canvasEl.style.display = '';

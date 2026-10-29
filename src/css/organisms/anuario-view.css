@@ -646,6 +646,11 @@
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
+/* Hidden while the modal has no data to download (inline-flex would override [hidden]) */
+.btn-modal-download-navy[hidden] {
+  display: none;
+}
+
 .btn-modal-download-navy:hover {
   background-color: #1a1d3f;
   transform: translateY(-1px);
