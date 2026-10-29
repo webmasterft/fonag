@@ -362,23 +362,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <!-- Tarjetas resumidas: Máximo, Mínimo y Último Dato -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 10px 0 12px;">
-        <div class="tr-last-reading ${estadoInfo.className}" title="${escapeHtml(estadoInfo.title)}">
+      <div class="tr-stat-cards">
+        <div class="tr-stat-card tr-last-reading ${estadoInfo.className}" title="${escapeHtml(estadoInfo.title)}">
           <div class="tr-last-reading-label">Último Dato${estadoInfo.label ? ` <span class="tr-last-reading-state">${escapeHtml(estadoInfo.label)}</span>` : ''}</div>
-          <div style="font-size: 15px; font-weight: 800; color: #242857; margin-top: 2px;">${lastVal}</div>
-          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">${lastTime}</div>
+          <div class="tr-stat-line">
+            <span class="tr-stat-value">${lastVal}</span>
+            <span class="tr-stat-caption">${lastTime}</span>
+          </div>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase;">Valor Máximo</div>
-          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${maxVal}</div>
-          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
+        <div class="tr-stat-card">
+          <div class="tr-stat-label is-max">Valor Máximo</div>
+          <div class="tr-stat-line">
+            <span class="tr-stat-value">${maxVal}</span>
+            <span class="tr-stat-caption">En el periodo seleccionado</span>
+          </div>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase;">Valor Mínimo</div>
-          <div style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 2px;">${minVal}</div>
-          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">En el periodo seleccionado</div>
+        <div class="tr-stat-card">
+          <div class="tr-stat-label is-min">Valor Mínimo</div>
+          <div class="tr-stat-line">
+            <span class="tr-stat-value">${minVal}</span>
+            <span class="tr-stat-caption">En el periodo seleccionado</span>
+          </div>
         </div>
       </div>
 
