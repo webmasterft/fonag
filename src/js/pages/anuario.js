@@ -355,17 +355,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           Descargar Excel
         </button>
       </div>
-
-      <div class="modal-nav-tabs">
-        <button type="button" class="modal-tab-btn is-active" id="tab-btn-charts">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          Gráficas estadísticas
-        </button>
-      </div>
     `;
 
     // Listeners del header

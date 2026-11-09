@@ -640,41 +640,6 @@
   transform: translateY(-1px);
 }
 
-/* Modal Nav Tabs (Gráficas vs Tabla) */
-.modal-nav-tabs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 0.5rem;
-}
-
-.modal-tab-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.modal-tab-btn:hover {
-  color: #242857;
-  background-color: #f1f5f9;
-}
-
-.modal-tab-btn.is-active {
-  color: #ffffff;
-  background-color: #242857;
-}
-
 .anuario-modal-body {
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
