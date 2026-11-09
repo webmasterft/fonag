@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const thisYear = new Date().getFullYear();
   let activeCardEl = null;
   let currentModalEstacion = null;
-  let currentModalTab = 'charts'; // 'charts' | 'table'
 
   // Leer parámetro URL opcional ?eje=... o ?codigo=...
   const urlParams = new URLSearchParams(window.location.search);
@@ -247,10 +246,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') closeModal();
   });
 
-  function openModal(estacion, tab = 'charts') {
+  function openModal(estacion) {
     if (!modal || !modalBody) return;
     currentModalEstacion = estacion;
-    currentModalTab = tab;
 
     renderModalHeader(estacion);
     renderModalContent(estacion);
@@ -359,19 +357,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="modal-nav-tabs">
-        <button type="button" class="modal-tab-btn ${currentModalTab === 'charts' ? 'is-active' : ''}" id="tab-btn-charts">
+        <button type="button" class="modal-tab-btn is-active" id="tab-btn-charts">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"></line>
             <line x1="12" y1="20" x2="12" y2="4"></line>
             <line x1="6" y1="20" x2="6" y2="14"></line>
           </svg>
           Gráficas estadísticas
-        </button>
-        <button type="button" class="modal-tab-btn ${currentModalTab === 'table' ? 'is-active' : ''}" id="tab-btn-table">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>
-          </svg>
-          Tabla de datos
         </button>
       </div>
     `;
@@ -387,29 +379,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnClose = modalHeader.querySelector('#btn-close-modal');
     if (btnClose) {
       btnClose.addEventListener('click', closeModal);
-    }
-
-    const tabCharts = modalHeader.querySelector('#tab-btn-charts');
-    const tabTable = modalHeader.querySelector('#tab-btn-table');
-
-    if (tabCharts) {
-      tabCharts.addEventListener('click', () => {
-        if (currentModalTab === 'charts') return;
-        currentModalTab = 'charts';
-        tabCharts.classList.add('is-active');
-        if (tabTable) tabTable.classList.remove('is-active');
-        renderModalContent(estacion);
-      });
-    }
-
-    if (tabTable) {
-      tabTable.addEventListener('click', () => {
-        if (currentModalTab === 'table') return;
-        currentModalTab = 'table';
-        tabTable.classList.add('is-active');
-        if (tabCharts) tabCharts.classList.remove('is-active');
-        renderModalContent(estacion);
-      });
     }
   }
 
@@ -437,15 +406,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!anuarioCache.has(cacheKey)) {
         anuarioCache.set(cacheKey, await fetchAnuarioSedc(estacion, year));
       }
-      if (token !== modalRenderToken) return; // otra estación/año/pestaña se pidió mientras cargaba
+      if (token !== modalRenderToken) return; // otra estación/año se pidió mientras cargaba
 
       // The Excel download is only offered when SEDC returned tables for the station/year
       setExcelDownloadVisible(Object.keys(anuarioCache.get(cacheKey)?.tables || {}).length > 0);
 
-      // "Gráficas estadísticas": solo las figuras de SEDC; "Tabla de datos": solo las tablas
-      await renderAnuarioSedc(modalBody, anuarioCache.get(cacheKey), {
-        view: currentModalTab === 'table' ? 'table' : 'charts'
-      });
+      await renderAnuarioSedc(modalBody, anuarioCache.get(cacheKey));
     } catch (err) {
       console.error('[Anuario] Error consultando hydro_annual:', err);
       anuarioCache.delete(cacheKey);
@@ -528,7 +494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (mapController) {
       mapController.setMarkers(filtered, (estacion, openData) => {
         if (openData) {
-          openModal(estacion, 'charts');
+          openModal(estacion);
         } else {
           highlightCard(estacion.codigo);
         }
@@ -610,7 +576,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const btnVer = card.querySelector('.btn-card-ver-estadisticas');
       if (btnVer) {
-        btnVer.addEventListener('click', () => openModal(estacion, 'charts'));
+        btnVer.addEventListener('click', () => openModal(estacion));
       }
 
       const btnDesc = card.querySelector('.btn-card-descargar');

@@ -1,7 +1,7 @@
 /**
  * Molecule: Anuario Hidroclimático (SEDC)
  * Renders the response of POST /hydro_annual exactly as the Django app does:
- * the monthly tables and the Plotly figure(s) sent by the server, shown in separate views.
+ * each variable's monthly table next to the Plotly figure(s) sent by the server.
  */
 import { loadPlotly, normalizeSedcTraces } from '../../atoms/plotly-loader.js';
 import { escapeHtml } from '../../atoms/escape-html.js';
@@ -133,15 +133,14 @@ export function destroyAnuarioSedc() {
  * Renders the hydro_annual response into the container.
  * @param {HTMLElement} container
  * @param {{ tables: Object<string, Object> }} data
- * @param {{ view?: 'charts' | 'table' }} [options] 'charts' renders only the figures, 'table' only the tables
  * @returns {Promise<void>} Resolves when every figure has been drawn
  */
-export async function renderAnuarioSedc(container, data, { view = 'charts' } = {}) {
+export async function renderAnuarioSedc(container, data) {
   if (!container) return;
   destroyAnuarioSedc();
 
   const entries = Object.entries(data?.tables || {});
-  const html = view === 'table' ? buildTablesView(entries) : buildChartsView(entries);
+  const html = buildChartsView(entries);
 
   if (!html.markup) {
     container.innerHTML = `
@@ -202,22 +201,6 @@ export async function renderAnuarioSedc(container, data, { view = 'charts' } = {
 
     return Plotly.newPlot(el, cleanData, layout, { responsive: true, displaylogo: false });
   }));
-}
-
-/** "Tabla de datos": only the monthly tables of every variable. */
-function buildTablesView(entries) {
-  const markup = entries.map(([variable, block]) => {
-    if (variable === 'RAD') {
-      return ['maximum', 'minimum']
-        .filter((factor) => block[factor])
-        .map((factor) => `
-          <section class="anuario-sedc-table-wrap">${buildTable(getRadiationColumns(block[factor], factor), block[factor].table)}</section>
-        `).join('');
-    }
-    return `<section class="anuario-sedc-table-wrap">${buildTable(getColumns(variable, block), block.table)}</section>`;
-  }).join('');
-
-  return { markup, figures: [] };
 }
 
 /**
